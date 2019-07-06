@@ -156,7 +156,7 @@ class Memory(object):
             )
             self.state.solver.add_constraints(z3.simplify(z3.Or(*conditions)))
 
-        return z3.simplify(res)
+        return z3.simplify(res) # what if res is None?
     
     def copy(self):
         new_memory = Memory(self.state, self.page_size, self.bits)

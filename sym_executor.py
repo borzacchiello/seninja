@@ -155,6 +155,13 @@ class SymbolicVisitor(BNILVisitor):
         func = get_function(self.view, ip)
         func.set_auto_instr_highlight(ip, DEFERRED_STATE_COLOR)
     
+    def _put_in_unsat(self, state):
+        ip = state.get_ip()
+        self.fringe.add_unsat(state)
+
+        func = get_function(self.view, ip)
+        func.set_auto_instr_highlight(ip, NO_COLOR)
+    
     def set_current_state(self, state):
         if self.state is not None:
             self._put_in_deferred(self.state)
@@ -253,15 +260,15 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(right, expr.right)
         
         return z3.simplify(left - right)
+    
+    def visit_LLIL_MUL(self, expr):
+        left  = self.visit(expr.left)
+        right = self.visit(expr.right)
 
-    def visit_LLIL_LOAD(self, expr):
-        src = self.visit(expr.src)
-
-        self._check_unsupported(src, expr.src)
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
         
-        loaded = self.state.mem.load(src, expr.size, endness=self.arch.endness())
-
-        return loaded
+        return z3.simplify(left * right)
 
     def visit_LLIL_XOR(self, expr):
         left = self.visit(expr.left)
@@ -272,17 +279,64 @@ class SymbolicVisitor(BNILVisitor):
 
         return z3.simplify(left ^ right)
 
+    def visit_LLIL_LOAD(self, expr):
+        src = self.visit(expr.src)
+
+        self._check_unsupported(src, expr.src)
+        
+        loaded = self.state.mem.load(src, expr.size, endness=self.arch.endness())
+
+        return loaded
+
     def visit_LLIL_LSL(self, expr):
         left = self.visit(expr.left)
         right = self.visit(expr.right)
 
-        assert right.size() < left.size()
+        assert right.size() <= left.size()
 
         self._check_unsupported(left,  expr.left )
         self._check_unsupported(right, expr.right)
 
         # the logical and arithmetic left-shifts are exactly the same
         return z3.simplify(left << z3.ZeroExt(left.size() - right.size(), right))
+
+    def visit_LLIL_LSR(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        assert right.size() <= left.size()
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+
+        return z3.simplify(
+            z3.LShR(
+                left, 
+                z3.ZeroExt(left.size() - right.size(), right)
+            )
+        )
+
+    def visit_LLIL_ASL(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        assert right.size() <= left.size()
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+
+        return z3.simplify(left << z3.ZeroExt(left.size() - right.size(), right))
+
+    def visit_LLIL_ASR(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        assert right.size() <= left.size()
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+
+        return z3.simplify(left >> z3.ZeroExt(left.size() - right.size(), right))
 
     def visit_LLIL_REG(self, expr):
         src = expr.src
@@ -344,26 +398,34 @@ class SymbolicVisitor(BNILVisitor):
         false_state = self.state.copy()
 
         self.state.solver.add_constraints(condition)
-
         if self.state.solver.satisfiable():
             self.update_ip(curr_fun, true_llil_index)
         else:
-            self.fringe.unsat.append(self.state)
+            self._put_in_unsat(self.state)
             self.state = None
 
         false_state.solver.add_constraints(z3.Not(condition))
         if false_state.solver.satisfiable():
             false_state.set_ip(curr_fun.llil[false_llil_index].address)
             if self.state is None:
-                self.state = false_state
+                self.set_current_state(false_state)
             else:
                 self._put_in_deferred(false_state)
         else:
-            self.fringe.unsat.append(false_state)
-
+            self._put_in_unsat(false_state)
+        
         self._wasjmp = True
         return True
-    
+
+    def visit_LLIL_CMP_E(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+        
+        return z3.simplify(left == right)
+
     def visit_LLIL_CMP_NE(self, expr):
         left = self.visit(expr.left)
         right = self.visit(expr.right)
@@ -371,8 +433,80 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(left,  expr.left )
         self._check_unsupported(right, expr.right)
         
-        return left != right
-    
+        return z3.simplify(left != right)
+
+    def visit_LLIL_CMP_SLT(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+        
+        return z3.simplify(left < right)
+
+    def visit_LLIL_CMP_ULT(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+        
+        return z3.simplify(z3.ULT(left, right))
+
+    def visit_LLIL_CMP_SLE(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+        
+        return z3.simplify(left <= right)
+
+    def visit_LLIL_CMP_ULE(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+        
+        return z3.simplify(z3.ULE(left, right))
+
+    def visit_LLIL_CMP_SGT(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+        
+        return z3.simplify(left > right)
+
+    def visit_LLIL_CMP_UGT(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+        
+        return z3.simplify(z3.UGT(left, right))
+
+    def visit_LLIL_CMP_SGE(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+        
+        return z3.simplify(left >= right)
+
+    def visit_LLIL_CMP_UGE(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+        
+        return z3.simplify(z3.UGE(left, right))
+
     def visit_LLIL_GOTO(self, expr):
         dest = expr.dest
 

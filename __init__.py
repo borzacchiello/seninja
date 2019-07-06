@@ -38,6 +38,14 @@ def continue_until_branch(bv):
         sv.execute_one()
         i = len(sv.fringe.deferred)
 
+def continue_until_address(bv, address):
+    global sv
+    if not __check_sv():
+        return
+    
+    while sv.state.get_ip() != address:
+        sv.execute_one()
+
 def change_current_state(bv, address):
     # take only the first one at the given address. TODO
     global sv
@@ -60,5 +68,6 @@ def get_current_state():
 
 PluginCommand.register("seninja: step", "", step)
 PluginCommand.register("seninja: continue until branch", "", continue_until_branch)
+PluginCommand.register_for_address("seninja: continue until address", "", continue_until_address)
 PluginCommand.register_for_address("seninja: start symbolic execution", "", start_se)
 PluginCommand.register_for_address("seninja: change current state", "", change_current_state)

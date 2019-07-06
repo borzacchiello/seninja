@@ -85,6 +85,14 @@ class x8664Arch(Arch):
                 'eip': { 'offset': 4, 'size': 4  },
                 'ip':  { 'offset': 6, 'size': 2  },
             }
+        },
+        'rflags': {
+            'addr': 72,
+            'size': 8,
+            'sub': {
+                'eflags': { 'offset': 4, 'size': 4 },
+                'flags':  { 'offset': 6, 'size': 2 }
+            }
         }
     }
 

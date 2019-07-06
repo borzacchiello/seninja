@@ -27,3 +27,6 @@ class Fringe(object):
     
     def add_errored(self, state):
         self.errored.append(state)
+    
+    def add_unsat(self, state):
+        self.unsat.append(state)

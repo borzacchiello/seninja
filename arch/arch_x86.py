@@ -76,6 +76,13 @@ class x86Arch(Arch):
             'sub': {
                 'ip':  { 'offset': 2, 'size': 2  }
             }
+        },
+        'eflags': {
+            'addr': 36,
+            'size': 4,
+            'sub': {
+                'flags':  { 'offset': 2, 'size': 2 }
+            }
         }
     }
 
