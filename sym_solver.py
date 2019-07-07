@@ -82,7 +82,7 @@ class Solver(object):
             extra_constraints = []
         return res
 
-    def copy(self):
-        res = Solver(self.state)
+    def copy(self, state):
+        res = Solver(state)
         res._solver = deepcopy(self._solver)
         return res

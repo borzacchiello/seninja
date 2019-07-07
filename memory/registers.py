@@ -40,7 +40,7 @@ class Regs(object):
         assert reg_size * 8 == val.size()
         self._mem.store(bvv(reg_addr, self.bits), val, endness='big')
 
-    def copy(self):
-        new_regs = Regs(self.state)
-        new_regs._mem = self._mem.copy()
+    def copy(self, state):
+        new_regs = Regs(state)
+        new_regs._mem = self._mem.copy(state)
         return new_regs

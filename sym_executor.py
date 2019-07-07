@@ -59,10 +59,11 @@ class SymbolicVisitor(BNILVisitor):
         self.state = State(self, arch=self.arch, page_size=0x1000)
 
         # load memory
-        print("\nloading segments...") 
+        print("loading segments...")
         for segment in self.view.segments:
             start = segment.start
             size  = segment.data_length
+            print(segment, hex(start), hex(size))
 
             if size == 0:
                 continue
@@ -75,8 +76,7 @@ class SymbolicVisitor(BNILVisitor):
                 self.state.address_page_aligned(start + size + self.state.mem.page_size) - self.state.address_page_aligned(start),
                 InitData(data, start - self.state.address_page_aligned(start))
             )
-
-        print("segment loading finished.\n")
+        print("loading finished!")
 
         current_function = get_function(view, addr)
 
@@ -151,17 +151,24 @@ class SymbolicVisitor(BNILVisitor):
     def _put_in_deferred(self, state):
         ip = state.get_ip()
         self.fringe.add_deferred(state)
-
-        func = get_function(self.view, ip)
-        func.set_auto_instr_highlight(ip, DEFERRED_STATE_COLOR)
     
     def _put_in_unsat(self, state):
         ip = state.get_ip()
         self.fringe.add_unsat(state)
-
-        func = get_function(self.view, ip)
-        func.set_auto_instr_highlight(ip, NO_COLOR)
     
+    def _set_colors(self, old_ip=None, reset=False):
+        if old_ip is not None:
+            old_func = get_function(self.view, old_ip)
+            old_func.set_auto_instr_highlight(old_ip, NO_COLOR)
+
+        for ip in self.fringe._deferred:
+            func = get_function(self.view, ip)
+            func.set_auto_instr_highlight(ip, DEFERRED_STATE_COLOR if not reset else NO_COLOR)
+            # func.set_comment_at(ip, str(len(self.fringe._deferred[ip]) if not reset else ""))
+        
+        func = get_function(self.view, self.ip)
+        func.set_auto_instr_highlight(self.ip, CURR_STATE_COLOR if not reset else NO_COLOR)
+
     def set_current_state(self, state):
         if self.state is not None:
             self._put_in_deferred(self.state)
@@ -174,7 +181,7 @@ class SymbolicVisitor(BNILVisitor):
         self.ip = ip
         self.llil_ip = new_func.llil.get_instruction_start(ip)
 
-        new_func.set_auto_instr_highlight(self.ip, CURR_STATE_COLOR)
+        self._set_colors()
 
     def select_from_deferred(self):
         if self.fringe.is_empty():
@@ -186,19 +193,15 @@ class SymbolicVisitor(BNILVisitor):
     
     def update_ip(self, function, new_llil_ip):
         old_ip = self.ip
-        old_func = get_function(self.view, old_ip)
 
         self.llil_ip = new_llil_ip
         self.ip = function.llil[new_llil_ip].address
         self.state.set_ip(self.ip)
 
-        if old_ip in self.fringe.deferred_addresses:
-            old_func.set_auto_instr_highlight(old_ip, DEFERRED_STATE_COLOR)
-        else:
-            old_func.set_auto_instr_highlight(old_ip, NO_COLOR)
-        function.set_auto_instr_highlight(self.ip, CURR_STATE_COLOR)
+        self._set_colors(old_ip)
     
     def execute_one(self):
+        old_ip = self.ip
         func = get_function(self.view, self.ip)
         expr = func.llil[self.llil_ip]
         res = self.visit(expr)
@@ -217,7 +220,8 @@ class SymbolicVisitor(BNILVisitor):
             self.update_ip(func, self.llil_ip + 1)
         else:
             self._wasjmp = False
-
+            self._set_colors(old_ip)
+        
     def visit_LLIL_STORE(self, expr):
         dest = self.visit(expr.dest)
         src  = self.visit(expr.src)
@@ -270,6 +274,15 @@ class SymbolicVisitor(BNILVisitor):
         
         return z3.simplify(left * right)
 
+    def visit_LLIL_AND(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+
+        return z3.simplify(left & right)
+
     def visit_LLIL_XOR(self, expr):
         left = self.visit(expr.left)
         right = self.visit(expr.right)
@@ -278,6 +291,20 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(right, expr.right)
 
         return z3.simplify(left ^ right)
+
+    def visit_LLIL_NOT(self, expr):
+        src = self.visit(expr.src)
+
+        self._check_unsupported(src,  expr.src)
+
+        return z3.simplify( ~ src )
+
+    def visit_LLIL_NEG(self, expr):
+        src = self.visit(expr.src)
+
+        self._check_unsupported(src,  expr.src)
+
+        return z3.simplify( - src )
 
     def visit_LLIL_LOAD(self, expr):
         src = self.visit(expr.src)
@@ -341,14 +368,6 @@ class SymbolicVisitor(BNILVisitor):
     def visit_LLIL_REG(self, expr):
         src = expr.src
         return getattr(self.state.regs, src.name)
-    
-    def visit_LLIL_PUSH(self, expr):
-        src = self.visit(expr.src)
-
-        self._check_unsupported(src, expr.src)
-        
-        self.state.stack_push(src)
-        return True
 
     def visit_LLIL_CALL(self, expr):
         dest = self.visit(expr.dest)
@@ -383,9 +402,6 @@ class SymbolicVisitor(BNILVisitor):
 
         self._wasjmp = True
         return True
-    
-    def visit_LLIL_POP(self, expr):
-        return self.state.stack_pop()
     
     def visit_LLIL_IF(self, expr):
         condition = self.visit(expr.condition)
@@ -527,6 +543,35 @@ class SymbolicVisitor(BNILVisitor):
 
         self._wasjmp = True
         return True
+
+    def visit_LLIL_PUSH(self, expr):
+        src = self.visit(expr.src)
+
+        self._check_unsupported(src, expr.src)
+        
+        self.state.stack_push(src)
+        return True
+    
+    def visit_LLIL_POP(self, expr):
+        return self.state.stack_pop()
+    
+    def visit_LLIL_SX(self, expr):
+        src = self.visit(expr.src)
+        dest_size = expr.size * 8
+
+        self._check_unsupported(src, expr.src)
+        assert src.size() <= dest_size
+
+        return z3.SignExt(dest_size - src.size(), src) 
+
+    def visit_LLIL_ZX(self, expr):
+        src = self.visit(expr.src)
+        dest_size = expr.size * 8
+
+        self._check_unsupported(src, expr.src)
+        assert src.size() <= dest_size
+
+        return z3.ZeroExt(dest_size - src.size(), src) 
 
     # def visit_LLIL_NORET(self, expr):
     #     log_alert("VM Halted.")

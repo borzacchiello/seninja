@@ -60,10 +60,10 @@ class State(object):
 
     def copy(self):
         new_state = State(self.executor, self.arch, self.page_size)
-        new_state.mem = self.mem.copy(); new_state.mem.state = new_state
-        new_state.regs = self.regs.copy(); new_state.regs.state = new_state
-        new_state.solver = self.solver.copy(); new_state.solver.state = new_state
-        new_state.device_manager = self.device_manager.copy(); new_state.device_manager.state = new_state
+        new_state.mem = self.mem.copy(new_state)
+        new_state.regs = self.regs.copy(new_state)
+        new_state.solver = self.solver.copy(new_state)
+        new_state.device_manager = self.device_manager.copy(new_state)
         new_state.events = list(self.events)
 
         return new_state

@@ -158,8 +158,8 @@ class Memory(object):
 
         return z3.simplify(res) # what if res is None?
     
-    def copy(self):
-        new_memory = Memory(self.state, self.page_size, self.bits)
+    def copy(self, state):
+        new_memory = Memory(state, self.page_size, self.bits)
         new_pages  = dict()
         for page_addr in self.pages:
             new_pages[page_addr] = self.pages[page_addr].copy()

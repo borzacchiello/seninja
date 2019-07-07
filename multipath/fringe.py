@@ -1,29 +1,37 @@
 class Fringe(object):
     def __init__(self):
-        self.unsat    = list()
-        self.deferred = list()
-        self.errored  = list()
-        self.deferred_addresses = dict()
+        self.unsat     = list()
+        self.errored   = list()
+        self._deferred = dict()
+
+    @property
+    def deferred(self):
+        res = list()
+        for addr in self._deferred:
+            res.extend(self._deferred[addr])
+        return res
 
     def is_empty(self):
-        return len(self.deferred) == 0
+        return len(self._deferred) == 0
     
     def get_deferred_by_address(self, address):
-        if address in self.deferred_addresses:
-            res = self.deferred_addresses[address]
-            del self.deferred_addresses[address]
+        if address in self._deferred:
+            res = self._deferred[address].pop()
+            if len(self._deferred[address]) == 0:
+                del self._deferred[address]
             return res
         return None
 
     def get_one_deferred(self):
         assert not self.is_empty()
-        state = self.deferred.pop()
-        del self.deferred_addresses[state.get_ip()]
+        addr, state = self._deferred.popitem()
         return state
 
     def add_deferred(self, state):
-        self.deferred_addresses[state.get_ip()] = state
-        self.deferred.append(state)
+        if state.get_ip() not in self._deferred:
+            self._deferred[state.get_ip()] = [state]
+        else:
+            self._deferred[state.get_ip()].append(state)
     
     def add_errored(self, state):
         self.errored.append(state)

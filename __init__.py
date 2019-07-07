@@ -18,7 +18,18 @@ def __check_sv():
 
 def start_se(bv, address):
     global sv
+    if sv is not None:
+        log_alert("seninja is already running")
+        return False
     sv = SymbolicVisitor(bv, address)
+
+def reset_se():
+    global sv
+    if not __check_sv():
+        return
+    
+    sv._set_colors(reset=True)
+    sv = None
 
 def step(bv):
     global sv

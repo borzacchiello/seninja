@@ -9,8 +9,9 @@ def get_function(view, address):
 def get_imported_functions(view):
     res = dict()
 
-    for name in view.symbols:
-        symb_types = view.symbols[name]
+    symbols = view.symbols
+    for name in symbols:
+        symb_types = symbols[name]
         if not isinstance(symb_types, list):
             symb_types = [symb_types]
         
@@ -23,8 +24,9 @@ def get_imported_functions(view):
 def get_imported_addresses(view):
     res = dict()
 
-    for name in view.symbols:
-        symb_types = view.symbols[name]
+    symbols = view.symbols
+    for name in symbols:
+        symb_types = symbols[name]
         if not isinstance(symb_types, list):
             symb_types = [symb_types]
         
