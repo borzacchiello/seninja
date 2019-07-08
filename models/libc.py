@@ -29,7 +29,8 @@ def atoi_handler(state: State):
     # TODO broken
     input_p = get_arg_k(state, 1)
 
-    assert not symbolic(input_p)  # no man. Don't make me cry
+    assert not symbolic(input_p) and not state.solver.symbolic(input_p)  # no man. Don't make me cry
+    print(input_p)
 
     def build_or_expression(b):
         conditions = []

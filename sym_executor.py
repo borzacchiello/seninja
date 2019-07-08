@@ -63,7 +63,7 @@ class SymbolicVisitor(BNILVisitor):
         for segment in self.view.segments:
             start = segment.start
             size  = segment.data_length
-            print(segment, hex(start), hex(size))
+            print(segment, hex(start), "->", hex(size))
 
             if size == 0:
                 continue
@@ -120,20 +120,23 @@ class SymbolicVisitor(BNILVisitor):
                 assert width*8 == self.arch.bits()  # has to happen... right?
                 self.state.mem.store(
                     bvv(stack_base + offset, self.arch.bits()), 
-                    bvv(stack_base + val.offset, width*8 ))
+                    bvv(stack_base + val.offset, width*8 ),
+                    endness=self.arch.endness())
             elif (
                 val.type.value == RegisterValueType.ConstantPointerValue or 
                 val.type.value == RegisterValueType.ConstantValue
             ):
                 self.state.mem.store(
                     bvv(stack_base + offset, self.arch.bits()), 
-                    bvv(val.value, width*8 ))
+                    bvv(val.value, width*8 ),
+                    endness=self.arch.endness())
             else:
                 symb = bvs(name + "_init", self.arch.bits())
                 self.vars.add(symb)
                 self.state.mem.store(
                     bvv(stack_base + offset, self.arch.bits()), 
-                    symb )
+                    symb,
+                    endness=self.arch.endness())
         
         # set eip
         self.state.set_ip(addr)
@@ -221,16 +224,6 @@ class SymbolicVisitor(BNILVisitor):
         else:
             self._wasjmp = False
             self._set_colors(old_ip)
-        
-    def visit_LLIL_STORE(self, expr):
-        dest = self.visit(expr.dest)
-        src  = self.visit(expr.src)
-
-        self._check_unsupported(dest, expr.dest)
-        self._check_unsupported(src,  expr.src )
-
-        self.state.mem.store(dest, src, endness=self.arch.endness())
-        return True
 
     def visit_LLIL_CONST(self, expr):
         return bvv(expr.constant, expr.size * 8)
@@ -297,23 +290,34 @@ class SymbolicVisitor(BNILVisitor):
 
         self._check_unsupported(src,  expr.src)
 
-        return z3.simplify( ~ src )
+        return z3.simplify( src.__invert__() )
 
     def visit_LLIL_NEG(self, expr):
         src = self.visit(expr.src)
 
         self._check_unsupported(src,  expr.src)
 
-        return z3.simplify( - src )
+        return z3.simplify( src.__neg__() )
 
     def visit_LLIL_LOAD(self, expr):
-        src = self.visit(expr.src)
+        src  = self.visit(expr.src)
+        size = expr.size
 
         self._check_unsupported(src, expr.src)
         
-        loaded = self.state.mem.load(src, expr.size, endness=self.arch.endness())
+        loaded = self.state.mem.load(src, size, endness=self.arch.endness())
 
         return loaded
+
+    def visit_LLIL_STORE(self, expr):
+        dest = self.visit(expr.dest)
+        src  = self.visit(expr.src)
+
+        self._check_unsupported(dest, expr.dest)
+        self._check_unsupported(src,  expr.src )
+
+        self.state.mem.store(dest, src, endness=self.arch.endness())
+        return True
 
     def visit_LLIL_LSL(self, expr):
         left = self.visit(expr.left)
@@ -538,7 +542,7 @@ class SymbolicVisitor(BNILVisitor):
         if symbolic(dest):
             raise Exception("symbolic IP")
         
-        dest_fun = self.view.get_function_at(dest.as_long())
+        dest_fun = get_function(self.view, dest.as_long())
         self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.as_long()))
 
         self._wasjmp = True

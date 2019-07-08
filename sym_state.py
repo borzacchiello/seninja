@@ -27,16 +27,7 @@ class State(object):
         return addr >> self.mem.index_bits << self.mem.index_bits
 
     def get_unmapped(self, size):
-        i     = 2**(self.arch.bits() - self.mem.index_bits) - 1
-        count = 0
-
-        while i > 0 and count != size:
-            if i not in self.mem.pages:
-                count += 1
-            else:
-                count  = 0
-            i -= 1
-        return i
+        return self.mem.get_unmapped(size)
 
     def initialize_stack(self, stack_base):
         setattr(self.regs, self.arch.get_stack_pointer_reg(), bvv(stack_base, self.arch.bits()))

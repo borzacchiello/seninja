@@ -31,7 +31,8 @@ class Solver(object):
             self.add_constraints(*extra_constraints)
 
         model = self._solver.model()
-        res = model.evaluate(var, model_completion=True).as_long()
+        res = model.evaluate(var, model_completion=True)
+        res = res.as_long()
         
         if extra_constraints:
             self._solver.pop()
@@ -61,7 +62,8 @@ class Solver(object):
         res = list()
         while n > 0 and self.satisfiable():
             model = self._solver.model()
-            r = model.evaluate(var, model_completion=True).as_long()
+            r = model.evaluate(var, model_completion=True)
+            r = r.as_long()
             res.append(r)
             self.add_constraints(var != r)
             n -= 1
@@ -69,6 +71,13 @@ class Solver(object):
         self._solver.pop()
         extra_constraints = []
         return res
+    
+    def symbolic(self, val: z3.BitVecRef):
+        return len(self.evaluate_upto(val, 2)) != 1
+
+    def is_unconstrained(self, val: z3.BitVecRef):
+        res = self.evaluate(val)
+        return res.eq(val)
     
     def model(self, extra_constraints: list=[]):
         assert self.satisfiable(extra_constraints)

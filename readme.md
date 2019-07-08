@@ -18,12 +18,12 @@ The current state is accessible through the python shell. Example:
 ```
 the code will check the satisfiablity of `eax == 3` given the path constraint of the current state. Look at the code for memory read/write and other possible interactions with the state.
 
-#### memory model
+<!-- #### memory model
 The memory model is fully symbolic (no concretization) and is based on the one of S2E (https://github.com/S2E) and KLEE (https://github.com/klee/klee):
 - it uses the *theory of arrays* to model memory pages (whose size is tunable)
 - if a symbolic address span multiple pages, it will create an ITE expression with a case for each (mapped) page
 
-I'm planning to build other memory models and to improve the performance of this one ( that is quite inefficient and probably broken :) )
+I'm planning to build other memory models and to improve the performance of this one ( that is quite inefficient and probably broken :) ) -->
 
 #### version and dependencies
 I tested it on binaryNinja Version 1.1.1689 Personal (with python 3)

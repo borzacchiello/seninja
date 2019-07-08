@@ -1,4 +1,7 @@
+from sym_solver import Solver
 import z3
+
+MIN_BASE = 0x10000
 
 def bvs(name: str, size: int):
     return z3.BitVec(name, size)
@@ -25,3 +28,12 @@ def symbolic(val: z3.BitVecRef) -> bool:
 def bvv_to_long(val: z3.BitVecRef):
     assert not symbolic(val)
     return z3.simplify(val).as_long()
+
+def heuristic_find_base(val: z3.BitVecRef):
+    fringe = val.children()
+    while fringe:
+        el = fringe.pop()
+        if not symbolic(el) and el.as_long() > MIN_BASE:
+            return el.as_long()
+        fringe.extend(el.children())
+    return -1

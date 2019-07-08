@@ -1,6 +1,7 @@
-from utility.z3_wrap_util import symbolic, split_bv, bvv_to_long, bvv
+from utility.z3_wrap_util import symbolic, split_bv, bvv_to_long, bvv, heuristic_find_base
 from memory.memory_object import MemoryObj
 from collections import namedtuple
+from options import HEURISTIC_UNCONSTRAINED_MEM_ACCESS
 import math
 import z3
 from IPython import embed
@@ -63,6 +64,8 @@ class Memory(object):
         if init is not None:
             init_val   = init.bytes
             init_index = init.index
+            data_index_i = 0
+            data_index_f = self.page_size - init_index
 
         i = 0
         for a in range(address // self.page_size, address // self.page_size + size // self.page_size, 1):
@@ -70,9 +73,11 @@ class Memory(object):
                 init_data = None
                 if init_index is not None:
                     init_data = InitData(
-                        init_val[i*self.page_size : (i+1)*self.page_size - init_index],
+                        init_val[data_index_i : data_index_f],
                         init_index)
                     init_index = 0  # only the first page has a starting index
+                    data_index_i = data_index_f
+                    data_index_f = data_index_i + self.page_size
                 self.pages[a] = Page(a, self.page_size, self.index_bits, init_data)
             else:
                 print("remapping the same page '%s'" % hex(a))
@@ -86,6 +91,17 @@ class Memory(object):
     
     def store(self, address: z3.BitVecRef, value: z3.BitVecRef, endness='big'):
         assert address.size() == self.bits
+        if (
+            HEURISTIC_UNCONSTRAINED_MEM_ACCESS and
+            symbolic(address) and
+            self.state.solver.is_unconstrained(address) and
+            heuristic_find_base(address) == -1
+        ):
+            address_conc = self.get_unmapped(value.size() // self.page_size + 1, False) * self.page_size
+            self.mmap(address_conc, (value.size() // self.page_size + 1) * self.page_size)
+            self.state.solver.add_constraints(address == address_conc)
+            print("WARNING: store, concretizing mem access (heuristic unconstrained)")
+            address = bvv(address_conc, address.size())
 
         page_addresses = set()
         conditions     = list()
@@ -97,11 +113,15 @@ class Memory(object):
             else:
                 page_address, page_index = split_bv(address + size // 8 - i - 1, self.index_bits)
 
-            if not symbolic(page_address):
+            if not symbolic(page_address):  # only syntactic check.
                 page_address = bvv_to_long(page_address)
                 page_addresses.add(page_address)
                 self._store(page_address, page_index, z3.Extract(8*(i+1)-1, 8*i, value))
-            else:
+            elif not self.state.solver.symbolic(page_address): # check with path constraint
+                page_address = self.state.solver.evaluate_long(page_address)
+                page_addresses.add(page_address)
+                self._store(page_address, page_index, z3.Extract(8*(i+1)-1, 8*i, value))
+            else: # symbolic access
                 page_address = z3.simplify(page_address)
                 page_index   = z3.simplify(page_index)
                 conditions   = list()
@@ -126,17 +146,32 @@ class Memory(object):
     
     def load(self, address: z3.BitVecRef, size: int, endness='big'):
         assert address.size() == self.bits
+        if (
+            HEURISTIC_UNCONSTRAINED_MEM_ACCESS and
+            symbolic(address) and
+            self.state.solver.is_unconstrained(address) and
+            heuristic_find_base(address) == -1
+        ):
+            address_conc = self.get_unmapped(size // self.page_size + 1, False) * self.page_size
+            self.mmap(address_conc, (size // self.page_size + 1) * self.page_size)
+            self.state.solver.add_constraints(address == address_conc)
+            print("WARNING: load, concretizing mem access (heuristic unconstrained)")
+            address = bvv(address_conc, address.size())
 
         res = None
         conditions = list()
         ran = range(size - 1, -1, -1) if endness == 'little' else range(size)
         for i in ran:
             page_address, page_index = split_bv(address + i, self.index_bits)
-            if not symbolic(page_address):
+            if not symbolic(page_address): # syntactic check
                 page_address = bvv_to_long(page_address)
                 tmp = z3.simplify(self._load(page_address, page_index))
                 res = tmp if res is None else z3.Concat(res, tmp)
-            else:
+            elif not self.state.solver.symbolic(page_address): # check with path constraint
+                page_address = self.state.solver.evaluate_long(page_address)
+                tmp = z3.simplify(self._load(page_address, page_index))
+                res = tmp if res is None else z3.Concat(res, tmp)
+            else: # symbolic access
                 conditions = list()
                 for p in self.pages:  # can be improved?
                     if self.state.solver.satisfiable(extra_constraints=[
@@ -156,7 +191,26 @@ class Memory(object):
             )
             self.state.solver.add_constraints(z3.simplify(z3.Or(*conditions)))
 
+        assert res.size() // 8 == size
         return z3.simplify(res) # what if res is None?
+
+    def get_unmapped(self, size, from_end=True):
+        last_page = 2**(self.bits - self.index_bits) - 4
+        i     = last_page if from_end else 2
+        j     = 2
+        count = 0
+
+        while j <= last_page and count != size:
+            if i not in self.pages:
+                count += 1
+            else:
+                count  = 0
+                if not from_end:
+                    i = j+1
+            j += 1
+            if from_end:
+                i -= 1
+        return i
     
     def copy(self, state):
         new_memory = Memory(state, self.page_size, self.bits)
