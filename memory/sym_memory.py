@@ -35,7 +35,7 @@ class Page(object):
             new_page.mo = self.mo.copy()
             return new_page.store(index, value)
 
-        self.mo.store(index, value)
+        self.mo.store(index, value, condition)
         return self
     
     def load(self, index: z3.BitVecRef):
@@ -166,23 +166,24 @@ class Memory(object):
             if not symbolic(page_address): # syntactic check
                 page_address = bvv_to_long(page_address)
                 tmp = z3.simplify(self._load(page_address, page_index))
-                res = tmp if res is None else z3.Concat(res, tmp)
             elif not self.state.solver.symbolic(page_address): # check with path constraint
                 page_address = self.state.solver.evaluate_long(page_address)
                 tmp = z3.simplify(self._load(page_address, page_index))
-                res = tmp if res is None else z3.Concat(res, tmp)
             else: # symbolic access
                 conditions = list()
+                tmp = None
                 for p in self.pages:  # can be improved?
                     if self.state.solver.satisfiable(extra_constraints=[
                         page_address == p
                     ]):
                         condition = z3.simplify(p == page_address)
                         conditions.append(condition)
-                        res = z3.If(condition,
+                        tmp = z3.If(condition,
                                 self._load(p, page_index),
-                                res
-                        ) if res is not None else self._load(p, page_index)
+                                tmp
+                        ) if tmp is not None else self._load(p, page_index)
+            res = tmp if res is None else z3.Concat(res, tmp)
+
         if conditions:
             errored_state = self.state.copy()
             errored_state.solver.add_constraints(z3.simplify(z3.Not(z3.Or(*conditions))))

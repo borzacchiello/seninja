@@ -152,11 +152,11 @@ class SymbolicVisitor(BNILVisitor):
         raise NotImplementedError  # implement this
     
     def _put_in_deferred(self, state):
-        ip = state.get_ip()
+        # ip = state.get_ip()
         self.fringe.add_deferred(state)
     
     def _put_in_unsat(self, state):
-        ip = state.get_ip()
+        # ip = state.get_ip()
         self.fringe.add_unsat(state)
     
     def _set_colors(self, old_ip=None, reset=False):
