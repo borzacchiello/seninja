@@ -159,6 +159,9 @@ class SymbolicVisitor(BNILVisitor):
         # ip = state.get_ip()
         self.fringe.add_unsat(state)
     
+    def _put_in_errored(self, state):
+        self.fringe.add_errored(state)
+    
     def _set_colors(self, old_ip=None, reset=False):
         if old_ip is not None:
             old_func = get_function(self.view, old_ip)

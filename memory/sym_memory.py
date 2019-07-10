@@ -1,7 +1,10 @@
 from utility.z3_wrap_util import symbolic, split_bv, bvv_to_long, bvv, heuristic_find_base
 from memory.memory_object import MemoryObj
 from collections import namedtuple
-from options import HEURISTIC_UNCONSTRAINED_MEM_ACCESS
+from options import (
+    HEURISTIC_UNCONSTRAINED_MEM_ACCESS,
+    CHECK_IF_MEM_ACCESS_IS_TOO_LARGE
+)
 import math
 import z3
 from IPython import embed
@@ -83,6 +86,52 @@ class Memory(object):
                 print("remapping the same page '%s'" % hex(a))
             i+=1
     
+    def _handle_symbolic_address(self, address: z3.BitVecRef, size: int, op_type: str):
+        if (
+            HEURISTIC_UNCONSTRAINED_MEM_ACCESS and
+            symbolic(address) and
+            self.state.solver.is_unconstrained(address) and
+            heuristic_find_base(address) == -1
+        ):
+            address_conc = self.get_unmapped(size // self.page_size + 1, False) * self.page_size
+            self.mmap(address_conc, (size // self.page_size + 1) * self.page_size)
+            self.state.solver.add_constraints(address == address_conc)
+            print("WARNING: %s, concretizing mem access (heuristic unconstrained)" % op_type)
+            address = bvv(address_conc, address.size())
+
+        if (
+            CHECK_IF_MEM_ACCESS_IS_TOO_LARGE and
+            symbolic(address)
+        ):
+            max_addr = self.state.solver.max(address)
+            min_addr = self.state.solver.min(address)
+            if max_addr - min_addr > 3 * self.page_size:
+                print("WARNING: %s, limiting mem access (too broad)" % op_type)
+
+                if min_addr == 0 and max_addr == 2 ** self.bits - 1:
+                    # unconstrained case
+                    address_conc = self.get_unmapped(size // self.page_size + 1, False) * self.page_size
+                    self.mmap(address_conc, (size // self.page_size + 1) * self.page_size)
+                    self.state.solver.add_constraints(address == address_conc)
+                    print("\tconcretizing mem access to a new page (unconstrained)")
+                    address = bvv(address_conc, address.size())
+                
+                else:
+                    # limit page near a pivot
+                    page_address, _ = split_bv(address, self.index_bits)
+                    pivot = (min_addr + self.page_size) >> self.index_bits
+                    base = heuristic_find_base(address)
+                    if base != -1 and min_addr <= base <= max_addr:
+                        print("\theurstic base: %s" % hex(base))
+                        pivot = base >> self.index_bits
+                    
+                    # for i in range(pivot-1, pivot+2):
+                    #     if i not in self.pages:
+                    #         print("\tmapping page %s" % hex(i))
+                    #         self.mmap(i*self.page_size, self.page_size)
+                    self.state.solver.add_constraints(page_address >= pivot - 1, page_address <= pivot + 1)
+        return address
+    
     def _store(self, page_address: int, page_index: z3.BitVecRef, value: z3.BitVecRef, condition: z3.BoolRef=None):
         assert page_address in self.pages
         assert value.size() == 8
@@ -91,17 +140,8 @@ class Memory(object):
     
     def store(self, address: z3.BitVecRef, value: z3.BitVecRef, endness='big'):
         assert address.size() == self.bits
-        if (
-            HEURISTIC_UNCONSTRAINED_MEM_ACCESS and
-            symbolic(address) and
-            self.state.solver.is_unconstrained(address) and
-            heuristic_find_base(address) == -1
-        ):
-            address_conc = self.get_unmapped(value.size() // self.page_size + 1, False) * self.page_size
-            self.mmap(address_conc, (value.size() // self.page_size + 1) * self.page_size)
-            self.state.solver.add_constraints(address == address_conc)
-            print("WARNING: store, concretizing mem access (heuristic unconstrained)")
-            address = bvv(address_conc, address.size())
+
+        address = self._handle_symbolic_address(address, value.size(), "store")
 
         page_addresses = set()
         conditions     = list()
@@ -146,17 +186,8 @@ class Memory(object):
     
     def load(self, address: z3.BitVecRef, size: int, endness='big'):
         assert address.size() == self.bits
-        if (
-            HEURISTIC_UNCONSTRAINED_MEM_ACCESS and
-            symbolic(address) and
-            self.state.solver.is_unconstrained(address) and
-            heuristic_find_base(address) == -1
-        ):
-            address_conc = self.get_unmapped(size // self.page_size + 1, False) * self.page_size
-            self.mmap(address_conc, (size // self.page_size + 1) * self.page_size)
-            self.state.solver.add_constraints(address == address_conc)
-            print("WARNING: load, concretizing mem access (heuristic unconstrained)")
-            address = bvv(address_conc, address.size())
+
+        address = self._handle_symbolic_address(address, size, "load")
 
         res = None
         conditions = list()
@@ -192,8 +223,14 @@ class Memory(object):
             )
             self.state.solver.add_constraints(z3.simplify(z3.Or(*conditions)))
 
+        if res is None:
+            self.state.executor.fringe.errored.append(
+                (self.state, "read unmapped")
+            )
+            self.state.executor.state = None
+            assert False  # find a way to handle this
         assert res.size() // 8 == size
-        return z3.simplify(res) # what if res is None?
+        return z3.simplify(res)
 
     def get_unmapped(self, size, from_end=True):
         last_page = 2**(self.bits - self.index_bits) - 4

@@ -79,6 +79,28 @@ class Solver(object):
         res = self.evaluate(val)
         return res.eq(val)
     
+    def max(self, val: z3.BitVecRef):
+        lb = 0
+        ub = 2 ** val.size() - 1
+        while lb <= ub:
+            m = (lb + ub) / 2
+            if not self.satisfiable(extra_constraints=[val >= m]):
+                ub = m - 1
+            else:
+                lb = m + 1
+        return ub
+    
+    def min(self, val: z3.BitVecRef):
+        lb = 0
+        ub = 2 ** val.size() - 1
+        while lb <= ub:
+            m = (lb + ub) / 2
+            if not self.satisfiable(extra_constraints=[val <= m]):
+                lb = m + 1
+            else:
+                ub = m - 1
+        return lb
+    
     def model(self, extra_constraints: list=[]):
         assert self.satisfiable(extra_constraints)
         if extra_constraints:
