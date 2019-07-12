@@ -12,8 +12,9 @@ from utility.z3_wrap_util import (
 )
 from utility.bninja_util import (
     get_function, get_imported_functions, 
-    get_imported_addresses
+    get_imported_addresses, find_os
 )
+from utility.models_util import get_result_reg
 from memory.sym_memory import InitData
 from multipath.fringe import Fringe
 
@@ -56,7 +57,7 @@ class SymbolicVisitor(BNILVisitor):
             self.arch = x8664Arch()
         
         assert self.arch is not None
-        self.state = State(self, arch=self.arch, page_size=0x1000)
+        self.state = State(self, arch=self.arch, os=find_os(view), page_size=0x1000)
 
         # load memory
         print("loading segments...")
@@ -522,7 +523,7 @@ class SymbolicVisitor(BNILVisitor):
                 raise Exception("unsupported external function '%s'" % name)
             
             res = library_functions[name](self.state, self.view)
-            setattr(self.state.regs, self.arch.get_result_register(res.size()), res)
+            setattr(self.state.regs, get_result_reg(self.state, self.view, res.size()), res)
             
             dest = self.state.stack_pop()
             dest_fun = curr_fun 
@@ -708,8 +709,19 @@ class SymbolicVisitor(BNILVisitor):
         return z3.ZeroExt(dest_size - src.size(), src) 
 
     def visit_LLIL_SYSCALL(self, expr):
-        print("syscall")
-        self._wasjmp = True
+        n_reg = self.state.os.get_syscall_n_reg()
+        n = getattr(self.state.regs, n_reg)
+        assert not symbolic(n)
+        n = n.as_long()
+        
+        handler = self.state.os.get_syscall_by_number(n)
+        if handler is None:
+            raise Exception("Unsopported syscall #%d" % n)
+        
+        res = handler(self.state)
+        res_reg = self.state.os.get_out_syscall_reg()
+        setattr(self.state.regs, res_reg, res)
+
         return True
 
     # def visit_LLIL_NORET(self, expr):

@@ -1,20 +1,21 @@
 from arch.arch_abstract import Arch
 from arch.arch_x86_64 import x8664Arch
+from os_models.os_abstract import Os
+from os_models.linux import Linuxia64
 from memory.registers import Regs
 from memory.sym_memory import Memory
 from sym_solver import Solver
 from utility.z3_wrap_util import bvv, symbolic
-from devices.device_manager import DeviceManager
 import z3
 
 class State(object):
-    def __init__(self, executor, arch: Arch=x8664Arch(), page_size: int=0x1000):
+    def __init__(self, executor, os: Os, arch: Arch=x8664Arch(), page_size: int=0x1000):
         self.page_size      = page_size
         self.arch           = arch
         self.mem            = Memory(self, page_size, arch.bits())
         self.regs           = Regs(self)
         self.solver         = Solver(self)
-        self.device_manager = DeviceManager(self)
+        self.os             = os
         self.events         = list()
         self.executor       = executor
     
@@ -50,11 +51,10 @@ class State(object):
         setattr(self.regs, self.arch.getip_reg(), bvv(new_ip, self.arch.bits()))
 
     def copy(self):
-        new_state = State(self.executor, self.arch, self.page_size)
+        new_state = State(self.executor, self.os.copy(), self.arch, self.page_size)
         new_state.mem = self.mem.copy(new_state)
         new_state.regs = self.regs.copy(new_state)
         new_state.solver = self.solver.copy(new_state)
-        new_state.device_manager = self.device_manager.copy(new_state)
         new_state.events = list(self.events)
 
         return new_state

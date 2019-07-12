@@ -13,5 +13,3 @@ class Arch(object):  # abstract class
         raise NotImplementedError
     def get_stack_pointer_reg(self):
         raise NotImplementedError
-    def get_result_register(self, size):
-        raise NotImplementedError

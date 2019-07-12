@@ -25,3 +25,32 @@ def get_arg_k(state, k, view):
         return state.mem.load(stack_pointer + (state.arch.bits() // 8)*k, state.arch.bits() // 8, state.arch.endness())
     
     raise Exception("Unknown calling convention")
+
+def get_result_reg(state, view, size):
+    ip = state.get_ip()
+    func = get_function(view, ip)
+    calling_convention = func.calling_convention.name
+
+    if calling_convention == 'cdecl':
+        if size == 8:
+            return 'al'
+        elif size == 16:
+            return 'ax'
+        elif size == 32:
+            return 'eax'
+        else:
+            raise Exception("invalid size") 
+    elif calling_convention == 'sysv':
+        if size == 8:
+            return 'al'
+        elif size == 16:
+            return 'ax'
+        elif size == 32:
+            return 'eax'
+        elif size == 64:
+            return 'rax'
+        else:
+            raise Exception("invalid size")
+    
+    raise Exception("Unknown calling convention")
+    

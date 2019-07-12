@@ -1,4 +1,6 @@
 from binaryninja import SymbolType
+from os_models.linux import Linuxi386, Linuxia64
+from os_models.windows import Windows
 
 def get_function(view, address):
     func = view.get_function_at(address)
@@ -35,3 +37,17 @@ def get_imported_addresses(view):
                 res[symb_type.address] = symb_type.name
     
     return res
+
+def find_os(view):
+    platform_name = view.platform.name
+
+    if platform_name == 'linux-x86_64':
+        return Linuxia64()
+    elif platform_name == 'linux-x86':
+        return Linuxi386()
+    elif platform_name == 'windows-x86':
+        return Windows()
+    elif platform_name == 'windows-x86_64':
+        return Windows()
+    
+    raise Exception("Unsupported os")

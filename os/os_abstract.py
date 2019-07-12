@@ -1,2 +1,0 @@
-class Os(object):
-    pass

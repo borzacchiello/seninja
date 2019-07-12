@@ -111,13 +111,3 @@ class x86Arch(Arch):
 
     def get_stack_pointer_reg(self):
         return 'esp'
-    
-    def get_result_register(self, size):
-        if size == 8:
-            return 'al'
-        elif size == 16:
-            return 'ax'
-        elif size == 32:
-            return 'eax'
-        else:
-            raise Exception("invalid size")
