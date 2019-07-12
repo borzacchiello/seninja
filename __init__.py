@@ -21,7 +21,7 @@ class TaskInBackground(BackgroundTaskThread):
 
     def run(self):
         self.bv.update_analysis_and_wait()
-        self.callback()
+        self.callback(self)
 
 sv = None
 running = False
@@ -53,7 +53,7 @@ def step(bv):
     if not __check_sv():
         return
     
-    def f():
+    def f(tb):
         global sv, running
         sv.execute_one()
         running = False
@@ -68,7 +68,7 @@ def continue_until_branch(bv):
     if not __check_sv():
         return
     
-    def f():
+    def f(tb):
         global sv, running
 
         k = len(sv.fringe.deferred)
@@ -76,6 +76,7 @@ def continue_until_branch(bv):
         while i == k:
             sv.execute_one()
             i = len(sv.fringe.deferred)
+        sv._set_colors()
         running = False
     
     if not running:
@@ -88,10 +89,14 @@ def continue_until_address(bv, address):
     if not __check_sv():
         return
     
-    def f():
+    def f(tb):
         global sv, running
-        while sv.state.get_ip() != address:
+        ip = sv.state.get_ip()
+        while ip != address:
             sv.execute_one()
+            ip = sv.state.get_ip()
+            tb.progress = "seninja: continue until address: %s" % hex(ip)
+        sv._set_colors()
         running = False
     
     if not running:

@@ -93,8 +93,20 @@ class x8664Arch(Arch):
                 'eflags': { 'offset': 4, 'size': 4 },
                 'flags':  { 'offset': 6, 'size': 2 }
             }
+        },
+        'fs': {
+            'addr': 80,
+            'size': 8,
+            'sub': {}
+        },
+        'gs': {
+            'addr': 88,
+            'size': 8,
+            'sub': {}
         }
     }
+
+    FLAGS = { 'c': 0, 'p': 2, 'a': 4, 'z': 6, 's': 7, 'd': 10, 'o': 11, 'c0': 32, 'c1': 33, 'c2': 34, 'c3': 35 }
 
     def __init__(self):
         self._bits = 64
@@ -104,6 +116,9 @@ class x8664Arch(Arch):
 
     def regs_data(self):
         return x8664Arch.REGS
+    
+    def flags_data(self):
+        return x8664Arch.FLAGS
 
     def endness(self):
         return 'little'

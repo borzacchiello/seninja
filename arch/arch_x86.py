@@ -86,6 +86,8 @@ class x86Arch(Arch):
         }
     }
 
+    FLAGS = { 'c': 0, 'p': 2, 'a': 4, 'z': 6, 's': 7, 'd': 10, 'o': 11, 'c0': 32, 'c1': 33, 'c2': 34, 'c3': 35 }
+
     def __init__(self):
         self._bits = 32
 
@@ -94,6 +96,9 @@ class x86Arch(Arch):
 
     def regs_data(self):
         return x86Arch.REGS
+    
+    def flags_data(self):
+        return x86Arch.FLAGS
 
     def endness(self):
         return 'little'

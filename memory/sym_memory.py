@@ -1,5 +1,6 @@
 from utility.z3_wrap_util import symbolic, split_bv, bvv_to_long, bvv, heuristic_find_base
 from memory.memory_object import MemoryObj
+from memory.memory_abstract import MemoryAbstract
 from collections import namedtuple
 from options import (
     HEURISTIC_UNCONSTRAINED_MEM_ACCESS,
@@ -49,7 +50,7 @@ class Page(object):
         self._lazycopy = True
         return self
 
-class Memory(object):
+class Memory(MemoryAbstract):
     def __init__(self, state, page_size=0x1000, bits=64):
         assert (page_size & (page_size - 1)) == 0  # page_size must be a power of 2
         self.bits       = bits
