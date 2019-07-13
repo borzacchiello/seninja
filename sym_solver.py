@@ -74,16 +74,12 @@ class Solver(object):
     
     def symbolic(self, val: z3.BitVecRef):
         return len(self.evaluate_upto(val, 2)) != 1
-
-    def is_unconstrained(self, val: z3.BitVecRef):
-        res = self.evaluate(val)
-        return res.eq(val)
     
     def max(self, val: z3.BitVecRef):
         lb = 0
         ub = 2 ** val.size() - 1
         while lb <= ub:
-            m = (lb + ub) / 2
+            m = (lb + ub) // 2
             if not self.satisfiable(extra_constraints=[val >= m]):
                 ub = m - 1
             else:
@@ -94,7 +90,7 @@ class Solver(object):
         lb = 0
         ub = 2 ** val.size() - 1
         while lb <= ub:
-            m = (lb + ub) / 2
+            m = (lb + ub) // 2
             if not self.satisfiable(extra_constraints=[val <= m]):
                 lb = m + 1
             else:

@@ -88,10 +88,12 @@ class Memory(MemoryAbstract):
             i+=1
     
     def _handle_symbolic_address(self, address: z3.BitVecRef, size: int, op_type: str):
+        max_addr = self.state.solver.max(address)
+        min_addr = self.state.solver.min(address)
         if (
             HEURISTIC_UNCONSTRAINED_MEM_ACCESS and
             symbolic(address) and
-            self.state.solver.is_unconstrained(address) and
+            max_addr - min_addr == 2**self.state.arch.bits() - 1 and
             heuristic_find_base(address) == -1
         ):
             address_conc = self.get_unmapped(size // self.page_size + 1, False) * self.page_size
@@ -104,8 +106,6 @@ class Memory(MemoryAbstract):
             CHECK_IF_MEM_ACCESS_IS_TOO_LARGE and
             symbolic(address)
         ):
-            max_addr = self.state.solver.max(address)
-            min_addr = self.state.solver.min(address)
             if max_addr - min_addr > 3 * self.page_size:
                 print("WARNING: %s, limiting mem access (too broad)" % op_type)
 

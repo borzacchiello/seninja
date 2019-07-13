@@ -1,5 +1,6 @@
 from copy import deepcopy
 from os_models.os_abstract import Os
+import models.linux_syscalls as models
 
 class Linux(Os):
     SYSCALL_TABLE = None
@@ -17,20 +18,33 @@ class Linux(Os):
         assert 0 < k <= 6
         return self.SYSCALL_PARAMS[k-1]
 
+    def get_stdin(self):
+        return self.devices[0]
+
+    def get_stdout(self):
+        return self.devices[1]
+    
+    def open(self, fd: int):
+        self.devices[fd] = []
+    
+    def get_device_by_fd(self, fd: int):
+        return self.devices[fd]
+
 class Linuxi386(Linux):
     SYSCALL_TABLE = {
         0: None,
-        1: None,
-        2: None,
-        3: None
+        3: models.read_handler,
+        4: models.write_handler
     }
     SYSCALL_PARAMS = [
         "ebx",   "ecx",   "edx",   "esi",   "edi",   "ebp"
     ]
 
     def __init__(self):
-        self.stdin  = []  # todo something better
-        self.stdout = []  # todo something better
+        self.devices = {
+            0: [],
+            1: []
+        }  # todo something better
 
     def get_syscall_n_reg(self):
         return "eax"
@@ -38,16 +52,9 @@ class Linuxi386(Linux):
     def get_out_syscall_reg(self):
         return "eax"
 
-    def get_stdin(self):
-        return self.stdin
-
-    def get_stdout(self):
-        return self.stdout
-
     def copy(self):
         res = Linuxi386()
-        res.stdin = deepcopy(self.stdin)
-        res.stdout = deepcopy(self.stdout)
+        res.devices = deepcopy(self.devices)
         return res
 
 class Linuxia64(Linux):
@@ -61,8 +68,10 @@ class Linuxia64(Linux):
     ]
 
     def __init__(self):
-        self.stdin  = []  # todo something better
-        self.stdout = []  # todo something better
+        self.devices = {
+            0: [],
+            1: []
+        }  # todo something better
 
     def get_syscall_n_reg(self):
         return "rax"
@@ -70,14 +79,7 @@ class Linuxia64(Linux):
     def get_out_syscall_reg(self):
         return "rax"
 
-    def get_stdin(self):
-        return self.stdin
-
-    def get_stdout(self):
-        return self.stdout
-
     def copy(self):
         res = Linuxia64()
-        res.stdin = deepcopy(self.stdin)
-        res.stdout = deepcopy(self.stdout)
+        res.devices = deepcopy(self.devices)
         return res

@@ -11,6 +11,7 @@ from binaryninja import (
     PluginCommand
 )
 from utility.z3_wrap_util import bvv, bvs
+from utility.string_util import int_to_str, str_to_int
 
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):
@@ -76,6 +77,8 @@ def continue_until_branch(bv):
         while i == k:
             sv.execute_one()
             i = len(sv.fringe.deferred)
+            ip = sv.state.get_ip()
+            tb.progress = "seninja: continue until branch: %s" % hex(ip)
         sv._set_colors()
         running = False
     
