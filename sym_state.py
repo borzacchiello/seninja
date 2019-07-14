@@ -50,11 +50,11 @@ class State(object):
     def set_ip(self, new_ip):
         setattr(self.regs, self.arch.getip_reg(), bvv(new_ip, self.arch.bits()))
 
-    def copy(self):
+    def copy(self, solver_copy_fast=False):
         new_state = State(self.executor, self.os.copy(), self.arch, self.page_size)
         new_state.mem = self.mem.copy(new_state)
         new_state.regs = self.regs.copy(new_state)
-        new_state.solver = self.solver.copy(new_state)
+        new_state.solver = self.solver.copy(new_state, solver_copy_fast)
         new_state.events = list(self.events)
 
         return new_state

@@ -26,6 +26,9 @@ class Linux(Os):
     
     def open(self, fd: int):
         self.devices[fd] = []
+
+    def close(self, fd: int):
+        del self.devices[fd]
     
     def get_device_by_fd(self, fd: int):
         return self.devices[fd]

@@ -1,6 +1,7 @@
 from sym_state import State
 from utility.z3_wrap_util import symbolic, bvv, bvs
 from utility.models_util import get_arg_k
+import re
 import z3
 
 ascii_numbers = ["0","1","2","3","4","5","6","7","8","9"]
@@ -19,12 +20,14 @@ def printf_handler(state: State, view):
         b = state.mem.load(format_str_p, 1)
 
     state.events.append(
-        "printf with format '%s'" % (format_str)
+        "printf with format '%s'" % format_str
     )
 
     return bvv(len(format_str), 32)
 
+scanf_count = 0
 def scanf_handler(state: State, view):
+    global scanf_count
     format_str_p = get_arg_k(state, 1, view)
 
     assert not symbolic(format_str_p)
@@ -36,16 +39,38 @@ def scanf_handler(state: State, view):
         format_str_p += 1
         b = state.mem.load(format_str_p, 1)
     
-    assert format_str.count("%s") == 1 and format_str.count("%") == 1  # TODO generalize
+    state.events.append(
+        "scanf with format '%s'" % format_str
+    )
+    params = re.findall("%([0-9]*s|d)", format_str)  # TODO generalize
 
-    par_p = get_arg_k(state, 2, view)
+    i = 2
+    for p in params:
 
-    assert not symbolic(par_p)
+        par_p = get_arg_k(state, i, view)
+        assert not symbolic(par_p) or not state.solver.symbolic(par_p)
+        name = 'scanf_input_%d' % scanf_count
 
-    data = bvs('scanf_input', 8*40)
-    state.mem.store(par_p, data, 'big')
-    state.solver.add_constraints(state.mem.load(par_p + 39, 1) == 0)
-    return bvv(40, 32)
+        if p[-1] == "d":
+            data = bvs(name + "_INT", 32)
+            state.os.get_stdin().append(data)
+            state.mem.store(par_p, data, endness=state.arch.endness())
+        elif p[-1] == "s":
+            n = 40
+            if p[0] != "s":
+                n = int(p[:-1])
+
+            data = bvs(name + "_STR", 8*(n - 1))
+            state.os.get_stdin().append(z3.Concat(data, bvv(ord("\n"), 8)))
+            state.mem.store(par_p, z3.Concat(data, bvv(0, 8)), 'big')
+            for i in range(0, data.size(), 8):
+                b = z3.Extract(i+7, i, data)
+                state.solver.add_constraints(b != ord("\n"))
+
+        scanf_count += 1
+        i += 1
+
+    return bvv(1, 32)
 
 def strcmp_handler(state: State, view):
     str1 = get_arg_k(state, 1, view)
@@ -70,7 +95,7 @@ def strcmp_handler(state: State, view):
         b2 = state.mem.load(str2, 1)
         i += 1
     
-    return z3.If(cond, bvv(0, 32), bvv(1, 32))
+    return z3.simplify(z3.If(cond, bvv(0, 32), bvv(1, 32)))
 
 def strlen_handler(state: State, view):
     str1 = get_arg_k(state, 1, view)
@@ -90,10 +115,10 @@ def strlen_handler(state: State, view):
         b1 = state.mem.load(str1, 1)
     
     state.solver.add_constraints(b1 == 0)
-    res = bvv(i, 32)
+    res = bvv(i, state.arch.bits())
     for i, b in vals[::-1]:
-        res = z3.simplify(z3.If(b == 0, bvv(i, 32), res))
-    return res
+        res = z3.simplify(z3.If(b == 0, bvv(i, state.arch.bits()), res))
+    return z3.simplify(res)
 
 def atoi_handler(state: State, view): 
     # TODO broken
@@ -130,3 +155,17 @@ def atoi_handler(state: State, view):
         res = (res + (b - ord("0")) * (10 ** (i // 8)))
     
     return res
+
+MAX_MALLOC = 0x1000
+def malloc_handler(state: State, view):  # naive... do something smarter
+    size = get_arg_k(state, 1, view)
+    if symbolic(size):
+        size = state.solver.max(size)
+        if size > MAX_MALLOC:
+            size = MAX_MALLOC
+    else:
+        size = size.as_long()
+    
+    num_pages = state.address_page_aligned(size + state.page_size) / state.page_size
+    res = state.get_unmapped(num_pages)
+    return bvv(res * state.page_size, state.arch.bits())

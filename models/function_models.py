@@ -1,10 +1,11 @@
-from models.libc import *
+import models.libc as models
 
 library_functions = {
-    'printf':           printf_handler,
-    'scanf':            scanf_handler,
-    '__isoc99_scanf':   scanf_handler,
-    'strcmp':           strcmp_handler,
-    'strlen':           strlen_handler,
-    'atoi':             atoi_handler
+    'printf':           models.printf_handler,
+    'scanf':            models.scanf_handler,
+    '__isoc99_scanf':   models.scanf_handler,
+    'strcmp':           models.strcmp_handler,
+    'strlen':           models.strlen_handler,
+    'atoi':             models.atoi_handler,
+    'malloc':           models.malloc_handler
 }

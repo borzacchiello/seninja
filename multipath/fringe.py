@@ -24,7 +24,10 @@ class Fringe(object):
 
     def get_one_deferred(self):
         assert not self.is_empty()
-        addr, state = self._deferred.popitem()
+        addr, states = self._deferred.popitem()
+        state = states.pop()
+        if states:
+            self._deferred[addr] = states
         return state
 
     def add_deferred(self, state):

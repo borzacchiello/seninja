@@ -6,6 +6,7 @@ from options import (
     HEURISTIC_UNCONSTRAINED_MEM_ACCESS,
     CHECK_IF_MEM_ACCESS_IS_TOO_LARGE
 )
+from utility.error_codes import ErrorInstruction
 import math
 import z3
 from IPython import embed
@@ -175,6 +176,18 @@ class Memory(MemoryAbstract):
                         conditions.append(condition)
                         self._store(p, page_index, z3.Extract(8*(i+1)-1, 8*i, value), condition)
             if conditions:
+                if not self.state.solver.satisfiable(z3.simplify(z3.Or(*conditions))):
+                    self.state.executor.fringe.errored.append(
+                        (self.state, "write unmapped")
+                    )
+                    self.state.executor.state = None
+                    return ErrorInstruction.UNMAPPED_WRITE
+
+                errored_state = self.state.copy()
+                errored_state.solver.add_constraints(z3.simplify(z3.Not(z3.Or(*conditions))))
+                self.state.executor.fringe.errored.append(
+                    (errored_state, "write unmapped")
+                )
                 self.state.solver.add_constraints(z3.simplify(z3.Or(*conditions)))
         
         # simplify accessed pages
@@ -217,6 +230,13 @@ class Memory(MemoryAbstract):
             res = tmp if res is None else z3.Concat(res, tmp)
 
         if conditions:
+            if not self.state.solver.satisfiable(z3.simplify(z3.Or(*conditions))):
+                self.state.executor.fringe.errored.append(
+                    (self.state, "read unmapped")
+                )
+                self.state.executor.state = None
+                return ErrorInstruction.UNMAPPED_READ
+
             errored_state = self.state.copy()
             errored_state.solver.add_constraints(z3.simplify(z3.Not(z3.Or(*conditions))))
             self.state.executor.fringe.errored.append(
@@ -224,12 +244,7 @@ class Memory(MemoryAbstract):
             )
             self.state.solver.add_constraints(z3.simplify(z3.Or(*conditions)))
 
-        if res is None:
-            self.state.executor.fringe.errored.append(
-                (self.state, "read unmapped")
-            )
-            self.state.executor.state = None
-            assert False  # find a way to handle this
+        assert res is not None
         assert res.size() // 8 == size
         return z3.simplify(res)
 

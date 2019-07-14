@@ -1,4 +1,3 @@
-from sym_solver import Solver
 import z3
 
 MIN_BASE = 0x10000
