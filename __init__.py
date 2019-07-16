@@ -11,7 +11,12 @@ from binaryninja import (
     PluginCommand
 )
 from utility.z3_wrap_util import bvv, bvs
-from utility.string_util import int_to_str, str_to_int
+from utility.string_util import (
+    int_to_str, 
+    str_to_int, 
+    as_bytes,
+    get_byte
+)
 
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):

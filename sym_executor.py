@@ -241,7 +241,7 @@ class SymbolicVisitor(BNILVisitor):
                 return
             else:
                 self.select_from_deferred()
-                self._wasjmp = False
+                self._wasjmp = True
                 self._set_colors(old_ip)
         
         if not self._wasjmp:

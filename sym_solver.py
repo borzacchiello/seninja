@@ -136,7 +136,9 @@ class Solver(object):
     def copy(self, state, fast_copy=False):
         res = Solver(state)
         if not fast_copy:
+            # print("copying the solver slow")
             res._solver = deepcopy(self._solver)
+            # print("copying done")
         else:
             for a in self._solver.assertions():
                 res._solver.add(a)
