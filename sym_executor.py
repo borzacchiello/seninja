@@ -310,6 +310,15 @@ class SymbolicVisitor(BNILVisitor):
         src = expr.src.name
         return self.state.regs.flags[src]
     
+    def visit_LLIL_LOW_PART(self, expr):
+        src = self.visit(expr.src)
+        size = expr.size
+
+        self._check_unsupported(src, expr.src)
+        if self._check_error(src): return src
+        
+        return z3.Extract(size*8-1, 0, src)
+    
     def visit_LLIL_ADD(self, expr):
         left  = self.visit(expr.left)
         right = self.visit(expr.right)
@@ -377,6 +386,34 @@ class SymbolicVisitor(BNILVisitor):
         
         return z3.simplify(left * right)
     
+    def visit_LLIL_MULS_DP(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+        if self._check_error(left):  return left
+        if self._check_error(right): return right
+
+        assert left.size() == right.size()
+        left  = z3.SignExt(left.size(),  left)
+        right = z3.SignExt(right.size(), right)
+        return left * right
+
+    def visit_LLIL_MULU_DP(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        self._check_unsupported(left,  expr.left )
+        self._check_unsupported(right, expr.right)
+        if self._check_error(left):  return left
+        if self._check_error(right): return right
+
+        assert left.size() == right.size()
+        left  = z3.ZeroExt(left.size(),  left)
+        right = z3.ZeroExt(right.size(), right)
+        return left * right
+
     def visit_LLIL_DIVU_DP(self, expr):
         left = self.visit(expr.left)
         right = self.visit(expr.right)
