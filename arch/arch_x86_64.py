@@ -103,6 +103,11 @@ class x8664Arch(Arch):
             'addr': 88,
             'size': 8,
             'sub': {}
+        },
+        'r8': {
+            'addr': 96,
+            'size': 8,
+            'sub': {}
         }
     }
 
