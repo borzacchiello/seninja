@@ -713,7 +713,6 @@ class SymbolicVisitor(BNILVisitor):
             assert not symbolic(dest)  # cannot happen (right?)
 
         # change ip
-        print(dest_fun)
         self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.as_long()))
 
         self._wasjmp = True
