@@ -10,7 +10,7 @@ class Linux(Os):
         raise NotImplementedError  # do not instantiate this class
 
     def get_syscall_by_number(self, n: int):
-        if n not in Linuxi386.SYSCALL_TABLE:
+        if n not in self.SYSCALL_TABLE:
             return None
         return self.SYSCALL_TABLE[n]
 
