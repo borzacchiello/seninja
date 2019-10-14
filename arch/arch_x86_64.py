@@ -107,9 +107,373 @@ class x8664Arch(Arch):
         'r8': {
             'addr': 96,
             'size': 8,
+            'sub': {
+                'r8d': { 'offset': 4, 'size': 4  },
+                'r8w': { 'offset': 6, 'size': 2  },
+                'r8b': { 'offset': 7, 'size': 1  }
+            }
+        },
+        'r9': {
+            'addr': 104,
+            'size': 8,
+            'sub': {
+                'r9d': { 'offset': 4, 'size': 4  },
+                'r9w': { 'offset': 6, 'size': 2  },
+                'r9b': { 'offset': 7, 'size': 1  }
+            }
+        },
+        'r10': {
+            'addr': 112,
+            'size': 8,
+            'sub': {
+                'r10d': { 'offset': 4, 'size': 4  },
+                'r10w': { 'offset': 6, 'size': 2  },
+                'r10b': { 'offset': 7, 'size': 1  }
+            }
+        },
+        'r11': {
+            'addr': 120,
+            'size': 8,
+            'sub': {
+                'r11d': { 'offset': 4, 'size': 4  },
+                'r11w': { 'offset': 6, 'size': 2  },
+                'r11b': { 'offset': 7, 'size': 1  }
+            }
+        },
+        'r12': {
+            'addr': 128,
+            'size': 8,
+            'sub': {
+                'r12d': { 'offset': 4, 'size': 4  },
+                'r12w': { 'offset': 6, 'size': 2  },
+                'r12b': { 'offset': 7, 'size': 1  }
+            }
+        },
+        'r13': {
+            'addr': 136,
+            'size': 8,
+            'sub': {
+                'r13d': { 'offset': 4, 'size': 4  },
+                'r13w': { 'offset': 6, 'size': 2  },
+                'r13b': { 'offset': 7, 'size': 1  }
+            }
+        },
+        'r14': {
+            'addr': 144,
+            'size': 8,
+            'sub': {
+                'r14d': { 'offset': 4, 'size': 4  },
+                'r14w': { 'offset': 6, 'size': 2  },
+                'r14b': { 'offset': 7, 'size': 1  }
+            }
+        },
+        'r15': {
+            'addr': 152,
+            'size': 8,
+            'sub': {
+                'r15d': { 'offset': 4, 'size': 4  },
+                'r15w': { 'offset': 6, 'size': 2  },
+                'r15b': { 'offset': 7, 'size': 1  }
+            }
+        },
+        'mmx0': {
+            'addr': 160,
+            'size': 8,
             'sub': {}
+        },
+        'mmx1': {
+            'addr': 168,
+            'size': 8,
+            'sub': {}
+        },
+        'mmx2': {
+            'addr': 176,
+            'size': 8,
+            'sub': {}
+        },
+        'mmx3': {
+            'addr': 184,
+            'size': 8,
+            'sub': {}
+        },
+        'mmx4': {
+            'addr': 192,
+            'size': 8,
+            'sub': {}
+        },
+        'mmx5': {
+            'addr': 200,
+            'size': 8,
+            'sub': {}
+        },
+        'mmx6': {
+            'addr': 208,
+            'size': 8,
+            'sub': {}
+        },
+        'mmx7': {
+            'addr': 216,
+            'size': 8,
+            'sub': {}
+        },
+        'zmm0': {
+            'addr': 224,
+            'size': 64,
+            'sub': {
+                'ymm0': { 'offset': 32, 'size': 32 },
+                'xmm0': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm1': {
+            'addr': 288,
+            'size': 64,
+            'sub': {
+                'ymm1': { 'offset': 32, 'size': 32 },
+                'xmm1': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm2': {
+            'addr': 352,
+            'size': 64,
+            'sub': {
+                'ymm2': { 'offset': 32, 'size': 32 },
+                'xmm2': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm3': {
+            'addr': 416,
+            'size': 64,
+            'sub': {
+                'ymm3': { 'offset': 32, 'size': 32 },
+                'xmm3': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm4': {
+            'addr': 480,
+            'size': 64,
+            'sub': {
+                'ymm4': { 'offset': 32, 'size': 32 },
+                'xmm4': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm5': {
+            'addr': 544,
+            'size': 64,
+            'sub': {
+                'ymm5': { 'offset': 32, 'size': 32 },
+                'xmm5': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm6': {
+            'addr': 608,
+            'size': 64,
+            'sub': {
+                'ymm6': { 'offset': 32, 'size': 32 },
+                'xmm6': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm7': {
+            'addr': 672,
+            'size': 64,
+            'sub': {
+                'ymm7': { 'offset': 32, 'size': 32 },
+                'xmm7': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm8': {
+            'addr': 736,
+            'size': 64,
+            'sub': {
+                'ymm8': { 'offset': 32, 'size': 32 },
+                'xmm8': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm9': {
+            'addr': 800,
+            'size': 64,
+            'sub': {
+                'ymm9': { 'offset': 32, 'size': 32 },
+                'xmm9': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm10': {
+            'addr': 864,
+            'size': 64,
+            'sub': {
+                'ymm10': { 'offset': 32, 'size': 32 },
+                'xmm10': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm11': {
+            'addr': 928,
+            'size': 64,
+            'sub': {
+                'ymm11': { 'offset': 32, 'size': 32 },
+                'xmm11': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm12': {
+            'addr': 992,
+            'size': 64,
+            'sub': {
+                'ymm12': { 'offset': 32, 'size': 32 },
+                'xmm12': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm13': {
+            'addr': 1056,
+            'size': 64,
+            'sub': {
+                'ymm13': { 'offset': 32, 'size': 32 },
+                'xmm13': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm14': {
+            'addr': 1120,
+            'size': 64,
+            'sub': {
+                'ymm14': { 'offset': 32, 'size': 32 },
+                'xmm14': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm15': {
+            'addr': 1184,
+            'size': 64,
+            'sub': {
+                'ymm15': { 'offset': 32, 'size': 32 },
+                'xmm15': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm16': {
+            'addr': 1248,
+            'size': 64,
+            'sub': {
+                'ymm16': { 'offset': 32, 'size': 32 },
+                'xmm16': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm17': {
+            'addr': 1312,
+            'size': 64,
+            'sub': {
+                'ymm17': { 'offset': 32, 'size': 32 },
+                'xmm17': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm18': {
+            'addr': 1376,
+            'size': 64,
+            'sub': {
+                'ymm18': { 'offset': 32, 'size': 32 },
+                'xmm18': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm19': {
+            'addr': 1440,
+            'size': 64,
+            'sub': {
+                'ymm19': { 'offset': 32, 'size': 32 },
+                'xmm19': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm20': {
+            'addr': 1504,
+            'size': 64,
+            'sub': {
+                'ymm20': { 'offset': 32, 'size': 32 },
+                'xmm20': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm21': {
+            'addr': 1568,
+            'size': 64,
+            'sub': {
+                'ymm21': { 'offset': 32, 'size': 32 },
+                'xmm21': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm22': {
+            'addr': 1632,
+            'size': 64,
+            'sub': {
+                'ymm22': { 'offset': 32, 'size': 32 },
+                'xmm22': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm23': {
+            'addr': 1696,
+            'size': 64,
+            'sub': {
+                'ymm23': { 'offset': 32, 'size': 32 },
+                'xmm23': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm24': {
+            'addr': 1760,
+            'size': 64,
+            'sub': {
+                'ymm24': { 'offset': 32, 'size': 32 },
+                'xmm24': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm25': {
+            'addr': 1824,
+            'size': 64,
+            'sub': {
+                'ymm25': { 'offset': 32, 'size': 32 },
+                'xmm25': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm26': {
+            'addr': 1888,
+            'size': 64,
+            'sub': {
+                'ymm26': { 'offset': 32, 'size': 32 },
+                'xmm26': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm27': {
+            'addr': 1952,
+            'size': 64,
+            'sub': {
+                'ymm27': { 'offset': 32, 'size': 32 },
+                'xmm27': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm28': {
+            'addr': 2016,
+            'size': 64,
+            'sub': {
+                'ymm28': { 'offset': 32, 'size': 32 },
+                'xmm28': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm29': {
+            'addr': 2080,
+            'size': 64,
+            'sub': {
+                'ymm29': { 'offset': 32, 'size': 32 },
+                'xmm29': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm30': {
+            'addr': 2144,
+            'size': 64,
+            'sub': {
+                'ymm30': { 'offset': 32, 'size': 32 },
+                'xmm30': { 'offset': 48, 'size': 16 }
+            }
+        },
+        'zmm31': {
+            'addr': 2208,
+            'size': 64,
+            'sub': {
+                'ymm31': { 'offset': 32, 'size': 32 },
+                'xmm31': { 'offset': 48, 'size': 16 }
+            }
         }
     }
+
 
     FLAGS = { 'c': 0, 'p': 2, 'a': 4, 'z': 6, 's': 7, 'd': 10, 'o': 11, 'c0': 32, 'c1': 33, 'c2': 34, 'c3': 35 }
 

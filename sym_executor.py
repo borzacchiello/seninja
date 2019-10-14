@@ -93,17 +93,18 @@ class SymbolicVisitor(BNILVisitor):
 
         # initialize registers
         for reg in self.arch.regs_data():
+            reg_dict = self.arch.regs_data()[reg]
             val = current_function.get_reg_value_after(addr, reg)
 
             if val.type.value == RegisterValueType.StackFrameOffset:
-                setattr(self.state.regs, reg, bvv(stack_base + val.offset, self.arch.bits()))
+                setattr(self.state.regs, reg, bvv(stack_base + val.offset, reg_dict['size'] * 8))
             elif (
                 val.type.value == RegisterValueType.ConstantPointerValue or 
                 val.type.value == RegisterValueType.ConstantValue
             ):
-                setattr(self.state.regs, reg, bvv(val.value, self.arch.bits()))
+                setattr(self.state.regs, reg, bvv(val.value, reg_dict['size'] * 8))
             else:
-                symb = bvs(reg + "_init", self.arch.bits())
+                symb = bvs(reg + "_init", reg_dict['size'] * 8)
                 self.vars.add(symb)
                 setattr(self.state.regs, reg, symb)
         
@@ -712,6 +713,7 @@ class SymbolicVisitor(BNILVisitor):
             assert not symbolic(dest)  # cannot happen (right?)
 
         # change ip
+        print(dest_fun)
         self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.as_long()))
 
         self._wasjmp = True

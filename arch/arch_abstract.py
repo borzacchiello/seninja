@@ -13,3 +13,7 @@ class Arch(object):  # abstract class
         raise NotImplementedError
     def get_stack_pointer_reg(self):
         raise NotImplementedError
+
+class SpecialInstructionHandler(object):
+    def handle_instruction(self, inst, state):
+        raise NotImplementedError

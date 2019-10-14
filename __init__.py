@@ -17,6 +17,10 @@ from utility.string_util import (
     as_bytes,
     get_byte
 )
+from utility.native_handlers_util import ( # TO BE REMOVED
+    get_src,
+    store_to_dst
+)
 
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):

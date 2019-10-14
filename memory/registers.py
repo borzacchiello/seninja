@@ -28,6 +28,9 @@ class Regs(object):
         for flag_name in state.arch.flags_data():
             self.flags[flag_name] = bvs(flag_name, 1)
     
+    def has_reg(self, reg_name: str):
+        return reg_name in self._regs
+
     def __getattribute__(self, k):
         if k in dir(Regs) or k in Regs.attr:
             return super().__getattribute__(k)
