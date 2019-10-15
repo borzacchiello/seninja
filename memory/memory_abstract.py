@@ -11,3 +11,5 @@ class MemoryAbstract(object):
         raise NotImplementedError
     def copy(self, state):
         raise NotImplementedError
+    def merge(self, other, merge_condition):
+        raise NotImplementedError

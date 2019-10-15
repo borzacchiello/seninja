@@ -9,7 +9,7 @@ class ArchX86SPH(SpecialInstructionHandler):
 
         handle_name = "{}_handler".format(inst_name)
         if hasattr(self, handle_name):
-            getattr(handle_name, self)(state, parameters)
+            getattr(self, handle_name)(state, parameters)
             return True
         return False
     

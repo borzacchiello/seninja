@@ -17,6 +17,7 @@ class State(object):
         self.solver         = Solver(self)
         self.os             = os
         self.events         = list()
+        self.llil_ip        = None
         self.executor       = executor
     
     def get_ip(self):
@@ -58,3 +59,22 @@ class State(object):
         new_state.events = list(self.events)
 
         return new_state
+
+    def merge(self, other):
+        assert isinstance(other, State)
+        assert self.arch.__class__ == other.arch.__class__
+        assert self.os.__class__ == other.os.__class__
+        assert self.get_ip() == other.get_ip()
+        assert self.llil_ip == other.llil_ip
+
+        _, _, merge_condition = self.solver.compute_solvers_difference(other.solver)
+        self.solver.merge(other.solver)
+        self.mem.merge(other.mem, merge_condition)
+        self.regs.merge(other.regs, merge_condition)
+        self.os.merge(other.os, merge_condition)
+        self.events.append(
+            (
+                "merged with %s" % str(other),
+                other.events[:]
+            )
+        )

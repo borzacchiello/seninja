@@ -2,6 +2,7 @@ from utility.z3_wrap_util import bvv, bvs
 from memory.sym_flat_memory import MemoryConcreteFlat
 from IPython import embed
 import math
+import z3
 
 class Regs(object):
 
@@ -56,3 +57,25 @@ class Regs(object):
         new_regs = Regs(state)
         new_regs._mem = self._mem.copy(state)
         return new_regs
+
+    def merge(self, other, merge_condition: z3.BoolRef):
+        assert isinstance(other, Regs)
+
+        for reg in self.state.arch.regs_data():
+            assert reg in other.state.arch.regs_data()
+
+            self_reg = getattr(self, reg)
+            other_reg = getattr(other, reg)
+
+            if self_reg.eq(other_reg):
+                continue
+            
+            setattr(self, reg, 
+                z3.simplify(
+                    z3.If(
+                        merge_condition,
+                        other_reg,
+                        self_reg
+                    )
+                )
+            )

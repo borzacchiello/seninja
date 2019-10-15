@@ -18,7 +18,7 @@ from utility.models_util import get_result_reg
 from memory.sym_memory import InitData
 from multipath.fringe import Fringe
 from utility.error_codes import ErrorInstruction
-from options import CHECK_DIVISION_BY_ZERO
+from options import CHECK_DIVISION_BY_ZERO, SINGLE_LLIL_STEP
 
 NO_COLOR             = enums.HighlightStandardColor(0)
 CURR_STATE_COLOR     = enums.HighlightStandardColor.GreenHighlightColor
@@ -198,15 +198,17 @@ class SymbolicVisitor(BNILVisitor):
 
     def set_current_state(self, state):
         if self.state is not None:
+            self.state.llil_ip = self.llil_ip
             self._put_in_deferred(self.state)
             self.state = None
         
         ip = state.get_ip()
+        llil_ip = state.llil_ip
 
         self.state = state
         new_func = get_function(self.view, ip) 
         self.ip = ip
-        self.llil_ip = new_func.llil.get_instruction_start(ip)
+        self.llil_ip = new_func.llil.get_instruction_start(ip) if llil_ip is None else llil_ip
 
         self._set_colors()
 
@@ -224,10 +226,11 @@ class SymbolicVisitor(BNILVisitor):
         self.llil_ip = new_llil_ip
         self.ip = function.llil[new_llil_ip].address
         self.state.set_ip(self.ip)
+        self.state.llil_ip = new_llil_ip
 
         self._set_colors(old_ip)
     
-    def execute_one(self):
+    def _execute_one(self):
         old_ip = self.ip
         func = get_function(self.view, self.ip)
         expr = func.llil[self.llil_ip]
@@ -251,6 +254,16 @@ class SymbolicVisitor(BNILVisitor):
         else:
             self._wasjmp = False
             self._set_colors(old_ip)
+        
+        return self.ip
+    
+    def execute_one(self):
+        if SINGLE_LLIL_STEP:
+            self._execute_one()
+        else:
+            old_ip = self.ip
+            while self._execute_one() == old_ip:
+                pass
 
     def visit_LLIL_CONST(self, expr):
         return bvv(expr.constant, expr.size * 8)
@@ -694,7 +707,7 @@ class SymbolicVisitor(BNILVisitor):
         
         curr_fun = get_function(self.view, self.ip)
         dest_fun = self.view.get_function_at(dest.as_long())
-        ret_addr = curr_fun.llil[self.llil_ip + 1].address
+        ret_addr = self.ip + self.view.get_instruction_length(self.ip)
 
         # push ret address
         self.state.stack_push(bvv(ret_addr, self.arch.bits()))
@@ -747,6 +760,7 @@ class SymbolicVisitor(BNILVisitor):
         false_state.solver.add_constraints(z3.Not(condition))
         if not false_unsat:
             false_state.set_ip(curr_fun.llil[false_llil_index].address)
+            false_state.llil_ip = false_llil_index
             if self.state is None:
                 self.set_current_state(false_state)
             else:

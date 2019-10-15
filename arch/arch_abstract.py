@@ -15,5 +15,5 @@ class Arch(object):  # abstract class
         raise NotImplementedError
 
 class SpecialInstructionHandler(object):
-    def handle_instruction(self, inst, state):
+    def handle_instruction(self, disasm_str, state):
         raise NotImplementedError

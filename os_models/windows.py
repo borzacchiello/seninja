@@ -1,5 +1,6 @@
 from copy import deepcopy
 from os_models.os_abstract import Os
+import z3
 
 class Windows(Os):
     def __init__(self):
@@ -29,3 +30,7 @@ class Windows(Os):
         res.stdin = deepcopy(self.stdin)
         res.stdout = deepcopy(self.stdout)
         return res
+
+    def merge(self, other, merge_condition: z3.BoolRef):
+        assert isinstance(other, Windows)
+        pass  # TODO implement this

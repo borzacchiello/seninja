@@ -1,3 +1,4 @@
+import traceback
 import sys
 import os
 path = os.path.dirname(os.path.abspath(__file__))
@@ -44,11 +45,20 @@ def __check_sv():
     return True
 
 def start_se(bv, address):
-    global sv
+    global sv, running
     if sv is not None:
         log_alert("seninja is already running")
         return False
-    sv = SymbolicVisitor(bv, address)
+    
+    def f(tb):
+        global sv, running
+        sv = SymbolicVisitor(bv, address)
+        running = False
+    
+    if not running:
+        running = True
+        background_task = TaskInBackground(bv, "seninja: starting symbolic execution", f)
+        background_task.start()
 
 def reset_se():
     global sv
@@ -65,7 +75,11 @@ def step(bv):
     
     def f(tb):
         global sv, running
-        sv.execute_one()
+        try:
+            sv.execute_one()
+        except Exception as e:
+            print("!ERROR!")
+            print(traceback.format_exc())
         running = False
 
     if not running:
@@ -84,7 +98,12 @@ def continue_until_branch(bv):
         k = len(sv.fringe.deferred)
         i = k
         while i == k:
-            sv.execute_one()
+            try:
+                sv.execute_one()
+            except Exception as e:
+                print("!ERROR!:")
+                print(traceback.format_exc())
+                break
             i = len(sv.fringe.deferred)
             ip = sv.state.get_ip()
             tb.progress = "seninja: continue until branch: %s" % hex(ip)
@@ -105,7 +124,12 @@ def continue_until_address(bv, address):
         global sv, running
         ip = sv.state.get_ip()
         while ip != address:
-            sv.execute_one()
+            try:
+                sv.execute_one()
+            except Exception as e:
+                print("!ERROR!:")
+                print(traceback.format_exc())
+                break
             ip = sv.state.get_ip()
             tb.progress = "seninja: continue until address: %s" % hex(ip)
         sv._set_colors()
@@ -129,6 +153,33 @@ def change_current_state(bv, address):
     
     sv.set_current_state(state)
 
+def merge_states(bv, address):
+    # merge all states at address and put them in current state. Current state must be at address
+    global sv, running
+    if not __check_sv():
+        return
+
+    if sv.state.get_ip() != address:
+        log_alert("current state is not at this address")
+        return
+
+    to_be_merged = sv.fringe.get_all_deferred_by_address(address)
+    if to_be_merged is None:
+        log_alert("no deferred state at this address")
+        return
+    
+    def f(tb):
+        global sv, running
+    
+        for s in to_be_merged:
+            sv.state.merge(s)
+        running = False
+    
+    if not running:
+        running = True
+        background_task = TaskInBackground(bv, "seninja: merging states", f)
+        background_task.start()
+
 def get_current_state():
     global sv
     if not __check_sv():
@@ -136,8 +187,9 @@ def get_current_state():
     
     return sv.state
 
+PluginCommand.register_for_address("seninja: start symbolic execution", "", start_se)
+PluginCommand.register_for_address("seninja: change current state", "", change_current_state)
 PluginCommand.register("seninja: step", "", step)
 PluginCommand.register("seninja: continue until branch", "", continue_until_branch)
 PluginCommand.register_for_address("seninja: continue until address", "", continue_until_address)
-PluginCommand.register_for_address("seninja: start symbolic execution", "", start_se)
-PluginCommand.register_for_address("seninja: change current state", "", change_current_state)
+PluginCommand.register_for_address("seninja: merge states", "", merge_states)

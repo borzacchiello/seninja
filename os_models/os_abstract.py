@@ -16,3 +16,5 @@ class Os(object):
     # other
     def copy(self):
         raise NotImplementedError
+    def merge(self, other, merge_condition):
+        raise NotImplementedError

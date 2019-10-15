@@ -273,3 +273,22 @@ class Memory(MemoryAbstract):
             new_pages[page_addr] = self.pages[page_addr].copy()
         new_memory.pages = new_pages
         return new_memory
+    
+    def merge(self, other, merge_condition: z3.BoolRef):
+        assert isinstance(other, Memory)
+        for page_addr in other.pages:
+            other_page = other.pages[page_addr]
+
+            if page_addr in self.pages and self.pages[page_addr].mo._z3obj.eq(other_page.mo._z3obj):
+                continue  # very same page. No need to update
+            
+            if page_addr not in self.pages:
+                self.mmap(page_addr, self.page_size)
+
+            self.pages[page_addr].mo._z3obj = z3.simplify(
+                z3.If(
+                    merge_condition, 
+                    other_page.mo._z3obj, 
+                    self.pages[page_addr].mo._z3obj
+                )
+            )
