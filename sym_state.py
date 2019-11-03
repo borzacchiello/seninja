@@ -57,6 +57,7 @@ class State(object):
         new_state.regs = self.regs.copy(new_state)
         new_state.solver = self.solver.copy(new_state, solver_copy_fast)
         new_state.events = list(self.events)
+        new_state.llil_ip = self.llil_ip
 
         return new_state
 
@@ -75,6 +76,6 @@ class State(object):
         self.events.append(
             (
                 "merged with %s" % str(other),
-                other.events[:]
+                other.events[:]  # TODO delete common events
             )
         )

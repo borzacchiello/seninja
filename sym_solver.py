@@ -141,6 +141,8 @@ class Solver(object):
         return res
 
     def copy(self, state, fast_copy=False):
+        fast_copy = True  # deepcopy seems broken
+
         res = Solver(state)
         if not fast_copy:
             # print("copying the solver slow")
@@ -174,6 +176,8 @@ class Solver(object):
     def merge(self, other):
         assert isinstance(other, Solver)
         common, only_self, only_other = self.compute_solvers_difference(other)
+
+        self._invalidate_cache()
         
         new_z3_solver = z3.Solver()
         new_z3_solver.add(*common)  # common constraints
