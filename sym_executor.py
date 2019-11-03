@@ -744,7 +744,9 @@ class SymbolicVisitor(BNILVisitor):
             condition = condition == 1
         curr_fun = get_function(self.view, self.ip)
         false_unsat = False
-        if self.state.solver.satisfiable([z3.Not(condition)]):
+        if self.state.solver.satisfiable(extra_constraints=[
+            z3.Not(condition)
+        ]):
             false_state = self.state.copy()
         else:
             false_unsat = True

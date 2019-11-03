@@ -176,7 +176,9 @@ class Memory(MemoryAbstract):
                         conditions.append(condition)
                         self._store(p, page_index, z3.Extract(8*(i+1)-1, 8*i, value), condition)
             if conditions:
-                if not self.state.solver.satisfiable(z3.simplify(z3.Or(*conditions))):
+                if not self.state.solver.satisfiable(extra_constraints=[
+                    z3.simplify(z3.Or(*conditions))
+                ]):
                     self.state.executor.fringe.errored.append(
                         (self.state, "write unmapped")
                     )
@@ -230,7 +232,9 @@ class Memory(MemoryAbstract):
             res = tmp if res is None else z3.Concat(res, tmp)
 
         if conditions:
-            if not self.state.solver.satisfiable(z3.simplify(z3.Or(*conditions))):
+            if not self.state.solver.satisfiable(extra_constraints=[
+                z3.simplify(z3.Or(*conditions))
+            ]):
                 self.state.executor.fringe.errored.append(
                     (self.state, "read unmapped")
                 )
