@@ -12,13 +12,14 @@ from utility.z3_wrap_util import (
 )
 from utility.bninja_util import (
     get_function, get_imported_functions, 
-    get_imported_addresses, find_os
+    get_imported_addresses, find_os,
+    get_disasm_from_addr, parse_disasm_str
 )
 from utility.models_util import get_result_reg
 from memory.sym_memory import InitData
 from multipath.fringe import Fringe
 from utility.error_codes import ErrorInstruction
-from options import CHECK_DIVISION_BY_ZERO, SINGLE_LLIL_STEP
+from options import CHECK_DIVISION_BY_ZERO, SINGLE_LLIL_STEP, DONT_USE_SPECIAL_HANDLERS
 
 NO_COLOR             = enums.HighlightStandardColor(0)
 CURR_STATE_COLOR     = enums.HighlightStandardColor.GreenHighlightColor
@@ -233,12 +234,19 @@ class SymbolicVisitor(BNILVisitor):
     def _execute_one(self):
         old_ip = self.ip
         func = get_function(self.view, self.ip)
-        expr = func.llil[self.llil_ip]
-        res = self.visit(expr)
 
-        self._check_unsupported(res, expr)
-        if self._check_error(res):
-            self._handle_error(res)
+        # check if a special handler is defined
+        disasm_str = get_disasm_from_addr(self.view, self.ip)
+        if (
+            DONT_USE_SPECIAL_HANDLERS or
+            not self.arch.execute_special_handler(disasm_str, self)
+        ):
+            expr = func.llil[self.llil_ip]
+            res = self.visit(expr)
+
+            self._check_unsupported(res, expr)
+            if self._check_error(res):
+                self._handle_error(res)
         
         if self.state is None:
             if self.fringe.is_empty():
@@ -264,6 +272,8 @@ class SymbolicVisitor(BNILVisitor):
             old_ip = self.ip
             while self._execute_one() == old_ip:
                 pass
+    
+    # --- HANDLERS ---
 
     def visit_LLIL_CONST(self, expr):
         return bvv(expr.constant, expr.size * 8)

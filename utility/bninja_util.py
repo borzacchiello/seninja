@@ -38,6 +38,23 @@ def get_imported_addresses(view):
     
     return res
 
+def get_addr_next_inst(view, addr):
+    return addr + view.get_instruction_length(addr)
+
+def get_disasm_from_addr(view, addr):
+    bbs = view.get_basic_blocks_at(addr)
+    if len(bbs) == 0:
+        return ""
+    if len(bbs) > 1:
+        print("WARNING: aliasing of basic blocks")
+        return ""
+    return bbs[0].view.get_disassembly(addr)
+
+def parse_disasm_str(disasm_str):
+    inst_name  = disasm_str.split(" ")[0]
+    parameters = ''.join(disasm_str.split(" ")[1:]).split(",")
+    return inst_name, parameters
+
 def find_os(view):
     platform_name = view.platform.name
 

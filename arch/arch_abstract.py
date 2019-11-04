@@ -13,7 +13,20 @@ class Arch(object):  # abstract class
         raise NotImplementedError
     def get_stack_pointer_reg(self):
         raise NotImplementedError
+    def get_flag_cond_lambda(self, cond: str):
+        raise NotImplementedError
+    def execute_special_handler(self, disasm_str, sv):
+        raise NotImplementedError
 
 class SpecialInstructionHandler(object):
-    def handle_instruction(self, disasm_str, state):
-        raise NotImplementedError
+    def __init__(self):
+        raise NotImplementedError  # do not instantiate this class
+
+    def handle_instruction(self, disasm_str: str, sv):
+        inst_name  = disasm_str.split(" ")[0]
+        parameters = ''.join(disasm_str.split(" ")[1:]).split(",")
+
+        handle_name = "{}_handler".format(inst_name)
+        if hasattr(self, handle_name):
+            return getattr(self, handle_name)(sv, parameters)
+        return False

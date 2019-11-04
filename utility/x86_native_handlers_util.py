@@ -1,5 +1,15 @@
 import z3
 
+_size_dict = {
+    "byte":     1,
+    "word":     2,
+    "dword":    4,
+    "qword":    8,
+    "xmmword": 16,
+    "ymmword": 32,
+    "zmmword": 64
+}
+
 def __is_hex(v):
     try:
         int(v, 16)
@@ -7,8 +17,14 @@ def __is_hex(v):
     except:
         return False
 
-def __find_address_mem(state, parameter):  # hackish way of parsing a mem address. bad, bad, bad code
+def __find_address_mem(state, parameter):  # hackish way of parsing a mem address. bad, bad, bad code    
     assert "[" in parameter and "]" in parameter
+
+    size = parameter[:parameter.find("[")]
+    size = size.replace(" ", "")
+    size = _size_dict[size]
+
+    parameter = parameter.replace("rel", "")
     parameter = parameter[parameter.find("[")+1:]
     parameter = parameter[:parameter.find("]")]
 
@@ -30,15 +46,14 @@ def __find_address_mem(state, parameter):  # hackish way of parsing a mem addres
         
         res = m_res if res is None else (res + m_res)
     
-    return res
+    return res, size
 
-def get_src(state, parameter: str, size: int):
+def get_src(state, parameter: str):
     if state.regs.has_reg(parameter):
         res = getattr(state.regs, parameter)
-        assert res.size() // 8 == size
         return res
     
-    addr = __find_address_mem(state, parameter)
+    addr, size = __find_address_mem(state, parameter)
     return state.mem.load(addr, size, state.arch.endness())
 
 def store_to_dst(state, parameter: str, value):
@@ -47,10 +62,6 @@ def store_to_dst(state, parameter: str, value):
         return
     
     assert "[" in parameter and "]" in parameter
-    parameter = parameter[parameter.find("[")+1:]
-    parameter = parameter[:parameter.find("]")]
 
-    parameter = parameter.split("+")
-
-    addr = __find_address_mem(state, parameter)
+    addr, _ = __find_address_mem(state, parameter)
     return state.mem.store(addr, value, state.arch.endness())

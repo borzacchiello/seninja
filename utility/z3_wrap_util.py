@@ -8,6 +8,14 @@ def bvs(name: str, size: int):
 def bvv(val: int, size: int):
     return z3.BitVecVal(val, size)
 
+def split_bv_in_list(bv: z3.BitVecRef, size: int) -> list:
+    assert size % 8 == 0
+    res = []
+    for i in range(0, bv.size(), size):
+        b = z3.simplify(z3.Extract(i+size-1, i, bv))
+        res.append(b)
+    return res
+
 def bvv_from_bytes(val: bytes):  # DONT USE IT TO CREATE LONG BV!!
     res = None 
     for c in val: 

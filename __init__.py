@@ -18,10 +18,6 @@ from utility.string_util import (
     as_bytes,
     get_byte
 )
-from utility.native_handlers_util import ( # TO BE REMOVED
-    get_src,
-    store_to_dst
-)
 
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):
@@ -35,7 +31,8 @@ class TaskInBackground(BackgroundTaskThread):
         self.callback(self)
 
 sv = None
-running = False
+_stop = False
+_running = False
 
 def __check_sv():
     global sv
@@ -45,18 +42,18 @@ def __check_sv():
     return True
 
 def start_se(bv, address):
-    global sv, running
+    global sv, _running
     if sv is not None:
         log_alert("seninja is already running")
         return False
     
     def f(tb):
-        global sv, running
+        global sv, _running
         sv = SymbolicVisitor(bv, address)
-        running = False
+        _running = False
     
-    if not running:
-        running = True
+    if not _running:
+        _running = True
         background_task = TaskInBackground(bv, "seninja: starting symbolic execution", f)
         background_task.start()
 
@@ -69,35 +66,35 @@ def reset_se():
     sv = None
 
 def step(bv):
-    global sv, running
+    global sv, _running
     if not __check_sv():
         return
     
     def f(tb):
-        global sv, running
+        global sv, _running
         try:
             sv.execute_one()
         except Exception as e:
             print("!ERROR!")
             print(traceback.format_exc())
-        running = False
+        _running = False
 
-    if not running:
-        running = True
+    if not _running:
+        _running = True
         background_task = TaskInBackground(bv, "seninja: stepping", f)
         background_task.start()
 
 def continue_until_branch(bv):
-    global sv, running
+    global sv, _running
     if not __check_sv():
         return
     
     def f(tb):
-        global sv, running
+        global sv, _running, _stop
 
         k = len(sv.fringe.deferred)
         i = k
-        while i == k:
+        while not _stop and i == k:
             try:
                 sv.execute_one()
             except Exception as e:
@@ -108,22 +105,23 @@ def continue_until_branch(bv):
             ip = sv.state.get_ip()
             tb.progress = "seninja: continue until branch: %s" % hex(ip)
         sv._set_colors()
-        running = False
+        _running = False
+        _stop = False
     
-    if not running:
-        running = True
+    if not _running:
+        _running = True
         background_task = TaskInBackground(bv, "seninja: continue until branch", f)
         background_task.start()
 
 def continue_until_address(bv, address):
-    global sv, running
+    global sv, _running
     if not __check_sv():
         return
     
     def f(tb):
-        global sv, running
+        global sv, _running, _stop
         ip = sv.state.get_ip()
-        while ip != address:
+        while not _stop and ip != address:
             try:
                 sv.execute_one()
             except Exception as e:
@@ -133,10 +131,11 @@ def continue_until_address(bv, address):
             ip = sv.state.get_ip()
             tb.progress = "seninja: continue until address: %s" % hex(ip)
         sv._set_colors()
-        running = False
+        _running = False
+        _stop = False
     
-    if not running:
-        running = True
+    if not _running:
+        _running = True
         background_task = TaskInBackground(bv, "seninja: continue until address", f)
         background_task.start()
 
@@ -155,7 +154,7 @@ def change_current_state(bv, address):
 
 def merge_states(bv, address):
     # merge all states at address and put them in current state. Current state must be at address
-    global sv, running
+    global sv, _running
     if not __check_sv():
         return
 
@@ -169,16 +168,21 @@ def merge_states(bv, address):
         return
     
     def f(tb):
-        global sv, running
+        global sv, _running
     
         for s in to_be_merged:
             sv.state.merge(s)
-        running = False
+        _running = False
     
-    if not running:
-        running = True
+    if not _running:
+        _running = True
         background_task = TaskInBackground(bv, "seninja: merging states", f)
         background_task.start()
+
+def stop():
+    global _running, _stop
+    if _running:  # race conditions?
+        _stop = True
 
 def get_current_state():
     global sv

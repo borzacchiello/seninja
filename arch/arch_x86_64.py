@@ -1,4 +1,6 @@
 from arch.arch_abstract import Arch
+from arch.arch_x86_64_sph import ArchX8664SPH
+import z3
 
 class x8664Arch(Arch):
     REGS = {
@@ -474,8 +476,34 @@ class x8664Arch(Arch):
         }
     }
 
-
     FLAGS = { 'c': 0, 'p': 2, 'a': 4, 'z': 6, 's': 7, 'd': 10, 'o': 11, 'c0': 32, 'c1': 33, 'c2': 34, 'c3': 35 }
+    
+    FLAGS_CONDS = {
+        'E':   lambda s: s.regs.flags['z'] == 0,
+        'NE':  lambda s: s.regs.flags['z'] == 1,
+        'NEG': lambda s: s.regs.flags['s'] == 1,
+        'POS': lambda s: s.regs.flags['s'] == 0,
+        'O':   lambda s: s.regs.flags['o'] == 1,
+        'NO':  lambda s: s.regs.flags['o'] == 0,
+        'SGE': lambda s: s.regs.flags['s'] == s.regs.flags['o'],
+        'SGT': lambda s: z3.And(
+            s.regs.flags['z'] == 0, 
+            s.regs.flags['s'] == s.regs.flags['o']),
+        'SLE': lambda s: z3.And(
+            s.regs.flags['z'] == 1, 
+            s.regs.flags['s'] != s.regs.flags['o']),
+        'SLT': lambda s: s.regs.flags['s'] != s.regs.flags['o'],
+        'UGE': lambda s: s.regs.flags['c'] == 0,
+        'UGT': lambda s: z3.And(
+            s.regs.flags['c'] == 0, 
+            s.regs.flags['z'] == 0),
+        'ULE': lambda s: z3.Or(
+            s.regs.flags['z'] == 1, 
+            s.regs.flags['c'] == 1),
+        'ULT': lambda s: s.regs.flags['c'] == 1
+    }
+
+    sph = ArchX8664SPH()
 
     def __init__(self):
         self._bits = 64
@@ -500,3 +528,11 @@ class x8664Arch(Arch):
 
     def get_stack_pointer_reg(self):
         return 'rsp'
+
+    def get_flag_cond_lambda(self, cond: str, state):
+        assert cond in x8664Arch.FLAGS_CONDS
+        return x8664Arch.FLAGS_CONDS[cond]
+
+    def execute_special_handler(self, disasm_str, sv):
+        res = x8664Arch.sph.handle_instruction(disasm_str, sv)
+        return res
