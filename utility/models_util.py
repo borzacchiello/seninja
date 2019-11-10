@@ -3,7 +3,7 @@ from utility.z3_wrap_util import symbolic
 from utility.bninja_util import get_function
 import z3
 
-def get_arg_k(state, k, view):
+def get_arg_k(state, k, size, view):
     
     ip = state.get_ip()
     func = get_function(view, ip)
@@ -12,17 +12,19 @@ def get_arg_k(state, k, view):
     if calling_convention == 'sysv':
         args = ['rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9']
         if k-1 < len(args):
-            return getattr(state.regs, args[k-1])
+            res = getattr(state.regs, args[k-1])
+            return z3.simplify(
+                z3.Extract(8*size-1, 0, res))
         else:
             stack_pointer = getattr(state.regs, state.arch.get_stack_pointer_reg())
             assert not symbolic(stack_pointer)
 
-            return state.mem.load(stack_pointer + (state.arch.bits() // 8)*k, state.arch.bits() // 8, state.arch.endness())
+            return state.mem.load(stack_pointer + (state.arch.bits() // 8)*k, size, state.arch.endness())
     elif calling_convention == 'cdecl':
         stack_pointer = getattr(state.regs, state.arch.get_stack_pointer_reg())
         assert not symbolic(stack_pointer)
 
-        return state.mem.load(stack_pointer + (state.arch.bits() // 8)*k, state.arch.bits() // 8, state.arch.endness())
+        return state.mem.load(stack_pointer + (state.arch.bits() // 8)*k, size, state.arch.endness())
     
     raise Exception("Unknown calling convention")
 

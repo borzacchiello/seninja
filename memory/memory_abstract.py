@@ -7,7 +7,9 @@ class MemoryAbstract(object):
         raise NotImplementedError
     def load(self, address: z3.BitVecRef, size: int, endness):
         raise NotImplementedError
-    def get_unmapped(self, size, from_end):
+    def get_unmapped(self, size: int, start_from: int, from_end: int):
+        raise NotImplementedError
+    def allocate(self, size: int, init):
         raise NotImplementedError
     def copy(self, state):
         raise NotImplementedError

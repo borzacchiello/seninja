@@ -19,7 +19,13 @@ from utility.models_util import get_result_reg
 from memory.sym_memory import InitData
 from multipath.fringe import Fringe
 from utility.error_codes import ErrorInstruction
-from options import CHECK_DIVISION_BY_ZERO, SINGLE_LLIL_STEP, DONT_USE_SPECIAL_HANDLERS
+from options import (
+    CHECK_DIVISION_BY_ZERO, 
+    SINGLE_LLIL_STEP, 
+    DONT_USE_SPECIAL_HANDLERS,
+    SAVE_UNSAT,
+    STACK_PAGE_SIZE
+)
 
 NO_COLOR             = enums.HighlightStandardColor(0)
 CURR_STATE_COLOR     = enums.HighlightStandardColor.GreenHighlightColor
@@ -53,6 +59,8 @@ class SymbolicVisitor(BNILVisitor):
         self.imported_functions = get_imported_functions(view)
         self.imported_addresses = get_imported_addresses(view)
 
+        self._last_colored_ip = None
+
         self._wasjmp = False
         if self.view.arch.name == "x86":
             self.arch = x86Arch()
@@ -85,9 +93,13 @@ class SymbolicVisitor(BNILVisitor):
         current_function = get_function(view, addr)
 
         # initialize stack
-        unmapped_page_init = self.state.get_unmapped(2)
-        self.state.mem.mmap(unmapped_page_init*self.state.page_size, self.state.page_size * 2)
-        p = unmapped_page_init + 1
+        unmapped_page_init = self.state.mem.get_unmapped(
+            STACK_PAGE_SIZE, 
+            start_from=(0x80 << (self.arch.bits() - 8)))
+        self.state.mem.mmap(
+            unmapped_page_init*self.state.page_size, 
+            self.state.page_size * STACK_PAGE_SIZE)
+        p = unmapped_page_init + STACK_PAGE_SIZE - 1 # leave one page for upper stack portion
         stack_base = p * self.state.page_size - self.arch.bits() // 8
 
         self.state.initialize_stack(stack_base)
@@ -147,7 +159,7 @@ class SymbolicVisitor(BNILVisitor):
         self.state.set_ip(addr)
         self.llil_ip = current_function.llil.get_instruction_start(addr)
 
-        current_function.set_auto_instr_highlight(self.ip, CURR_STATE_COLOR)
+        self._set_colors()
     
     def _check_unsupported(self, val, expr):
         if val is None:
@@ -177,14 +189,16 @@ class SymbolicVisitor(BNILVisitor):
     
     def _put_in_unsat(self, state):
         # ip = state.get_ip()
-        self.fringe.add_unsat(state)
+        if SAVE_UNSAT:
+            self.fringe.add_unsat(state)
     
     def _put_in_errored(self, state, msg: str):
         self.fringe.add_errored(
             (msg, state)
         )
     
-    def _set_colors(self, old_ip=None, reset=False):
+    def _set_colors(self, reset=False):
+        old_ip = self._last_colored_ip
         if old_ip is not None:
             old_func = get_function(self.view, old_ip)
             old_func.set_auto_instr_highlight(old_ip, NO_COLOR)
@@ -196,6 +210,8 @@ class SymbolicVisitor(BNILVisitor):
         
         func = get_function(self.view, self.ip)
         func.set_auto_instr_highlight(self.ip, CURR_STATE_COLOR if not reset else NO_COLOR)
+        if not reset:
+            self._last_colored_ip = self.ip
 
     def set_current_state(self, state):
         if self.state is not None:
@@ -222,17 +238,12 @@ class SymbolicVisitor(BNILVisitor):
         return True
     
     def update_ip(self, function, new_llil_ip):
-        old_ip = self.ip
-
         self.llil_ip = new_llil_ip
         self.ip = function.llil[new_llil_ip].address
         self.state.set_ip(self.ip)
         self.state.llil_ip = new_llil_ip
-
-        self._set_colors(old_ip)
     
-    def _execute_one(self):
-        old_ip = self.ip
+    def _execute_one(self, no_colors=False):
         func = get_function(self.view, self.ip)
 
         # check if a special handler is defined
@@ -254,23 +265,24 @@ class SymbolicVisitor(BNILVisitor):
             else:
                 self.select_from_deferred()
                 self._wasjmp = True
-                self._set_colors(old_ip)
         
         if not self._wasjmp:
             # go on by 1 instruction
             self.update_ip(func, self.llil_ip + 1)
         else:
             self._wasjmp = False
-            self._set_colors(old_ip)
+
+        if not no_colors:
+            self._set_colors()
         
         return self.ip
     
-    def execute_one(self):
+    def execute_one(self, no_colors=False):
         if SINGLE_LLIL_STEP:
-            self._execute_one()
+            self._execute_one(no_colors)
         else:
             old_ip = self.ip
-            while self._execute_one() == old_ip:
+            while self._execute_one(no_colors) == old_ip:
                 pass
     
     # --- HANDLERS ---

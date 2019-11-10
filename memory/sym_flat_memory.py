@@ -89,7 +89,10 @@ class MemoryConcreteFlat(MemoryAbstract):
         
         return z3.simplify(res)
 
-    def get_unmapped(self, size, from_end):
+    def get_unmapped(self, size, start_from, from_end):
+        raise NotImplementedError
+    
+    def allocate(self, size):
         raise NotImplementedError
 
     def copy(self, state):

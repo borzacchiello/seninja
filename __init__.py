@@ -94,15 +94,17 @@ def continue_until_branch(bv):
 
         k = len(sv.fringe.deferred)
         i = k
+        count = 0
         while not _stop and i == k:
             try:
-                sv.execute_one()
+                sv.execute_one(no_colors=(count != 0))
             except Exception as e:
                 print("!ERROR!:")
                 print(traceback.format_exc())
                 break
             i = len(sv.fringe.deferred)
             ip = sv.state.get_ip()
+            count = (count+1) % 20
             tb.progress = "seninja: continue until branch: %s" % hex(ip)
         sv._set_colors()
         _running = False
@@ -121,14 +123,17 @@ def continue_until_address(bv, address):
     def f(tb):
         global sv, _running, _stop
         ip = sv.state.get_ip()
+
+        count = 0
         while not _stop and ip != address:
             try:
-                sv.execute_one()
+                sv.execute_one(no_colors=(count != 0))
             except Exception as e:
                 print("!ERROR!:")
                 print(traceback.format_exc())
                 break
             ip = sv.state.get_ip()
+            count = (count+1) % 20
             tb.progress = "seninja: continue until address: %s" % hex(ip)
         sv._set_colors()
         _running = False

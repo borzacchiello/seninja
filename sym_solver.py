@@ -16,6 +16,9 @@ class Solver(object):
         self._max_cache = {}
         self._eval_cache = {}
         self._symb_check_cache = {}
+    
+    def get_path_constraint(self):
+        return self._solver.assertions()
 
     def add_constraints(self, *constraints):
         self._invalidate_cache()

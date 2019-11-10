@@ -1,15 +1,13 @@
 from utility.z3_wrap_util import symbolic, bvs, bvv
+from utility.models_util import get_arg_k
+from sym_state import State
 
 MAX_READ = 100
 
-def read_handler(state):
-    fd_reg    = state.os.get_syscall_parameter(1)
-    buf_reg   = state.os.get_syscall_parameter(2)
-    count_reg = state.os.get_syscall_parameter(3)
-
-    fd    = getattr(state.regs, fd_reg)
-    buf   = getattr(state.regs, buf_reg)
-    count = getattr(state.regs, count_reg)
+def read_handler(state: State, view):
+    fd    = get_arg_k(state, 1, 4, view)
+    buf   = get_arg_k(state, 2, state.arch.bits() // 8, view)
+    count = get_arg_k(state, 3, 4, view)
 
     assert not symbolic(fd) or not state.solver.symbolic(fd)
     fd = fd.as_long()
@@ -31,14 +29,10 @@ def read_handler(state):
     )
     return bvv(count, 32)
 
-def write_handler(state):
-    fd_reg    = state.os.get_syscall_parameter(1)
-    buf_reg   = state.os.get_syscall_parameter(2)
-    count_reg = state.os.get_syscall_parameter(3)
-
-    fd    = getattr(state.regs, fd_reg)
-    buf   = getattr(state.regs, buf_reg)
-    count = getattr(state.regs, count_reg)
+def write_handler(state: State, view):
+    fd    = get_arg_k(state, 1, 4, view)
+    buf   = get_arg_k(state, 2, state.arch.bits() // 8, view)
+    count = get_arg_k(state, 3, 4, view)
 
     assert not symbolic(fd) or not state.solver.symbolic(fd)
     fd = fd.as_long()
@@ -56,6 +50,3 @@ def write_handler(state):
         "read from fd %d, count %d" % (fd, count)
     )
     return bvv(count, 32)
-
-def exit_handler(state):
-    pass

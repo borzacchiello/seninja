@@ -97,7 +97,7 @@ class Memory(MemoryAbstract):
             max_addr - min_addr == 2**self.state.arch.bits() - 1 and
             heuristic_find_base(address) == -1
         ):
-            address_conc = self.get_unmapped(size // self.page_size + 1, False) * self.page_size
+            address_conc = self.get_unmapped(size // self.page_size + 1, from_end=False) * self.page_size
             self.mmap(address_conc, (size // self.page_size + 1) * self.page_size)
             self.state.solver.add_constraints(address == address_conc)
             print("WARNING: %s, concretizing mem access (heuristic unconstrained)" % op_type)
@@ -112,7 +112,7 @@ class Memory(MemoryAbstract):
 
                 if min_addr == 0 and max_addr == 2 ** self.bits - 1:
                     # unconstrained case
-                    address_conc = self.get_unmapped(size // self.page_size + 1, False) * self.page_size
+                    address_conc = self.get_unmapped(size // self.page_size + 1, from_end=False) * self.page_size
                     self.mmap(address_conc, (size // self.page_size + 1) * self.page_size)
                     self.state.solver.add_constraints(address == address_conc)
                     print("\tconcretizing mem access to a new page (unconstrained)")
@@ -252,23 +252,50 @@ class Memory(MemoryAbstract):
         assert res.size() // 8 == size
         return z3.simplify(res)
 
-    def get_unmapped(self, size, from_end=True):
-        last_page = 2**(self.bits - self.index_bits) - 4
-        i     = last_page if from_end else 2
-        j     = 2
-        count = 0
+    def get_unmapped(self, size: int, start_from: int=None, from_end: int=True):
+        start_from = start_from >> self.index_bits if start_from is not None else None
+        last_page  = 2**(self.bits - self.index_bits) - 4
+        first_page = 2
 
-        while j <= last_page and count != size:
-            if i not in self.pages:
-                count += 1
-            else:
-                count  = 0
-                if not from_end:
-                    i = j+1
-            j += 1
-            if from_end:
-                i -= 1
-        return i
+        if from_end:
+            res   = last_page if start_from is None else start_from
+            count = 0
+
+            while res >= first_page:
+                if res not in self.pages:
+                    count += 1
+                    if count == size:
+                        return res
+                else:
+                    count = 0
+                res -= 1
+            
+            return -1
+
+        else:
+            idx   = first_page if start_from is None else start_from
+            res   = first_page if start_from is None else start_from
+            count = 0
+
+            while idx <= last_page:
+                if idx not in self.pages:
+                    count += 1
+                    if count == size:
+                        return res
+                else:
+                    count = 0
+                    res = idx+1
+
+            return -1
+    
+    def allocate(self, size: int, init: InitData=None):
+        assert size > 0
+        num_pages = (size + self.page_size - 1) >> self.index_bits
+        page_addr = self.get_unmapped(num_pages)
+        full_addr = page_addr << self.index_bits
+        self.mmap(full_addr, num_pages * self.page_size, init)
+        
+        return full_addr
     
     def copy(self, state):
         new_memory = Memory(state, self.page_size, self.bits)

@@ -1,6 +1,7 @@
 from sym_state import State
 from utility.z3_wrap_util import symbolic, bvv, bvs
 from utility.models_util import get_arg_k
+from memory.sym_memory import InitData
 import re
 import z3
 
@@ -9,8 +10,9 @@ ascii_numbers = ["0","1","2","3","4","5","6","7","8","9"]
 # just pseudo-stubs... Don't take them seriously
 
 def printf_handler(state: State, view): 
-    format_str_p = get_arg_k(state, 1, view)
-    assert not symbolic(format_str_p)
+    format_str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
+
+    assert not symbolic(format_str_p) or not state.solver.symbolic(format_str_p)
 
     b = state.mem.load(format_str_p, 1)
     format_str = ""
@@ -28,9 +30,9 @@ def printf_handler(state: State, view):
 scanf_count = 0
 def scanf_handler(state: State, view):
     global scanf_count
-    format_str_p = get_arg_k(state, 1, view)
+    format_str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
-    assert not symbolic(format_str_p)
+    assert not symbolic(format_str_p) or not state.solver.symbolic(format_str_p)
 
     b = state.mem.load(format_str_p, 1)
     format_str = ""
@@ -42,16 +44,16 @@ def scanf_handler(state: State, view):
     state.events.append(
         "scanf with format '%s'" % format_str
     )
-    params = re.findall("%([0-9]*s|d)", format_str)  # TODO generalize
+    params = re.findall("%([0-9]*s|d|x)", format_str)  # TODO generalize
 
     i = 2
     for p in params:
 
-        par_p = get_arg_k(state, i, view)
+        par_p = get_arg_k(state, i, state.arch.bits() // 8, view)
         assert not symbolic(par_p) or not state.solver.symbolic(par_p)
         name = 'scanf_input_%d' % scanf_count
 
-        if p[-1] == "d":
+        if p[-1] == "d" or p[-1] == "x":
             data = bvs(name + "_INT", 32)
             state.os.get_stdin().append(data)
             state.mem.store(par_p, data, endness=state.arch.endness())
@@ -73,11 +75,11 @@ def scanf_handler(state: State, view):
     return bvv(1, 32)
 
 def strcmp_handler(state: State, view):
-    str1 = get_arg_k(state, 1, view)
-    str2 = get_arg_k(state, 2, view)
+    str1 = get_arg_k(state, 1, state.arch.bits() // 8, view)
+    str2 = get_arg_k(state, 2, state.arch.bits() // 8, view)
 
-    assert not symbolic(str1)
-    assert not symbolic(str2)
+    assert not symbolic(str1) or not state.solver.symbolic(str1)
+    assert not symbolic(str2) or not state.solver.symbolic(str2)
 
     b1 = state.mem.load(str1, 1)
     b2 = state.mem.load(str2, 1)
@@ -98,9 +100,9 @@ def strcmp_handler(state: State, view):
     return z3.simplify(z3.If(cond, bvv(0, 32), bvv(1, 32)))
 
 def strlen_handler(state: State, view):
-    str1 = get_arg_k(state, 1, view)
+    str1 = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
-    assert not symbolic(str1)
+    assert not symbolic(str1) or not state.solver.symbolic(str1)
 
     b1 = state.mem.load(str1, 1)
     vals = []
@@ -120,11 +122,12 @@ def strlen_handler(state: State, view):
         res = z3.simplify(z3.If(b == 0, bvv(i, state.arch.bits()), res))
     return z3.simplify(res)
 
+# SLOW... but cool :)
 def atoi_handler(state: State, view): 
-    # TODO broken
-    input_p = get_arg_k(state, 1, view)
+    input_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
-    assert not symbolic(input_p) and not state.solver.symbolic(input_p)  # no man. Don't make me cry
+    # no man. Don't make me cry
+    assert not symbolic(input_p) or not state.solver.symbolic(input_p)
 
     def build_or_expression(b):
         conditions = []
@@ -133,32 +136,62 @@ def atoi_handler(state: State, view):
             conditions.append(b == n)
         return z3.Or(*conditions)
 
-    max_len = 10
-    i = 0
-    b = state.mem.load(input_p + i, 1)
-    array = None
-    while i < max_len and state.solver.evaluate_long(b) != ord("\n"):
-        array = z3.Concat(b, array) if array is not None else b
-        if symbolic(b):
-            state.solver.add_constraints(build_or_expression(b))
-        i += 1
-        b = state.mem.load(input_p + i, 1)
-    if symbolic(b):
-        state.solver.add_constraints(b == ord("\n"))
-    
-    assert state.solver.satisfiable()  # we should create an errored state...
-    assert array.size() % 8 == 0  # load 8 bytes at a time...
+    max_len = len(str(2**32))  # max valid number
 
-    res = bvv(0, 32)
-    for i in range(0, array.size(), 8):
-        b = z3.ZeroExt(32-8, z3.Extract(i+7, i, array))
-        res = (res + (b - ord("0")) * (10 ** (i // 8)))
+    first_char = state.mem.load(input_p, 1)
+    state.solver.add_constraints(
+        build_or_expression(first_char)
+    )  # first char must be ascii
+
+    i     = 1
+    char  = state.mem.load(input_p + i, 1)
+    chars = []
+    while i <= max_len:
+
+        cond_1 = build_or_expression(char)
+        cond_2 = char == ord('\n')
+        for old_char in chars:
+            cond_2 = z3.And(
+                cond_2,
+                old_char != ord('\n')
+            )
+        cond = z3.Or(
+            cond_1, cond_2
+        )
+        state.solver.add_constraints(
+            cond
+        )
+
+        chars.append(char)
+        i+=1
+        char = state.mem.load(input_p + i, 1)
+        
+    chars = [first_char] + chars
     
-    return res
+    res = z3.ZeroExt(32-8, first_char) - ord('0')
+    for i in range(1, len(chars)):
+        char = chars[i]
+
+        expr = None
+        for j in range(len(chars[:i])):
+            old_char = z3.ZeroExt(32-8, chars[i-j-1])
+            if expr is not None:
+                expr += (10**j)*(old_char - ord('0'))
+            else:
+                expr  = (10**j)*(old_char - ord('0'))
+
+        res = z3.If(
+            char == ord('\n'),
+                expr,
+                res
+            )
+    
+    assert state.solver.satisfiable()
+    return z3.simplify(res)
 
 MAX_MALLOC = 0x1000
-def malloc_handler(state: State, view):  # naive... do something smarter
-    size = get_arg_k(state, 1, view)
+def malloc_handler(state: State, view):
+    size = get_arg_k(state, 1, 4, view)
     if symbolic(size):
         size = state.solver.max(size)
         if size > MAX_MALLOC:
@@ -166,6 +199,20 @@ def malloc_handler(state: State, view):  # naive... do something smarter
     else:
         size = size.as_long()
     
-    num_pages = state.address_page_aligned(size + state.page_size) / state.page_size
-    res = state.get_unmapped(num_pages)
-    return bvv(res * state.page_size, state.arch.bits())
+    res = state.mem.allocate(size)
+    return bvv(res, state.arch.bits())
+
+def calloc_handler(state: State, view):
+    size = get_arg_k(state, 1, 4, view)
+    if symbolic(size):
+        size = state.solver.max(size)
+        if size > MAX_MALLOC:
+            size = MAX_MALLOC
+    else:
+        size = size.as_long()
+    
+    res = state.mem.allocate(
+        size,
+        InitData(bytes="\x00"*size, index=0)
+    )
+    return bvv(res, state.arch.bits())

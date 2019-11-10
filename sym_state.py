@@ -28,9 +28,6 @@ class State(object):
     def address_page_aligned(self, addr):
         return addr >> self.mem.index_bits << self.mem.index_bits
 
-    def get_unmapped(self, size):
-        return self.mem.get_unmapped(size)
-
     def initialize_stack(self, stack_base):
         setattr(self.regs, self.arch.get_stack_pointer_reg(), bvv(stack_base, self.arch.bits()))
         setattr(self.regs, self.arch.get_base_pointer_reg(),  bvv(stack_base, self.arch.bits()))

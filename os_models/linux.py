@@ -27,6 +27,9 @@ class Linux(Os):
     
     def open(self, fd: int):
         self.devices[fd] = []
+    
+    def is_open(self, fd: int):
+        return fd in self.devices
 
     def close(self, fd: int):
         del self.devices[fd]
@@ -67,8 +70,8 @@ class Linuxi386(Linux):
 
 class Linuxia64(Linux):
     SYSCALL_TABLE = {
-        0: None,
-        1: None,
+        0: models.read_handler,
+        1: models.write_handler,
         2: None
     }
     SYSCALL_PARAMS = [
