@@ -2,6 +2,7 @@ from sym_state import State
 from utility.z3_wrap_util import symbolic, bvv, bvs
 from utility.models_util import get_arg_k
 from memory.sym_memory import InitData
+from options import ATOI_SLOW_MODEL
 import re
 import z3
 
@@ -123,11 +124,17 @@ def strlen_handler(state: State, view):
     return z3.simplify(res)
 
 # SLOW... but cool :)
+atoi_idx = 0
 def atoi_handler(state: State, view): 
+    if not ATOI_SLOW_MODEL:
+        global atoi_idx
+        atoi_idx += 1
+        return bvs('atoi_unconstrained_{idx}'.format(atoi_idx), 32)
+    
     input_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
     # no man. Don't make me cry
-    assert not symbolic(input_p) or not state.solver.symbolic(input_p)
+    # assert not symbolic(input_p) or not state.solver.symbolic(input_p)
 
     def build_or_expression(b):
         conditions = []
@@ -149,14 +156,19 @@ def atoi_handler(state: State, view):
     while i <= max_len:
 
         cond_1 = build_or_expression(char)
-        cond_2 = char == ord('\n')
+        cond_2 = char == 0
+        cond_3 = z3.BoolVal(False)
         for old_char in chars:
             cond_2 = z3.And(
                 cond_2,
-                old_char != ord('\n')
+                old_char != 0
+            )
+            cond_3 = z3.Or(
+                cond_3,
+                old_char == 0
             )
         cond = z3.Or(
-            cond_1, cond_2
+            cond_1, cond_2, cond_3
         )
         state.solver.add_constraints(
             cond
@@ -168,26 +180,34 @@ def atoi_handler(state: State, view):
         
     chars = [first_char] + chars
     
-    res = z3.ZeroExt(32-8, first_char) - ord('0')
-    for i in range(1, len(chars)):
+    # one bit more, to prevent overflow
+    res = z3.ZeroExt(33-8, first_char) - ord('0')
+    for i in range(len(chars)-1, 0, -1):
         char = chars[i]
 
         expr = None
         for j in range(len(chars[:i])):
-            old_char = z3.ZeroExt(32-8, chars[i-j-1])
+            # one bit more, to prevent overflow
+            old_char = z3.ZeroExt(33-8, chars[i-j-1])
             if expr is not None:
                 expr += (10**j)*(old_char - ord('0'))
             else:
                 expr  = (10**j)*(old_char - ord('0'))
 
         res = z3.If(
-            char == ord('\n'),
+            char == 0,
                 expr,
                 res
             )
-    
+
+    # prevent overflow
+    overflow_bit = z3.Extract(32, 32, res)
+    state.solver.add_constraints(
+        overflow_bit == 0
+    )
+
     assert state.solver.satisfiable()
-    return z3.simplify(res)
+    return z3.simplify(z3.Extract(31, 0, res))
 
 MAX_MALLOC = 0x1000
 def malloc_handler(state: State, view):
