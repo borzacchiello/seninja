@@ -36,7 +36,7 @@ class Page(object):
         return self
 
 class MemoryConcreteFlat(MemoryAbstract):
-    def __init__(self, state, page_size=0x1000, bits=64):
+    def __init__(self, state, page_size=0x100, bits=64):
         assert (page_size & (page_size - 1)) == 0  # page_size must be a power of 2
         self.bits       = bits
         self.state      = state
@@ -58,16 +58,18 @@ class MemoryConcreteFlat(MemoryAbstract):
     def store(self, address: z3.BitVecRef, value: z3.BitVecRef, endness='big'):
         assert not symbolic(address)
 
-        size = value.size()
+        address = address.as_long()
+        size    = value.size()
 
         for i in range(size // 8 - 1, -1, -1):
             if endness == 'little':
-                page_address, page_index = split_bv(address + i, self.index_bits)
+                addr = address + i
             else:
-                page_address, page_index = split_bv(address + size // 8 - i - 1, self.index_bits)
-            
-            page_address = page_address.as_long()
-            page_index   = page_index.as_long()
+                addr = address + size // 8 - i - 1
+
+            page_address  = addr >> self.index_bits
+            page_index    = addr - (page_address << self.index_bits)
+
             self._store(page_address, page_index, z3.simplify(z3.Extract(8*(i+1)-1, 8*i, value)))
     
     def _load(self, page_address:int, page_index:int):
@@ -77,12 +79,14 @@ class MemoryConcreteFlat(MemoryAbstract):
     def load(self, address: z3.BitVecRef, size: int, endness='big'):
         assert not symbolic(address)
 
+        address = address.as_long()
+
         ran = range(size - 1, -1, -1) if endness == 'little' else range(size)
         res = None
         for i in ran:
-            page_address, page_index = split_bv(address + i, self.index_bits)
-            page_address = page_address.as_long()
-            page_index   = page_index.as_long()
+            addr = address + i
+            page_address  = addr >> self.index_bits
+            page_index    = addr - (page_address << self.index_bits)
 
             tmp = self._load(page_address, page_index)
             res = tmp if res is None else z3.Concat(res, tmp)

@@ -753,6 +753,40 @@ class SymbolicVisitor(BNILVisitor):
         self._wasjmp = True
         return True
     
+    def visit_LLIL_TAILCALL(self, expr):
+        dest = self.visit(expr.dest)
+
+        self._check_unsupported(dest, expr.dest)
+        if self._check_error(dest): return dest
+        
+        if symbolic(dest):
+            raise Exception("symbolic IP")
+        
+        dest_fun = self.view.get_function_at(dest.as_long())
+
+        # check if imported
+        if dest.as_long() in self.imported_functions:
+            name = self.imported_functions[dest.as_long()]
+            if name not in library_functions:
+                raise Exception("unsupported external function '%s'" % name)
+            
+            res = library_functions[name](self.state, self.view)
+            setattr(self.state.regs, get_result_reg(self.state, self.view, res.size()), res)
+            
+            dest = self.state.stack_pop()
+            if symbolic(dest):
+                raise Exception("symbolic IP") 
+
+            bbs = self.view.get_basic_blocks_at(dest.as_long())
+            assert len(bbs) == 1
+            dest_fun = bbs[0].function
+
+        # change ip
+        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.as_long()))
+
+        self._wasjmp = True
+        return True
+    
     def visit_LLIL_IF(self, expr):
         condition = self.visit(expr.condition)
         true_llil_index = expr.true

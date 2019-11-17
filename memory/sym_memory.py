@@ -140,7 +140,9 @@ class Memory(MemoryAbstract):
         
         self.pages[page_address] = self.pages[page_address].store(page_index, value, condition)
     
-    def store(self, address: z3.BitVecRef, value: z3.BitVecRef, endness='big'):
+    def store(self, address, value: z3.BitVecRef, endness='big'):
+        if isinstance(address, int):
+            address = bvv(address, self.state.arch.bits())
         assert address.size() == self.bits
 
         address = self._handle_symbolic_address(address, value.size(), "store")
@@ -200,7 +202,9 @@ class Memory(MemoryAbstract):
         assert page_address in self.pages
         return self.pages[page_address].load(page_index)
     
-    def load(self, address: z3.BitVecRef, size: int, endness='big'):
+    def load(self, address, size: int, endness='big'):
+        if isinstance(address, int):
+            address = bvv(address, self.state.arch.bits())
         assert address.size() == self.bits
 
         address = self._handle_symbolic_address(address, size, "load")

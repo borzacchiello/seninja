@@ -2,15 +2,13 @@ from sym_state import State
 from utility.z3_wrap_util import symbolic, bvv, bvs
 from utility.models_util import get_arg_k
 from memory.sym_memory import InitData
-from options import ATOI_SLOW_MODEL
+from options import ATOX_SLOW_MODEL, MAX_MALLOC
 import re
 import z3
 
 ascii_numbers = ["0","1","2","3","4","5","6","7","8","9"]
 
-# just pseudo-stubs... Don't take them seriously
-
-def printf_handler(state: State, view): 
+def printf_handler(state: State, view):  # TODO think about stdout
     format_str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
     assert not symbolic(format_str_p) or not state.solver.symbolic(format_str_p)
@@ -27,6 +25,19 @@ def printf_handler(state: State, view):
     )
 
     return bvv(len(format_str), 32)
+
+getchar_count = 0
+def getchar_handler(state: State, view):
+    global getchar_count
+    new_symb = z3.BitVec("getchar_symb_%d" % getchar_count, 8)
+    getchar_count += 1
+
+    state.events.append(
+        "getchar called"
+    )
+    state.os.get_stdin().append(new_symb)
+
+    return new_symb
 
 scanf_count = 0
 def scanf_handler(state: State, view):
@@ -123,18 +134,20 @@ def strlen_handler(state: State, view):
         res = z3.simplify(z3.If(b == 0, bvv(i, state.arch.bits()), res))
     return z3.simplify(res)
 
+# ************** atoX models **************
+
 # SLOW... but cool :)
-atoi_idx = 0
-def atoi_handler(state: State, view): 
-    if not ATOI_SLOW_MODEL:
-        global atoi_idx
-        atoi_idx += 1
-        return bvs('atoi_unconstrained_{idx}'.format(atoi_idx), 32)
-    
+atox_idx = 0
+def _atox(state: State, view, size: int):
+    if not ATOX_SLOW_MODEL:
+        global atox_idx
+        atox_idx += 1
+        return bvs('atox_unconstrained_{idx}'.format(atox_idx), size*8)
+
     input_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
     # no man. Don't make me cry
-    # assert not symbolic(input_p) or not state.solver.symbolic(input_p)
+    assert not symbolic(input_p) or not state.solver.symbolic(input_p)
 
     def build_or_expression(b):
         conditions = []
@@ -143,7 +156,7 @@ def atoi_handler(state: State, view):
             conditions.append(b == n)
         return z3.Or(*conditions)
 
-    max_len = len(str(2**32))  # max valid number
+    max_len = len(str(2**(size * 8)))  # max valid number
 
     first_char = state.mem.load(input_p, 1)
     state.solver.add_constraints(
@@ -181,14 +194,14 @@ def atoi_handler(state: State, view):
     chars = [first_char] + chars
     
     # one bit more, to prevent overflow
-    res = z3.ZeroExt(33-8, first_char) - ord('0')
+    res = z3.ZeroExt(size*8+1-8, first_char) - ord('0')
     for i in range(len(chars)-1, 0, -1):
         char = chars[i]
 
         expr = None
         for j in range(len(chars[:i])):
             # one bit more, to prevent overflow
-            old_char = z3.ZeroExt(33-8, chars[i-j-1])
+            old_char = z3.ZeroExt(size*8+1-8, chars[i-j-1])
             if expr is not None:
                 expr += (10**j)*(old_char - ord('0'))
             else:
@@ -201,15 +214,22 @@ def atoi_handler(state: State, view):
             )
 
     # prevent overflow
-    overflow_bit = z3.Extract(32, 32, res)
+    overflow_bit = z3.Extract(size*8, size*8, res)
     state.solver.add_constraints(
         overflow_bit == 0
     )
 
     assert state.solver.satisfiable()
-    return z3.simplify(z3.Extract(31, 0, res))
+    return z3.simplify(z3.Extract(size*8-1, 0, res))
 
-MAX_MALLOC = 0x1000
+def atoi_handler(state: State, view): 
+    return _atox(state, view, 4)
+
+def atol_handler(state: State, view):
+    return _atox(state, view, 8)
+
+# ********* MALLOC MODELS *********
+
 def malloc_handler(state: State, view):
     size = get_arg_k(state, 1, 4, view)
     if symbolic(size):
@@ -236,3 +256,5 @@ def calloc_handler(state: State, view):
         InitData(bytes="\x00"*size, index=0)
     )
     return bvv(res, state.arch.bits())
+
+# ***************************************

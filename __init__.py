@@ -18,6 +18,8 @@ from utility.string_util import (
     as_bytes,
     get_byte
 )
+import options as seninja_opts
+import models.function_models as seninja_models
 
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):
