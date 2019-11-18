@@ -477,7 +477,7 @@ class SymbolicVisitor(BNILVisitor):
             self.state = None
             return ErrorInstruction.DIVISION_BY_ZERO
 
-        div = left / right
+        div = left / right  # FIX signed division!!!
         return z3.simplify(z3.Extract(expr.size * 8 - 1, 0, div))
     
     def visit_LLIL_DIVS_DP(self, expr):  # is it correct?
@@ -537,7 +537,7 @@ class SymbolicVisitor(BNILVisitor):
             self.state = None
             return ErrorInstruction.DIVISION_BY_ZERO
 
-        mod = left % right
+        mod = left % right  # FIX Wrong. This is signed
         return z3.simplify(z3.Extract(expr.size * 8 - 1, 0, mod))
 
     def visit_LLIL_MODS_DP(self, expr):  # is it correct?
@@ -567,7 +567,7 @@ class SymbolicVisitor(BNILVisitor):
             self.state = None
             return ErrorInstruction.DIVISION_BY_ZERO
 
-        mod = left % right
+        mod = left % right  # FIX This is modulo, not remainder (?)
         return z3.simplify(z3.Extract(expr.size * 8 - 1, 0, mod))
 
     def visit_LLIL_AND(self, expr):

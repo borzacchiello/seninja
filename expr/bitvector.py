@@ -1,0 +1,663 @@
+from expr.bool_expr import BoolExpr, BoolV
+import z3
+
+class BV(object):
+    def __init__(self):
+        # do not instantiate this class
+        raise NotImplementedError
+
+    def __repr__(self):
+        return self.__str__()
+    # operator.__lt__(a, b)
+    # operator.__le__(a, b)
+    # operator.__ge__(a, b)
+    # operator.__gt__(a, b)
+
+
+class BVExpr(BV):
+    def __init__(self, size: int, z3obj):
+        self.z3obj = z3obj
+        self.size  = size
+    
+    def __str__(self):
+        return "<BVExpr{size} {obj}>".format(
+            size=self.size, obj=str(self.z3obj)
+        )
+
+    def eq(self, other):
+        if not isinstance(other, BV):
+            return False
+        return self.z3obj.eq(other.z3obj)
+
+    def __hash__(self):
+        return self.z3obj.__hash__()
+    
+    def __add__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, self.z3obj + other.z3obj)
+
+    def __sub__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, self.z3obj - other.z3obj)
+
+    def __mul__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, self.z3obj * other.z3obj)
+    
+    def __truediv__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, self.z3obj / other.z3obj)
+
+    def __mod__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, self.z3obj % other.z3obj)
+
+    def __xor__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, self.z3obj ^ other.z3obj)
+    
+    def __and__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, self.z3obj & other.z3obj)
+
+    def __or__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, self.z3obj | other.z3obj)
+    
+    def __lshift__(self, other):
+        # arithmetic/logical left shift
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, self.z3obj << other.z3obj)
+
+    def __rshift__(self, other):
+        # arithmetic right shift
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, self.z3obj >> other.z3obj)
+
+    def __eq__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BoolExpr(self.z3obj == other.z3obj)
+
+    def __neq__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BoolExpr(self.z3obj != other.z3obj)
+
+    def __lt__(self, other):
+        # signed
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BoolExpr(self.z3obj < other.z3obj)
+
+    def __le__(self, other):
+        # signed
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BoolExpr(self.z3obj <= other.z3obj)
+
+    def __gt__(self, other):
+        # signed
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BoolExpr(self.z3obj > other.z3obj)
+
+    def __ge__(self, other):
+        # signed
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BoolExpr(self.z3obj >= other.z3obj)
+
+    def UDiv(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, z3.UDiv(self.z3obj, other.z3obj))
+    
+    def SDiv(self, other):
+        return self.__truediv__(other)
+
+    def URem(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, z3.URem(self.z3obj, other.z3obj))
+    
+    def LShL(self, other):
+        return self.__lshift__(other)
+
+    def AShL(self, other):
+        # arithmetic and logical left shift are identical
+        return self.__lshift__(other)
+
+    def LShR(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, z3.LShR(self.z3obj, other.z3obj))
+
+    def AShR(self, other):
+        return self.__rshift__(other)
+
+    def ULT(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BoolExpr(z3.ULT(self.z3obj, other.z3obj))
+
+    def ULE(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BoolExpr(z3.ULE(self.z3obj, other.z3obj))
+
+    def UGT(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BoolExpr(z3.UGT(self.z3obj, other.z3obj))
+
+    def UGE(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BoolExpr(z3.UGE(self.z3obj, other.z3obj))
+    
+    def SLT(self, other):
+        return self.__lt__(other)
+    
+    def SLE(self, other):
+        return self.__le__(other)
+    
+    def SGT(self, other):
+        return self.__gt__(other)
+    
+    def SGE(self, other):
+        return self.__ge__(other)
+
+    def RotateLeft(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, z3.RotateLeft(self.z3obj, other.z3obj))
+
+    def RotateRight(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, z3.RotateRight(self.z3obj, other.z3obj))
+
+    def Concat(self, other: BV):
+        return BVExpr(self.size + other.size, z3.Concat(self.z3obj, other.z3obj))
+
+    def Extract(self, high: int, low: int):
+        assert high <= low
+        return BVExpr(high-low+1, z3.Extract(high, low, self.z3obj))
+
+    def SignExt(self, n: int):
+        assert n >= 0
+        return BVExpr(self.size + n, z3.SignExt(n, self.z3obj))
+    
+    def ZeroExt(self, n: int):
+        assert n >= 0
+        return BVExpr(self.size + n, z3.ZeroExt(n, self.z3obj))
+
+class BVS(BVExpr):
+    def __init__(self, name: str, size: int):
+        self.name  = name
+        self.size  = size
+        self.z3obj = z3.BitVec(name, size)
+
+    def __str__(self):
+        return "<BVS{size} {obj}>".format(
+            size=self.size, obj=str(self.z3obj)
+        )
+
+class BVV(BV):
+    def __init__(self, value: int, size: int):
+        self.value = value
+        self.size  = size
+        self._mask = 2**size - 1
+        self._signMask = 2**(size-1)
+    
+    @property
+    def z3obj(self):
+        return z3.BitVecVal(self.value, self.size)
+
+    def __str__(self):
+        return "<BVV{size} 0x{obj:02x}>".format(
+            size=self.size, obj=self.value
+        )
+    
+    def eq(self, other):
+        if not isinstance(other, BV):
+            return False
+        if isinstance(other, BVV):
+            return self.value == other.value and \
+                self.size == other.size
+        return self.z3obj.eq(other.z3obj)
+    
+    def __hash__(self):
+        return self.z3obj.__hash__()
+
+    def __add__ (self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BVV((self.value + other.value) & self._mask, self.size)
+        return BVExpr(self.size, self.value + other.z3obj)
+
+    def __sub__ (self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BVV((self.value - other.value) & self._mask, self.size)
+        return BVExpr(self.size, self.value - other.z3obj)
+
+    def __mul__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BVV((self.value * other.value) & self._mask, self.size)
+        return BVExpr(self.size, self.value * other.z3obj)
+
+    def __truediv__(self, other):
+        # signed
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            signed_left = (self.value - 2**self.size) \
+                if self.value & self._signMask else self.value
+            signed_right = (other.value - 2**other.size) \
+                if other.value & other._signMask else other.value
+            # python round up -x.y to -(x+1). Z3 round up to -x
+            # We want to be consistent with Z3
+            sign = 1 if signed_left * signed_right > 0 else -1
+            value = abs(signed_left) // abs(signed_right)
+            return BVV((sign * value) & self._mask, self.size)
+        return BVExpr(self.size, self.z3obj / other.z3obj)
+
+    def __mod__(self, other):
+        # signed
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            signed_left = (self.value - 2**self.size) \
+                if self.value & self._signMask else self.value
+            signed_right = (other.value - 2**other.size) \
+                if other.value & other._signMask else other.value
+            return BVV((signed_left % signed_right) & self._mask, self.size)
+        return BVExpr(self.size, self.z3obj % other.z3obj)
+
+    def __xor__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BVV((self.value ^ other.value) & self._mask, self.size)
+        return BVExpr(self.size, self.value ^ other.z3obj)
+
+    def __and__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BVV((self.value & other.value) & self._mask, self.size)
+        return BVExpr(self.size, self.z3obj & other.z3obj)
+
+    def __or__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BVV((self.value | other.value) & self._mask, self.size)
+        return BVExpr(self.size, self.z3obj | other.z3obj)
+
+    def __lshift__(self, other):
+        # arithmetic/logical left shift
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BVV((self.value << other.value) & self._mask, self.size)
+        return BVExpr(self.size, self.z3obj << other.z3obj)
+
+    def __rshift__(self, other):
+        # arithmetic right shift
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            tmp = self._signMask >> other.value
+            new = ((self.value >> other.value) ^ tmp) - tmp
+            return BVV(new & self._mask, self.size)
+        return BVExpr(self.size, self.z3obj >> other.z3obj)
+
+    def __eq__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BoolV(self.value == other.value)
+        return BoolExpr(self.z3obj == other.z3obj)
+
+    def __neq__(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BoolV(self.value != other.value)
+        return BoolExpr(self.z3obj != other.z3obj)
+
+    def __lt__(self, other):
+        # signed
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            signed_left = (self.value - 2**self.size) \
+                if self.value & self._signMask else self.value
+            signed_right = (other.value - 2**other.size) \
+                if other.value & other._signMask else other.value
+            return BoolV(signed_left < signed_right)
+        return BoolExpr(self.z3obj < other.z3obj)
+
+    def __le__(self, other):
+        # signed
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            signed_left = (self.value - 2**self.size) \
+                if self.value & self._signMask else self.value
+            signed_right = (other.value - 2**other.size) \
+                if other.value & other._signMask else other.value
+            return BoolV(signed_left <= signed_right)
+        return BoolExpr(self.z3obj <= other.z3obj)
+
+    def __gt__(self, other):
+        # signed
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            signed_left = (self.value - 2**self.size) \
+                if self.value & self._signMask else self.value
+            signed_right = (other.value - 2**other.size) \
+                if other.value & other._signMask else other.value
+            return BoolV(signed_left > signed_right)
+        return BoolExpr(self.z3obj > other.z3obj)
+
+    def __ge__(self, other):
+        # signed
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            signed_left = (self.value - 2**self.size) \
+                if self.value & self._signMask else self.value
+            signed_right = (other.value - 2**other.size) \
+                if other.value & other._signMask else other.value
+            return BoolV(signed_left >= signed_right)
+        return BoolExpr(self.z3obj >= other.z3obj)
+    
+    def UDiv(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BVV((self.value // other.value) & self._mask, self.size)
+        return BVExpr(self.size, z3.UDiv(self.z3obj, other.z3obj))
+    
+    def SDiv(self, other):
+        return self.__truediv__(other)
+    
+    def URem(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BVV((self.value % other.value) & self._mask, self.size)
+        return BVExpr(self.size, z3.URem(self.z3obj, other.z3obj))
+
+    def LShL(self, other):
+        return self.__lshift__(other)
+    
+    def AShL(self, other):
+        # arithmetic and logical left shift are identical
+        return self.__lshift__(other)
+    
+    def LShR(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BVV((self.value >> other.value) & self._mask, self.size)
+        return BVExpr(self.size, z3.LShR(self.z3obj, other.z3obj))
+
+    def AShR(self, other):
+        return self.__rshift__(other)
+    
+    def ULT(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BoolV(self.value < other.value)
+        return BoolExpr(z3.ULT(self.z3obj, other.z3obj))
+
+    def ULE(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BoolV(self.value <= other.value)
+        return BoolExpr(z3.ULE(self.z3obj, other.z3obj))
+
+    def UGT(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BoolV(self.value > other.value)
+        return BoolExpr(z3.UGT(self.z3obj, other.z3obj))
+
+    def UGE(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            return BoolV(self.value >= other.value)
+        return BoolExpr(z3.UGE(self.z3obj, other.z3obj))
+    
+    def SLT(self, other):
+        return self.__lt__(other)
+    
+    def SLE(self, other):
+        return self.__le__(other)
+    
+    def SGT(self, other):
+        return self.__gt__(other)
+    
+    def SGE(self, other):
+        return self.__ge__(other)
+    
+    def RotateLeft(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            other_norm = other.value % self.size
+            new = (((self.value << other_norm) & self._mask) |
+                ((self.value >> ((self.size - other_norm) & self._mask)) & self._mask))
+            return BVV(new & self._mask, self.size)
+        return BVExpr(self.size, z3.RotateLeft(self.z3obj, other.z3obj))
+
+    def RotateRight(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            other_norm = other.value % self.size
+            new = (((self.value >> other_norm) & self._mask) |
+                ((self.value << ((self.size - other_norm) & self._mask)) & self._mask))
+            return BVV(new & self._mask, self.size)
+        return BVExpr(self.size, z3.RotateRight(self.z3obj, other.z3obj))
+
+    def Concat(self, other: BV):
+        if isinstance(other, BVV):
+            new_value = (self.value << other.size) + other.value
+            new_size  = self.size + other.size
+            new_mask  = 2**new_size-1
+            return BVV(new_value & new_mask, new_size)
+        return BVExpr(self.size + other.size, z3.Concat(self.z3obj, other.z3obj))
+    
+    def Extract(self, high: int, low: int):
+        assert high <= low
+        new_size = high-low+1
+        new_value = (self.value >> low) & (2**new_size-1)
+        return BVV(new_value, new_size)
+
+    def SignExt(self, n: int):
+        assert n >= 0
+        if self._signMask & self.value:
+            new = ((2**n-1) << self.size) + self.value
+        else:
+            new = self.value
+        mask = 2**(self.size+n)-1
+        return BVV(new & mask, self.size + n)
+    
+    def ZeroExt(self, n: int):
+        assert n >= 0
+        return BVV(self.value, self.size + n)
