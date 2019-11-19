@@ -1,5 +1,6 @@
 from copy import deepcopy
 from expr.bitvector import BV, BVV, BVExpr
+from expr.bool_expr import Bool, BoolV
 import z3
 
 class BVArray(object):
@@ -24,6 +25,11 @@ class BVArray(object):
     
     def __repr__(self):
         return self.__str__()
+    
+    def simplify(self):
+        if self._z3obj is None:
+            return
+        self._z3obj = z3.simplify(self._z3obj)
     
     @property
     def z3obj(self):
@@ -92,6 +98,47 @@ class BVArray(object):
                 index.z3obj,
                 value.z3obj
             )
+
+    def ConditionalStore(self, index, value, cond):
+        if isinstance(index, int):
+            index = BVV(index, self.index_width)
+        else:
+            assert index.size == self.index_width
+        if isinstance(value, int):
+            value = BVV(value, self.value_width)
+        else:
+            assert value.size == self.value_width
+        if isinstance(cond, bool):
+            cond = BoolV(cond)
+        
+        if isinstance(cond, BoolV):
+            if cond.value:
+                self.Store(index, value)
+            return
+        
+        if (
+            self._conc_store is not None and
+            isinstance(index, BVV) and
+            index.value in self._conc_store and
+            self._conc_store[index.value].eq(value)
+        ):
+            # the condition is symbolic, but the value is already in memory
+            # we can safetely skip the store
+            return
+        
+        self._switch_to_symbolic()
+        self._z3obj = z3.If(
+            cond.z3obj,
+            z3.Store(
+                self._z3obj,
+                index.z3obj,
+                value.z3obj
+            ),
+            self._z3obj
+        )
+        # this can be quite inefficient. 
+        # Let's try to simplfy the expression.
+        self._z3obj = z3.simplify(self._z3obj)
     
     def Select(self, index: BV) -> BV:
         if isinstance(index, int):
@@ -122,3 +169,23 @@ class BVArray(object):
         new._z3obj = self._z3obj
 
         return new
+    
+    def merge(self, other, merge_condition: Bool):
+        assert self.name == other.name
+        assert self.index_width == other.index_width
+        assert self.value_width == other.value_width
+        if isinstance(merge_condition, BoolV):
+            if merge_condition.value:
+                return other.copy()
+            return self
+        
+        self._switch_to_symbolic()
+        self._z3obj = z3.If(
+            merge_condition.z3obj,
+            other.z3obj,
+            self._z3obj
+        )
+        # this can be quite inefficient. 
+        # Let's try to simplfy the expression.
+        self._z3obj = z3.simplify(self._z3obj)
+        return self

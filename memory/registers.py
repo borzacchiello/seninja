@@ -1,12 +1,14 @@
-from utility.z3_wrap_util import bvv, bvs
 from memory.sym_flat_memory import MemoryConcreteFlat
-from IPython import embed
+from expr import BVV, BVS, Bool, ITE
 import math
-import z3
 
 class Regs(object):
 
-    attr = {'state', 'bits', '_mem', '_regs', '_tmp_regs', 'flags'}
+    attr = {'state', 'bits', '_mem', '_regs', '_tmp_regs', 'flags', '__class__', '__delattr__',
+        '__dict__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__',
+        '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__', '__lt__', '__module__',
+        '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__',
+        '__str__', '__subclasshook__', '__weakref__', 'attr', 'copy', 'has_reg', 'merge'}
 
     def __init__(self, state):
         self.state     = state
@@ -27,30 +29,30 @@ class Regs(object):
                 self._regs[subreg_name] = reg_info["addr"] + subreg_info["offset"], subreg_info["size"]
         
         for flag_name in state.arch.flags_data():
-            self.flags[flag_name] = bvs(flag_name, 1)
+            self.flags[flag_name] = BVS(flag_name, 1) 
     
     def has_reg(self, reg_name: str):
         return reg_name in self._regs
 
     def __getattribute__(self, k):
-        if k in dir(Regs) or k in Regs.attr:
+        if k in Regs.attr:
             return super().__getattribute__(k)
         if k not in self._regs and k not in self._tmp_regs:
             raise AttributeError("'%s' object has not attribute '%s'" % (self.__class__.__name__, k))
         if k in self._regs:
             reg_addr, reg_size = self._regs[k]
-            return self._mem.load(bvv(reg_addr, self.bits), reg_size, endness='big')
+            return self._mem.load(BVV(reg_addr, self.bits), reg_size, endness='big')
         return self._tmp_regs[k]
     
     def __setattr__(self, k, val):
-        if k in dir(Regs) or k in Regs.attr:
+        if k in Regs.attr:
             return super().__setattr__(k, val)
         if k not in self._regs and "temp" not in k:
             raise AttributeError("'%s' object has not attribute '%s'" % (self.__class__.__name__, k))
         if k in self._regs:
             reg_addr, reg_size = self._regs[k]
-            assert reg_size * 8 == val.size()
-            self._mem.store(bvv(reg_addr, self.bits), val, endness='big')
+            assert reg_size * 8 == val.size
+            self._mem.store(BVV(reg_addr, self.bits), val, endness='big')
         self._tmp_regs[k] = val
 
     def copy(self, state):
@@ -58,7 +60,7 @@ class Regs(object):
         new_regs._mem = self._mem.copy(state)
         return new_regs
 
-    def merge(self, other, merge_condition: z3.BoolRef):
+    def merge(self, other, merge_condition: Bool):
         assert isinstance(other, Regs)
 
         for reg in self.state.arch.regs_data():
@@ -71,11 +73,9 @@ class Regs(object):
                 continue
             
             setattr(self, reg, 
-                z3.simplify(
-                    z3.If(
-                        merge_condition,
-                        other_reg,
-                        self_reg
-                    )
+                ITE(
+                    merge_condition,
+                    other_reg,
+                    self_reg
                 )
             )

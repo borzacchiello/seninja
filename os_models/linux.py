@@ -1,7 +1,7 @@
 from copy import deepcopy
 from os_models.os_abstract import Os
 import models.linux_syscalls as models
-import z3
+from expr import Bool
 
 class Linux(Os):
     SYSCALL_TABLE = None
@@ -64,7 +64,7 @@ class Linuxi386(Linux):
         res.devices = deepcopy(self.devices)
         return res
     
-    def merge(self, other, merge_condition: z3.BoolRef):
+    def merge(self, other, merge_condition: Bool):
         assert isinstance(other, Linuxi386)
         pass  # TODO implement this
 
@@ -95,6 +95,6 @@ class Linuxia64(Linux):
         res.devices = deepcopy(self.devices)
         return res
 
-    def merge(self, other, merge_condition: z3.BoolRef):
+    def merge(self, other, merge_condition: Bool):
         assert isinstance(other, Linuxia64)
         pass  # TODO implement this

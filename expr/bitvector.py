@@ -8,6 +8,27 @@ class BV(object):
 
     def __repr__(self):
         return self.__str__()
+    
+    def __neg__(self):
+        raise NotImplementedError
+    
+    def __add__(self, other):
+        raise NotImplementedError
+    
+    def __sub__(self, other):
+        raise NotImplementedError
+
+    def __mul__(self, other):
+        raise NotImplementedError
+    
+    def __radd__(self, other):
+        return self.__add__(other)
+    
+    def __rsub__(self, other):
+        return self.__neg__().__sub__(other)
+    
+    def __rmul__(self, other):
+        return self.__mul__(other)
 
 class BVExpr(BV):
     def __init__(self, size: int, z3obj):
@@ -18,6 +39,9 @@ class BVExpr(BV):
         return "<BVExpr{size} {obj}>".format(
             size=self.size, obj=str(self.z3obj)
         )
+    
+    def simplify(self):
+        self.z3obj = z3.simplify(self.z3obj)
 
     def eq(self, other):
         if not isinstance(other, BV):
@@ -161,6 +185,12 @@ class BVExpr(BV):
             assert self.size == other.size
         return BoolExpr(self.z3obj >= other.z3obj)
 
+    def __invert__(self):
+        return BVExpr(self.size, self.z3obj.__invert__())
+    
+    def __neg__(self):
+        return BVExpr(self.size, self.z3obj.__neg__())
+
     def UDiv(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
@@ -270,7 +300,7 @@ class BVExpr(BV):
         return BVExpr(self.size + other.size, z3.Concat(self.z3obj, other.z3obj))
 
     def Extract(self, high: int, low: int):
-        assert high <= low
+        assert high >= low
         return BVExpr(high-low+1, z3.Extract(high, low, self.z3obj))
 
     def SignExt(self, n: int):
@@ -308,6 +338,8 @@ class BVV(BV):
             size=self.size, obj=self.value,
             width=(self.size+3) // 4
         )
+    def simplify(self):
+        return
     
     def eq(self, other):
         if not isinstance(other, BV):
@@ -518,6 +550,12 @@ class BVV(BV):
             return BoolV(signed_left >= signed_right)
         return BoolExpr(self.z3obj >= other.z3obj)
     
+    def __invert__(self):
+        return BVV(-self.value, self.size)
+    
+    def __neg__(self):
+        return BVV(~self.value, self.size)
+    
     def UDiv(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
@@ -668,7 +706,7 @@ class BVV(BV):
         return BVExpr(self.size + other.size, z3.Concat(self.z3obj, other.z3obj))
     
     def Extract(self, high: int, low: int):
-        assert high <= low
+        assert high >= low
         new_size = high-low+1
         new_value = (self.value >> low) & (2**new_size-1)
         return BVV(new_value, new_size)

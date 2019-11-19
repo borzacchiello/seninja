@@ -11,3 +11,30 @@ def ITE(cond: Bool, iftrue: BV, iffalse: BV):
         iftrue.size,
         z3.If(cond.z3obj, iftrue.z3obj, iffalse.z3obj)
     )
+
+def Or(*conditions):
+    res = None
+    for cond in conditions:
+        assert isinstance(cond, Bool)
+        res = res.Or(cond) if res is not None else cond
+    
+    assert res is not None
+    return res
+
+def And(*conditions):
+    res = None
+    for cond in conditions:
+        assert isinstance(cond, Bool)
+        res = res.And(cond) if res is not None else cond
+    
+    assert res is not None
+    return res
+
+def Xor(*conditions):
+    res = None
+    for cond in conditions:
+        assert isinstance(cond, Bool)
+        res = res.Xor(cond) if res is not None else cond
+    
+    assert res is not None
+    return res

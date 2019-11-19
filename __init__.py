@@ -20,6 +20,7 @@ from utility.string_util import (
 )
 import options as seninja_opts
 import models.function_models as seninja_models
+from expr import *
 
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):
@@ -176,9 +177,12 @@ def merge_states(bv, address):
     
     def f(tb):
         global sv, _running
-    
+        tot = len(to_be_merged)
+        i = 0
         for s in to_be_merged:
             sv.state.merge(s)
+            i += 1
+            tb.progress = "seninja: merging states: %d/%d" % (i, tot)
         _running = False
     
     if not _running:

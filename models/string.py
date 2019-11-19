@@ -1,8 +1,8 @@
 from sym_state import State
-from utility.z3_wrap_util import symbolic, bvv, bvs
+from utility.expr_wrap_util import symbolic
+from expr import BVV, BVS, BoolV, And, ITE
 from utility.models_util import get_arg_k
 from options import MAX_MEMCMP, MAX_MEMSET
-import z3
 
 def memcmp_handler(state: State, view):
     buff1 = get_arg_k(state, 1, state.arch.bits() // 8, view)
@@ -14,18 +14,18 @@ def memcmp_handler(state: State, view):
         if n > MAX_MEMCMP:
             n = MAX_MEMCMP
     else:
-        n = n.as_long()
+        n = n.value
     
-    res = z3.BoolVal(True)
+    res = BoolV(True)
     for i in range(n):
         c1 = state.mem.load(buff1 + i, 1)
         c2 = state.mem.load(buff2 + i, 1)
         
-        res = z3.And(
+        res = And(
             c1 == c2, res
         )
     
-    return z3.If(res, bvv(0, 32), bvv(1, 32))
+    return ITE(res, BVV(0, 32), BVV(1, 32))
 
 def memset_handler(state: State, view):
     buff = get_arg_k(state, 1, state.arch.bits() // 8, view)
@@ -37,7 +37,7 @@ def memset_handler(state: State, view):
         if n > MAX_MEMSET:
             n = MAX_MEMSET
     else:
-        n = n.as_long()
+        n = n.value
     
     for i in range(n):
         state.mem.store(buff+i, val)

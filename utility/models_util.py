@@ -1,7 +1,6 @@
 from arch.arch_x86 import x86Arch
 from utility.z3_wrap_util import symbolic
 from utility.bninja_util import get_function
-import z3
 
 def get_arg_k(state, k, size, view):
     
@@ -13,8 +12,7 @@ def get_arg_k(state, k, size, view):
         args = ['rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9']
         if k-1 < len(args):
             res = getattr(state.regs, args[k-1])
-            return z3.simplify(
-                z3.Extract(8*size-1, 0, res))
+            return res.Extract(8*size-1, 0)
         else:
             stack_pointer = getattr(state.regs, state.arch.get_stack_pointer_reg())
             assert not symbolic(stack_pointer)

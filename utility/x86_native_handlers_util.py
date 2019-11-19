@@ -1,4 +1,4 @@
-import z3
+from expr import BVV
 
 _size_dict = {
     "byte":     1,
@@ -39,7 +39,7 @@ def __find_address_mem(state, parameter):  # hackish way of parsing a mem addres
                 v = getattr(state.regs, m_sub)
                 m_res = v if m_res is None else (m_res * v)
             elif __is_hex(m_sub):
-                v = z3.BitVecVal(int(m_sub, 16), state.arch.bits())
+                v = BVV(int(m_sub, 16), state.arch.bits())
                 m_res = v if m_res is None else (m_res * v)
             else:
                 raise Exception("Unknown subexpression")

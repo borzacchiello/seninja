@@ -1,4 +1,5 @@
-from utility.z3_wrap_util import symbolic, bvs, bvv
+from utility.expr_wrap_util import symbolic
+from expr import BVV, BVS
 from utility.models_util import get_arg_k
 from sym_state import State
 
@@ -10,24 +11,24 @@ def read_handler(state: State, view):
     count = get_arg_k(state, 3, 4, view)
 
     assert not symbolic(fd) or not state.solver.symbolic(fd)
-    fd = fd.as_long()
+    fd = fd.value
     assert state.os.is_open(fd)
     if symbolic(count):
         count = state.solver.max(count)
         count = MAX_READ if count > MAX_READ else count
     else:
-        count = count.as_long()
+        count = count.value
     
     s = "read_fd%d" % fd
     for i in range(count):
-        b = bvs(s + "_%d" % i, 8)
+        b = BVS(s + "_%d" % i, 8)
         state.os.get_device_by_fd(fd).append(b)
         state.mem.store(buf + i, b)
     
     state.events.append(
         "read from fd %d, count %d" % (fd, count)
     )
-    return bvv(count, 32)
+    return BVV(count, 32)
 
 def write_handler(state: State, view):
     fd    = get_arg_k(state, 1, 4, view)
@@ -35,12 +36,12 @@ def write_handler(state: State, view):
     count = get_arg_k(state, 3, 4, view)
 
     assert not symbolic(fd) or not state.solver.symbolic(fd)
-    fd = fd.as_long()
+    fd = fd.value
     if symbolic(count):
         count = state.solver.max(count)
         count = MAX_READ if count > MAX_READ else count
     else:
-        count = count.as_long()
+        count = count.value
     
     for i in range(count):
         b = state.mem.load(buf + i, 1)
@@ -49,7 +50,7 @@ def write_handler(state: State, view):
     state.events.append(
         "read from fd %d, count %d" % (fd, count)
     )
-    return bvv(count, 32)
+    return BVV(count, 32)
 
 stat_idx = 0
 def _stat(state: State, statbuf):
@@ -58,22 +59,22 @@ def _stat(state: State, statbuf):
     long_t  = state.arch.bits()
     int_t   = 32
 
-    st_dev          = bvs('stat_st_dev_%d' % stat_idx,     long_t)
-    st_ino          = bvs('stat_st_ino_%d' % stat_idx,     long_t)
-    st_mode         = bvs('stat_st_mode_%d' % stat_idx,    long_t)
-    st_nlink        = bvs('stat_st_nlink_%d' % stat_idx,   long_t)
-    st_uid          = bvs('stat_st_uid_%d' % stat_idx,     int_t )
-    st_gid          = bvs('stat_st_gid_%d' % stat_idx,     int_t )
-    st_rdev         = bvs('stat_st_rdev_%d' % stat_idx,    long_t)
-    st_size         = bvs('stat_st_size_%d' % stat_idx,    long_t)
-    st_blksize      = bvs('stat_st_blksize_%d' % stat_idx, long_t)
-    st_blocks       = bvs('stat_st_blocks_%d' % stat_idx,  long_t)
-    st_atim_tv_sec  = bvs('stat_atim.sec_%d' % stat_idx,   long_t)
-    st_atim_tv_nsec = bvs('stat_atim.nsec_%d' % stat_idx,  long_t)
-    st_mtim_tv_sec  = bvs('stat_mtim.sec_%d' % stat_idx,   long_t)
-    st_mtim_tv_nsec = bvs('stat_mtim.nsec_%d' % stat_idx,  long_t)
-    st_ctim_tv_sec  = bvs('stat_ctim.sec_%d' % stat_idx,   long_t)
-    st_ctim_tv_nsec = bvs('stat_ctim.nsec_%d' % stat_idx,  long_t)
+    st_dev          = BVS('stat_st_dev_%d' % stat_idx,     long_t)
+    st_ino          = BVS('stat_st_ino_%d' % stat_idx,     long_t)
+    st_mode         = BVS('stat_st_mode_%d' % stat_idx,    long_t)
+    st_nlink        = BVS('stat_st_nlink_%d' % stat_idx,   long_t)
+    st_uid          = BVS('stat_st_uid_%d' % stat_idx,     int_t )
+    st_gid          = BVS('stat_st_gid_%d' % stat_idx,     int_t )
+    st_rdev         = BVS('stat_st_rdev_%d' % stat_idx,    long_t)
+    st_size         = BVS('stat_st_size_%d' % stat_idx,    long_t)
+    st_blksize      = BVS('stat_st_blksize_%d' % stat_idx, long_t)
+    st_blocks       = BVS('stat_st_blocks_%d' % stat_idx,  long_t)
+    st_atim_tv_sec  = BVS('stat_atim.sec_%d' % stat_idx,   long_t)
+    st_atim_tv_nsec = BVS('stat_atim.nsec_%d' % stat_idx,  long_t)
+    st_mtim_tv_sec  = BVS('stat_mtim.sec_%d' % stat_idx,   long_t)
+    st_mtim_tv_nsec = BVS('stat_mtim.nsec_%d' % stat_idx,  long_t)
+    st_ctim_tv_sec  = BVS('stat_ctim.sec_%d' % stat_idx,   long_t)
+    st_ctim_tv_nsec = BVS('stat_ctim.nsec_%d' % stat_idx,  long_t)
 
     stat_idx += 1
 
@@ -83,7 +84,7 @@ def _stat(state: State, statbuf):
     state.mem.store(statbuf +  24, st_mode,         state.arch.endness())
     state.mem.store(statbuf +  32, st_uid,          state.arch.endness())
     state.mem.store(statbuf +  36, st_gid,          state.arch.endness())
-    state.mem.store(statbuf +  40, bvv(0, 8*8))  # padding
+    state.mem.store(statbuf +  40, BVV(0, 8*8))  # padding
     state.mem.store(statbuf +  48, st_rdev,         state.arch.endness())
     state.mem.store(statbuf +  56, st_size,         state.arch.endness())
     state.mem.store(statbuf +  64, st_blksize,      state.arch.endness())
@@ -94,10 +95,9 @@ def _stat(state: State, statbuf):
     state.mem.store(statbuf + 104, st_mtim_tv_nsec, state.arch.endness())
     state.mem.store(statbuf + 112, st_ctim_tv_sec,  state.arch.endness())
     state.mem.store(statbuf + 120, st_ctim_tv_nsec, state.arch.endness())
-    state.mem.store(statbuf + 128, bvv(0, 8*16)) # reserved (zero (?))
+    state.mem.store(statbuf + 128, BVV(0, 8*16)) # reserved (zero (?))
 
-    return bvv(0, 32)
-
+    return BVV(0, 32)
 
 def stat_handler(state: State, view):
     global stat_idx
@@ -109,8 +109,8 @@ def stat_handler(state: State, view):
     if not symbolic(pathname):
         i = 0
         c = state.mem.load(pathname, 1)
-        while not symbolic(c) and c.as_long() != 0 and i < 100:
-            path += chr(c.as_long())
+        while not symbolic(c) and c.value != 0 and i < 100:
+            path += chr(c.value)
             i += 1
             c = state.mem.load(pathname+i, 1)
     else:
@@ -131,15 +131,15 @@ def xstat_handler(state: State, view):
     if not symbolic(pathname):
         i = 0
         c = state.mem.load(pathname, 1)
-        while not symbolic(c) and c.as_long() != 0 and i < 100:
-            path += chr(c.as_long())
+        while not symbolic(c) and c.value != 0 and i < 100:
+            path += chr(c.value)
             i += 1
             c = state.mem.load(pathname+i, 1)
     else:
         path = "<symbolic>"
     
     if not symbolic(version):
-        version = str(version.as_long())
+        version = str(version.value)
     else:
         version = "<symbolic>"
 

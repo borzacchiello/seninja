@@ -1,4 +1,3 @@
-import z3
 from binaryninja import (
     BinaryReader, BinaryWriter, 
     RegisterValueType, enums
@@ -7,9 +6,10 @@ from sym_state import State
 from arch.arch_x86 import x86Arch
 from arch.arch_x86_64 import x8664Arch
 from models.function_models import library_functions
-from utility.z3_wrap_util import (
-    bvv_from_bytes, bvv, bvs, symbolic
+from utility.expr_wrap_util import (
+    bvv_from_bytes, symbolic
 )
+from expr import BV, BVV, BVS, Bool, ITE
 from utility.bninja_util import (
     get_function, get_imported_functions, 
     get_imported_addresses, find_os,
@@ -110,14 +110,14 @@ class SymbolicVisitor(BNILVisitor):
             val = current_function.get_reg_value_after(addr, reg)
 
             if val.type.value == RegisterValueType.StackFrameOffset:
-                setattr(self.state.regs, reg, bvv(stack_base + val.offset, reg_dict['size'] * 8))
+                setattr(self.state.regs, reg, BVV(stack_base + val.offset, reg_dict['size'] * 8))
             elif (
                 val.type.value == RegisterValueType.ConstantPointerValue or 
                 val.type.value == RegisterValueType.ConstantValue
             ):
-                setattr(self.state.regs, reg, bvv(val.value, reg_dict['size'] * 8))
+                setattr(self.state.regs, reg, BVV(val.value, reg_dict['size'] * 8))
             else:
-                symb = bvs(reg + "_init", reg_dict['size'] * 8)
+                symb = BVS(reg + "_init", reg_dict['size'] * 8)
                 self.vars.add(symb)
                 setattr(self.state.regs, reg, symb)
         
@@ -136,22 +136,22 @@ class SymbolicVisitor(BNILVisitor):
             if val.type.value == RegisterValueType.StackFrameOffset:
                 assert width*8 == self.arch.bits()  # has to happen... right?
                 self.state.mem.store(
-                    bvv(stack_base + offset, self.arch.bits()), 
-                    bvv(stack_base + val.offset, width*8 ),
+                    BVV(stack_base + offset, self.arch.bits()), 
+                    BVV(stack_base + val.offset, width*8 ),
                     endness=self.arch.endness())
             elif (
                 val.type.value == RegisterValueType.ConstantPointerValue or 
                 val.type.value == RegisterValueType.ConstantValue
             ):
                 self.state.mem.store(
-                    bvv(stack_base + offset, self.arch.bits()), 
-                    bvv(val.value, width*8 ),
+                    BVV(stack_base + offset, self.arch.bits()), 
+                    BVV(val.value, width*8 ),
                     endness=self.arch.endness())
             else:
-                symb = bvs(name + "_init", self.arch.bits())
+                symb = BVS(name + "_init", self.arch.bits())
                 self.vars.add(symb)
                 self.state.mem.store(
-                    bvv(stack_base + offset, self.arch.bits()), 
+                    BVV(stack_base + offset, self.arch.bits()), 
                     symb,
                     endness=self.arch.endness())
         
@@ -288,10 +288,10 @@ class SymbolicVisitor(BNILVisitor):
     # --- HANDLERS ---
 
     def visit_LLIL_CONST(self, expr):
-        return bvv(expr.constant, expr.size * 8)
+        return BVV(expr.constant, expr.size * 8)
 
     def visit_LLIL_CONST_PTR(self, expr):
-        return bvv(expr.constant, self.arch.bits())
+        return BVV(expr.constant, self.arch.bits())
 
     def visit_LLIL_SET_REG(self, expr):
         dest = expr.dest.name
@@ -311,7 +311,7 @@ class SymbolicVisitor(BNILVisitor):
         lo = getattr(self.state.regs, expr.lo.name)
         hi = getattr(self.state.regs, expr.hi.name)
 
-        return z3.Concat(hi, lo)
+        return hi.Concat(lo)
 
     def visit_LLIL_SET_REG_SPLIT(self, expr):
         src = self.visit(expr.src)
@@ -321,8 +321,8 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(src, expr.src)
         if self._check_error(src): return src
 
-        lo_val = z3.Extract(src.size() // 2 - 1, 0, src)
-        hi_val = z3.Extract(src.size() - 1, src.size() // 2, src)
+        lo_val = src.Extract(src.size // 2 - 1, 0)
+        hi_val = src.Extract(src.size - 1, src.size // 2)
         
         setattr(self.state.regs, lo, lo_val)
         setattr(self.state.regs, hi, hi_val)
@@ -335,10 +335,10 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(src, expr.src)
         if self._check_error(src): return src
 
-        if isinstance(src, z3.BoolRef):
-            res = z3.simplify(z3.If(src, bvv(1, 1), bvv(0, 1)))
+        if isinstance(src, Bool):
+            res = ITE(src, BVV(1, 1), BVV(0, 1))
         else:
-            res = z3.simplify(z3.If(src == 0, bvv(0, 1), bvv(1, 1)))
+            res = ITE(src == 0, BVV(0, 1), BVV(1, 1))
         self.state.regs.flags[dest] = res
         return True
     
@@ -353,7 +353,7 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(src, expr.src)
         if self._check_error(src): return src
         
-        return z3.Extract(size*8-1, 0, src)
+        return src.Extract(size*8-1, 0)
     
     def visit_LLIL_ADD(self, expr):
         left  = self.visit(expr.left)
@@ -364,12 +364,12 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        if right.size() > left.size():
-            left = z3.SignExt(right.size() - left.size(), left)
-        if left.size() > right.size():
-            right = z3.SignExt(left.size() - right.size(), right)
+        if right.size > left.size:
+            left = left.SignExt(right.size - left.size)
+        if left.size > right.size:
+            right = right.SignExt(left.size - right.size)
         
-        return z3.simplify(left + right)
+        return left + right
     
     def visit_LLIL_ADC(self, expr):
         left  = self.visit(expr.left)
@@ -383,12 +383,12 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(right): return right
         if self._check_error(carry): return carry
 
-        if right.size() > left.size():
-            left = z3.SignExt(right.size() - left.size(), left)
-        if left.size() > right.size():
-            right = z3.SignExt(left.size() - right.size(), right)
+        if right.size > left.size:
+            left = left.SignExt(right.size - left.size)
+        if left.size > right.size:
+            right = right.SignExt(left.size - right.size)
         
-        return z3.simplify(left + right + z3.ZeroExt(left.size() - 1, carry))
+        return left + right + carry.ZeroExt(left.size - 1)
 
     def visit_LLIL_SUB(self, expr):
         left  = self.visit(expr.left)
@@ -399,12 +399,12 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        if right.size() > left.size():
-            left = z3.SignExt(right.size() - left.size(), left)
-        if left.size() > right.size():
-            right = z3.SignExt(left.size() - right.size(), right)
+        if right.size > left.size:
+            left = left.SignExt(right.size - left.size)
+        if left.size > right.size:
+            right = right.SignExt(left.size - right.size)
         
-        return z3.simplify(left - right)
+        return left - right
     
     def visit_LLIL_MUL(self, expr):
         left  = self.visit(expr.left)
@@ -415,12 +415,12 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        if right.size() > left.size():
-            left = z3.SignExt(right.size() - left.size(), left)
-        if left.size() > right.size():
-            right = z3.SignExt(left.size() - right.size(), right)
+        if right.size > left.size:
+            left = left.SignExt(right.size - left.size)
+        if left.size > right.size:
+            right = right.SignExt(left.size - right.size)
         
-        return z3.simplify(left * right)
+        return left * right
     
     def visit_LLIL_MULS_DP(self, expr):
         left = self.visit(expr.left)
@@ -431,9 +431,9 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        assert left.size() == right.size()
-        left  = z3.SignExt(left.size(),  left)
-        right = z3.SignExt(right.size(), right)
+        assert left.size == right.size
+        left  = left.SignExt(left.size)
+        right = right.SignExt(right.size)
         return left * right
 
     def visit_LLIL_MULU_DP(self, expr):
@@ -445,9 +445,9 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        assert left.size() == right.size()
-        left  = z3.ZeroExt(left.size(),  left)
-        right = z3.ZeroExt(right.size(), right)
+        assert left.size == right.size
+        left  = left.ZeroExt(left.size)
+        right = right.ZeroExt(right.size)
         return left * right
 
     def visit_LLIL_DIVU_DP(self, expr):
@@ -459,9 +459,9 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        assert left.size() == 2*right.size()
+        assert left.size == 2*right.size
         
-        right = z3.ZeroExt(left.size() - right.size(), right)
+        right = right.ZeroExt(left.size - right.size)
         if CHECK_DIVISION_BY_ZERO and self.state.solver.satisfiable(extra_constraints=[right == 0]):
             print("WARNING: division by zero detected")
             errored = self.state.copy(solver_copy_fast=True)
@@ -477,8 +477,8 @@ class SymbolicVisitor(BNILVisitor):
             self.state = None
             return ErrorInstruction.DIVISION_BY_ZERO
 
-        div = left / right  # FIX signed division!!!
-        return z3.simplify(z3.Extract(expr.size * 8 - 1, 0, div))
+        div = left.UDiv(right)
+        return div.Extract(expr.size * 8 - 1, 0)
     
     def visit_LLIL_DIVS_DP(self, expr):  # is it correct?
         left = self.visit(expr.left)
@@ -489,9 +489,9 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        assert left.size() == 2*right.size()
+        assert left.size == 2*right.size
 
-        right = z3.SignExt(left.size() - right.size(), right)
+        right = right.SignExt(left.size - right.size)
         if CHECK_DIVISION_BY_ZERO and self.state.solver.satisfiable(extra_constraints=[right == 0]):
             print("WARNING: division by zero detected")
             errored = self.state.copy(solver_copy_fast=True)
@@ -508,7 +508,7 @@ class SymbolicVisitor(BNILVisitor):
             return ErrorInstruction.DIVISION_BY_ZERO
         
         div = left / right
-        return z3.simplify(z3.Extract(expr.size * 8 - 1, 0, div))
+        return div.Extract(expr.size * 8 - 1, 0)
     
     def visit_LLIL_MODU_DP(self, expr):
         left = self.visit(expr.left)
@@ -519,9 +519,9 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        assert left.size() == 2*right.size()
+        assert left.size == 2*right.size
 
-        right = z3.ZeroExt(left.size() - right.size(), right)
+        right = right.ZeroExt(left.size - right.size)
         if CHECK_DIVISION_BY_ZERO and self.state.solver.satisfiable(extra_constraints=[right == 0]):
             print("WARNING: division by zero detected")
             errored = self.state.copy(solver_copy_fast=True)
@@ -537,8 +537,8 @@ class SymbolicVisitor(BNILVisitor):
             self.state = None
             return ErrorInstruction.DIVISION_BY_ZERO
 
-        mod = left % right  # FIX Wrong. This is signed
-        return z3.simplify(z3.Extract(expr.size * 8 - 1, 0, mod))
+        mod = left.URem(right)
+        return mod.Extract(expr.size * 8 - 1, 0)
 
     def visit_LLIL_MODS_DP(self, expr):  # is it correct?
         left = self.visit(expr.left)
@@ -549,9 +549,9 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        assert left.size() == 2*right.size()
+        assert left.size == 2*right.size
 
-        right = z3.SignExt(left.size() - right.size(), right)
+        right = right.SignExt(left.size - right.size)
         if CHECK_DIVISION_BY_ZERO and self.state.solver.satisfiable(extra_constraints=[right == 0]):
             print("WARNING: division by zero detected")
             errored = self.state.copy(solver_copy_fast=True)
@@ -567,8 +567,8 @@ class SymbolicVisitor(BNILVisitor):
             self.state = None
             return ErrorInstruction.DIVISION_BY_ZERO
 
-        mod = left % right  # FIX This is modulo, not remainder (?)
-        return z3.simplify(z3.Extract(expr.size * 8 - 1, 0, mod))
+        mod = left.SRem(right)
+        return mod.Extract(expr.size * 8 - 1, 0)
 
     def visit_LLIL_AND(self, expr):
         left = self.visit(expr.left)
@@ -582,12 +582,12 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(left,  expr.left )
         self._check_unsupported(right, expr.right)
 
-        if right.size() > left.size():
-            left = z3.ZeroExt(right.size() - left.size(), left)
-        if left.size() > right.size():
-            right = z3.ZeroExt(left.size() - right.size(), right)
+        if right.size > left.size:
+            left = left.ZeroExt(right.size - left.size)
+        if left.size > right.size:
+            right = right.ZeroExt(left.size - right.size)
 
-        return z3.simplify(left & right)
+        return left & right
 
     def visit_LLIL_OR(self, expr):
         left  = self.visit(expr.left)
@@ -598,12 +598,12 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        if right.size() > left.size():
-            left = z3.ZeroExt(right.size() - left.size(), left)
-        if left.size() > right.size():
-            right = z3.ZeroExt(left.size() - right.size(), right)
+        if right.size > left.size:
+            left = left.ZeroExt(right.size - left.size)
+        if left.size > right.size:
+            right = right.ZeroExt(left.size - right.size)
         
-        return z3.simplify(left | right)
+        return left | right
 
     def visit_LLIL_XOR(self, expr):
         left = self.visit(expr.left)
@@ -614,12 +614,12 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        if right.size() > left.size():
-            left = z3.ZeroExt(right.size() - left.size(), left)
-        if left.size() > right.size():
-            right = z3.ZeroExt(left.size() - right.size(), right)
+        if right.size > left.size:
+            left = left.ZeroExt(right.size - left.size)
+        if left.size > right.size:
+            right = right.ZeroExt(left.size - right.size)
 
-        return z3.simplify(left ^ right)
+        return left ^ right
 
     def visit_LLIL_NOT(self, expr):
         src = self.visit(expr.src)
@@ -627,7 +627,7 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(src,  expr.src)
         if self._check_error(src):  return src
 
-        return z3.simplify( src.__invert__() )
+        return src.__invert__()
 
     def visit_LLIL_NEG(self, expr):
         src = self.visit(expr.src)
@@ -635,7 +635,7 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(src,  expr.src)
         if self._check_error(src):  return src
 
-        return z3.simplify( src.__neg__() )
+        return src.__neg__()
 
     def visit_LLIL_LOAD(self, expr):
         src  = self.visit(expr.src)
@@ -664,7 +664,7 @@ class SymbolicVisitor(BNILVisitor):
         left = self.visit(expr.left)
         right = self.visit(expr.right)
 
-        assert right.size() <= left.size()
+        assert right.size <= left.size
 
         self._check_unsupported(left,  expr.left )
         self._check_unsupported(right, expr.right)
@@ -672,38 +672,35 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(right): return right
 
         # the logical and arithmetic left-shifts are exactly the same
-        return z3.simplify(left << z3.ZeroExt(left.size() - right.size(), right))
+        return left << right.ZeroExt(left.size - right.size)
 
     def visit_LLIL_LSR(self, expr):
         left = self.visit(expr.left)
         right = self.visit(expr.right)
 
-        assert right.size() <= left.size()
+        assert right.size <= left.size
 
         self._check_unsupported(left,  expr.left )
         self._check_unsupported(right, expr.right)
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        return z3.simplify(
-            z3.LShR(
-                left, 
-                z3.ZeroExt(left.size() - right.size(), right)
-            )
+        return left.LShR(
+            right.ZeroExt(left.size - right.size)
         )
 
     def visit_LLIL_ASL(self, expr):
         left = self.visit(expr.left)
         right = self.visit(expr.right)
 
-        assert right.size() <= left.size()
+        assert right.size <= left.size
 
         self._check_unsupported(left,  expr.left )
         self._check_unsupported(right, expr.right)
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        return z3.simplify(left << z3.ZeroExt(left.size() - right.size(), right))
+        return left << right.ZeroExt(left.size - right.size)
 
     def visit_LLIL_ASR(self, expr):
         left = self.visit(expr.left)
@@ -714,9 +711,9 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
 
-        assert right.size() <= left.size()
+        assert right.size <= left.size
 
-        return z3.simplify(left >> z3.ZeroExt(left.size() - right.size(), right))
+        return left >> right.ZeroExt(left.size - right.size)
 
     def visit_LLIL_CALL(self, expr):
         dest = self.visit(expr.dest)
@@ -728,27 +725,27 @@ class SymbolicVisitor(BNILVisitor):
             raise Exception("symbolic IP")
         
         curr_fun = get_function(self.view, self.ip)
-        dest_fun = self.view.get_function_at(dest.as_long())
+        dest_fun = self.view.get_function_at(dest.value)
         ret_addr = self.ip + self.view.get_instruction_length(self.ip)
 
         # push ret address
-        self.state.stack_push(bvv(ret_addr, self.arch.bits()))
+        self.state.stack_push(BVV(ret_addr, self.arch.bits()))
 
         # check if imported
-        if dest.as_long() in self.imported_functions:
-            name = self.imported_functions[dest.as_long()]
+        if dest.value in self.imported_functions:
+            name = self.imported_functions[dest.value]
             if name not in library_functions:
                 raise Exception("unsupported external function '%s'" % name)
             
             res = library_functions[name](self.state, self.view)
-            setattr(self.state.regs, get_result_reg(self.state, self.view, res.size()), res)
+            setattr(self.state.regs, get_result_reg(self.state, self.view, res.size), res)
             
             dest = self.state.stack_pop()
             dest_fun = curr_fun 
             assert not symbolic(dest)  # cannot happen (right?)
 
         # change ip
-        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.as_long()))
+        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.value))
 
         self._wasjmp = True
         return True
@@ -762,27 +759,27 @@ class SymbolicVisitor(BNILVisitor):
         if symbolic(dest):
             raise Exception("symbolic IP")
         
-        dest_fun = self.view.get_function_at(dest.as_long())
+        dest_fun = self.view.get_function_at(dest.value)
 
         # check if imported
-        if dest.as_long() in self.imported_functions:
-            name = self.imported_functions[dest.as_long()]
+        if dest.value in self.imported_functions:
+            name = self.imported_functions[dest.value]
             if name not in library_functions:
                 raise Exception("unsupported external function '%s'" % name)
             
             res = library_functions[name](self.state, self.view)
-            setattr(self.state.regs, get_result_reg(self.state, self.view, res.size()), res)
+            setattr(self.state.regs, get_result_reg(self.state, self.view, res.size), res)
             
             dest = self.state.stack_pop()
             if symbolic(dest):
                 raise Exception("symbolic IP") 
 
-            bbs = self.view.get_basic_blocks_at(dest.as_long())
+            bbs = self.view.get_basic_blocks_at(dest.value)
             assert len(bbs) == 1
             dest_fun = bbs[0].function
 
         # change ip
-        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.as_long()))
+        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.value))
 
         self._wasjmp = True
         return True
@@ -795,18 +792,18 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(condition, expr.condition)
         if self._check_error(condition): return condition
         
-        if isinstance(condition, z3.BitVecRef):
-            assert condition.size() == 1
+        if isinstance(condition, BV):
+            assert condition.size == 1
             condition = condition == 1
         curr_fun = get_function(self.view, self.ip)
         false_unsat = False
         if self.state.solver.satisfiable(extra_constraints=[
-            z3.Not(condition)
+            condition.Not()
         ]):
             false_state = self.state.copy()
         else:
             false_unsat = True
-            false_state = self.state.copy(solver_copy_fast=True)
+            false_state = self.state.copy(solver_copy_fast=True) if SAVE_UNSAT else None
 
         self.state.solver.add_constraints(condition)
         if self.state.solver.satisfiable():
@@ -815,8 +812,8 @@ class SymbolicVisitor(BNILVisitor):
             self._put_in_unsat(self.state)
             self.state = None
 
-        false_state.solver.add_constraints(z3.Not(condition))
         if not false_unsat:
+            false_state.solver.add_constraints(condition.Not())
             false_state.set_ip(curr_fun.llil[false_llil_index].address)
             false_state.llil_ip = false_llil_index
             if self.state is None:
@@ -838,7 +835,7 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
         
-        return z3.simplify(left == right)
+        return left == right
 
     def visit_LLIL_CMP_NE(self, expr):
         left = self.visit(expr.left)
@@ -849,7 +846,7 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
         
-        return z3.simplify(left != right)
+        return left != right
 
     def visit_LLIL_CMP_SLT(self, expr):
         left = self.visit(expr.left)
@@ -860,7 +857,7 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
         
-        return z3.simplify(left < right)
+        return left < right
 
     def visit_LLIL_CMP_ULT(self, expr):
         left = self.visit(expr.left)
@@ -871,7 +868,7 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
         
-        return z3.simplify(z3.ULT(left, right))
+        return left.ULT(right)
 
     def visit_LLIL_CMP_SLE(self, expr):
         left = self.visit(expr.left)
@@ -882,7 +879,7 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
         
-        return z3.simplify(left <= right)
+        return left <= right
 
     def visit_LLIL_CMP_ULE(self, expr):
         left = self.visit(expr.left)
@@ -893,7 +890,7 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
         
-        return z3.simplify(z3.ULE(left, right))
+        return left.ULE(right)
 
     def visit_LLIL_CMP_SGT(self, expr):
         left = self.visit(expr.left)
@@ -904,7 +901,7 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
         
-        return z3.simplify(left > right)
+        return left > right
 
     def visit_LLIL_CMP_UGT(self, expr):
         left = self.visit(expr.left)
@@ -915,7 +912,7 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
         
-        return z3.simplify(z3.UGT(left, right))
+        return left.UGT(right)
 
     def visit_LLIL_CMP_SGE(self, expr):
         left = self.visit(expr.left)
@@ -926,7 +923,7 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
         
-        return z3.simplify(left >= right)
+        return left >= right
 
     def visit_LLIL_CMP_UGE(self, expr):
         left = self.visit(expr.left)
@@ -937,7 +934,7 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
         
-        return z3.simplify(z3.UGE(left, right))
+        return left.UGE(left, right)
 
     def visit_LLIL_GOTO(self, expr):
         dest = expr.dest
@@ -957,8 +954,8 @@ class SymbolicVisitor(BNILVisitor):
         if symbolic(dest):
             raise Exception("symbolic IP")
         
-        dest_fun = get_function(self.view, dest.as_long())
-        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.as_long()))
+        dest_fun = get_function(self.view, dest.value)
+        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.value))
 
         self._wasjmp = True
         return True
@@ -982,9 +979,9 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(src, expr.src)
         if self._check_error(src): return src
 
-        assert src.size() <= dest_size
+        assert src.size <= dest_size
 
-        return z3.SignExt(dest_size - src.size(), src) 
+        return src.SignExt(dest_size - src.size) 
 
     def visit_LLIL_ZX(self, expr):
         src = self.visit(expr.src)
@@ -993,15 +990,15 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(src, expr.src)
         if self._check_error(src): return src
 
-        assert src.size() <= dest_size
+        assert src.size <= dest_size
 
-        return z3.ZeroExt(dest_size - src.size(), src) 
+        return src.ZeroExt(dest_size - src.size) 
 
     def visit_LLIL_SYSCALL(self, expr):
         n_reg = self.state.os.get_syscall_n_reg()
         n = getattr(self.state.regs, n_reg)
         assert not symbolic(n)
-        n = n.as_long()
+        n = n.value
         
         handler = self.state.os.get_syscall_by_number(n)
         if handler is None:

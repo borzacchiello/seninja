@@ -1,6 +1,6 @@
 from copy import deepcopy
 from os_models.os_abstract import Os
-import z3
+from expr import Bool
 
 class Windows(Os):
     def __init__(self):
@@ -44,6 +44,6 @@ class Windows(Os):
         res.devices = deepcopy(self.devices)
         return res
 
-    def merge(self, other, merge_condition: z3.BoolRef):
+    def merge(self, other, merge_condition: Bool):
         assert isinstance(other, Windows)
         pass  # TODO implement this

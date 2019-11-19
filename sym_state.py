@@ -5,8 +5,8 @@ from os_models.linux import Linuxia64
 from memory.registers import Regs
 from memory.sym_memory import Memory
 from sym_solver import Solver
-from utility.z3_wrap_util import bvv, symbolic
-import z3
+from utility.expr_wrap_util import symbolic
+from expr import BV, BVV
 
 class State(object):
     def __init__(self, executor, os: Os, arch: Arch=x8664Arch(), page_size: int=0x1000):
@@ -23,16 +23,16 @@ class State(object):
     def get_ip(self):
         ip = getattr(self.regs, self.arch.getip_reg())
         assert not symbolic(ip)
-        return ip.as_long()
+        return ip.value
     
     def address_page_aligned(self, addr):
         return addr >> self.mem.index_bits << self.mem.index_bits
 
     def initialize_stack(self, stack_base):
-        setattr(self.regs, self.arch.get_stack_pointer_reg(), bvv(stack_base, self.arch.bits()))
-        setattr(self.regs, self.arch.get_base_pointer_reg(),  bvv(stack_base, self.arch.bits()))
+        setattr(self.regs, self.arch.get_stack_pointer_reg(), BVV(stack_base, self.arch.bits()))
+        setattr(self.regs, self.arch.get_base_pointer_reg(),  BVV(stack_base, self.arch.bits()))
 
-    def stack_push(self, val: z3.BitVecRef):
+    def stack_push(self, val: BV):
         stack_pointer     = getattr(self.regs, self.arch.get_stack_pointer_reg())
         new_stack_pointer = stack_pointer - self.arch.bits() // 8
         self.mem.store(new_stack_pointer, val, endness=self.arch.endness())
@@ -46,7 +46,7 @@ class State(object):
         return res
     
     def set_ip(self, new_ip):
-        setattr(self.regs, self.arch.getip_reg(), bvv(new_ip, self.arch.bits()))
+        setattr(self.regs, self.arch.getip_reg(), BVV(new_ip, self.arch.bits()))
 
     def copy(self, solver_copy_fast=False):
         new_state = State(self.executor, self.os.copy(), self.arch, self.page_size)

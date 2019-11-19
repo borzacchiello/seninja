@@ -3,7 +3,7 @@ from utility.bninja_util import get_function, get_addr_next_inst
 from utility.x86_native_handlers_util import (
     store_to_dst, get_src
 )
-import z3
+from expr import ITE, BVV
 
 class ArchX86SPH(SpecialInstructionHandler):
     def __init__(self):
@@ -18,7 +18,7 @@ class ArchX86SPH(SpecialInstructionHandler):
         # we have cmp/test + setCC. Avoid fork
         cond = sv.visit(expr.condition)
 
-        v = z3.If(cond, z3.BitVecVal(1, 8), z3.BitVecVal(0, 8))
+        v = ITE(cond, BVV(1, 8), BVV(0, 8))
         store_to_dst(sv.state, parameters[0], v)
 
         sv._wasjmp = True

@@ -1,32 +1,35 @@
-import z3
+from expr import BV, BVArray, Bool, ITE
 
 class MemoryObj(object):
-    def __init__(self, name, bits=64):
-        index_sort  = z3.BitVecSort(bits)
-        value_sort  = z3.BitVecSort(8)
-        self._z3obj = z3.Array("MEMOBJ_" + name, index_sort, value_sort)
+    def __init__(self, name, bits=64, bvarray=None):
+        self.bvarray = BVArray (
+            "MEMOBJ_" + name, bits, 8
+        ) if bvarray is None else bvarray
 
         self.name = name
         self.bits = bits
     
-    def simplify(self):
-        self._z3obj = z3.simplify(self._z3obj)
+    def __str__(self):
+        return "<MemoryObj{bits} {name}>".format(
+            bits = self.bits,
+            name = self.name
+        )
     
-    def load(self, index: z3.BitVecRef):
-        return z3.simplify(z3.Select(self._z3obj, index))
+    def __repr__(self):
+        return self.__str__()
     
-    def store(self, index: z3.BitVecRef, value: z3.BitVecRef, condition: z3.BoolRef=None):
-        index = z3.simplify(index)
-        value = z3.simplify(value)
+    def load(self, index: BV):
+        return self.bvarray.Select(index)
+    
+    def store(self, index: BV, value: BV, condition: Bool=None):
         if condition is None:
-            self._z3obj = z3.Store(self._z3obj, index, value)
+            self.bvarray.Store(index, value)
         else:
-            self._z3obj = z3.simplify(
-                z3.If(condition, 
-                    z3.simplify(z3.Store(self._z3obj, index, value)), 
-                    self._z3obj))
+            # this can be inefficient
+            self.bvarray.ConditionalStore(index, value, condition)
 
     def copy(self):
-        res = MemoryObj(self.name, self.bits)
-        res._z3obj = self._z3obj
-        return res
+        return MemoryObj(self.name, self.bits, self.bvarray.copy())
+    
+    def merge(self, other, merge_condition: Bool):
+        self.bvarray = self.bvarray.merge(other.bvarray, merge_condition)

@@ -1,8 +1,8 @@
 from memory.memory_abstract import MemoryAbstract
-from utility.z3_wrap_util import symbolic, split_bv
+from utility.expr_wrap_util import symbolic, split_bv
+from expr import BVV, BV, BVS
 from copy import deepcopy
 import math
-import z3
 
 class MemoryConcreteFlatNotPaged(MemoryAbstract):
     def __init__(self, state, bits=64):
@@ -13,34 +13,34 @@ class MemoryConcreteFlatNotPaged(MemoryAbstract):
     def mmap(self, address: int, size: int, init=None):
         pass  # do nothing
 
-    def store(self, address: z3.BitVecRef, value: z3.BitVecRef, endness='big'):
+    def store(self, address: BV, value: BV, endness='big'):
         assert not symbolic(address)
 
-        address = address.as_long()
-        size    = value.size()
+        address = address.value
+        size    = value.size
 
         for i in range(size // 8 - 1, -1, -1):
             if endness == 'little':
                 addr = address + i
             else:
                 addr = address + size // 8 - i - 1
-            self.values[addr] = z3.simplify(z3.Extract(8*(i+1)-1, 8*i, value))
+            self.values[addr] = value.Extract(8*(i+1)-1, 8*i)
 
-    def load(self, address: z3.BitVecRef, size: int, endness='big'):
+    def load(self, address: BV, size: int, endness='big'):
         assert not symbolic(address)
         
-        address = address.as_long()
+        address = address.value
 
         ran = range(size - 1, -1, -1) if endness == 'little' else range(size)
         res = None
         for i in ran:
             if (address+i) not in self.values:
-                self.values[address+i] = z3.BitVec('FlatMemUnconstrained_%x' % (address+i), 8)
+                self.values[address+i] = BVS('FlatMemUnconstrained_%x' % (address+i), 8)
 
             tmp = self.values[address+i]
-            res = tmp if res is None else z3.Concat(res, tmp)
+            res = tmp if res is None else res.Concat(tmp)
         
-        return z3.simplify(res)
+        return res
 
     def get_unmapped(self, size, start_from, from_end):
         raise NotImplementedError

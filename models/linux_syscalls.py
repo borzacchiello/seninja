@@ -1,4 +1,5 @@
-from utility.z3_wrap_util import symbolic, bvs, bvv
+from utility.expr_wrap_util import symbolic
+from expr import BVV, BVS
 
 MAX_READ = 100
 
@@ -12,24 +13,24 @@ def read_handler(state):
     count = getattr(state.regs, count_reg)
 
     assert not symbolic(fd) or not state.solver.symbolic(fd)
-    fd = fd.as_long()
+    fd = fd.value
     assert state.os.is_open(fd)
     if symbolic(count):
         count = state.solver.max(count)
         count = MAX_READ if count > MAX_READ else count
     else:
-        count = count.as_long()
+        count = count.value
     
     s = "read_fd%d" % fd
     for i in range(count):
-        b = bvs(s + "_%d" % i, 8)
+        b = BVS(s + "_%d" % i, 8)
         state.os.get_device_by_fd(fd).append(b)
         state.mem.store(buf + i, b)
     
     state.events.append(
         "read from fd %d, count %d" % (fd, count)
     )
-    return bvv(count, 32)
+    return BVV(count, 32)
 
 def write_handler(state):
     fd_reg    = state.os.get_syscall_parameter(1)
@@ -41,12 +42,12 @@ def write_handler(state):
     count = getattr(state.regs, count_reg)
 
     assert not symbolic(fd) or not state.solver.symbolic(fd)
-    fd = fd.as_long()
+    fd = fd.value
     if symbolic(count):
         count = state.solver.max(count)
         count = MAX_READ if count > MAX_READ else count
     else:
-        count = count.as_long()
+        count = count.value
     
     for i in range(count):
         b = state.mem.load(buf + i, 1)
@@ -55,7 +56,7 @@ def write_handler(state):
     state.events.append(
         "read from fd %d, count %d" % (fd, count)
     )
-    return bvv(count, 32)
+    return BVV(count, 32)
 
 def exit_handler(state):
     pass

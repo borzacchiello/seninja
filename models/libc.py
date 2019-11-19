@@ -1,10 +1,10 @@
 from sym_state import State
-from utility.z3_wrap_util import symbolic, bvv, bvs
+from utility.expr_wrap_util import symbolic
+from expr import BVV, BVS, BoolV, ITE, Or, And
 from utility.models_util import get_arg_k
 from memory.sym_memory import InitData
 from options import ATOX_SLOW_MODEL, MAX_MALLOC
 import re
-import z3
 
 ascii_numbers = ["0","1","2","3","4","5","6","7","8","9"]
 
@@ -15,8 +15,8 @@ def printf_handler(state: State, view):  # TODO think about stdout
 
     b = state.mem.load(format_str_p, 1)
     format_str = ""
-    while not symbolic(b) and b.as_long() != 0:
-        format_str   += chr(b.as_long())
+    while not symbolic(b) and b.value != 0:
+        format_str   += chr(b.value)
         format_str_p += 1
         b = state.mem.load(format_str_p, 1)
 
@@ -24,12 +24,12 @@ def printf_handler(state: State, view):  # TODO think about stdout
         "printf with format '%s'" % format_str
     )
 
-    return bvv(len(format_str), 32)
+    return BVV(len(format_str), 32)
 
 getchar_count = 0
 def getchar_handler(state: State, view):
     global getchar_count
-    new_symb = z3.BitVec("getchar_symb_%d" % getchar_count, 8)
+    new_symb = BVS("getchar_symb_%d" % getchar_count, 8)
     getchar_count += 1
 
     state.events.append(
@@ -48,8 +48,8 @@ def scanf_handler(state: State, view):
 
     b = state.mem.load(format_str_p, 1)
     format_str = ""
-    while not symbolic(b) and b.as_long() != 0:
-        format_str   += chr(b.as_long())
+    while not symbolic(b) and b.value != 0:
+        format_str   += chr(b.value)
         format_str_p += 1
         b = state.mem.load(format_str_p, 1)
     
@@ -66,7 +66,7 @@ def scanf_handler(state: State, view):
         name = 'scanf_input_%d' % scanf_count
 
         if p[-1] == "d" or p[-1] == "x":
-            data = bvs(name + "_INT", 32)
+            data = BVS(name + "_INT", 32)
             state.os.get_stdin().append(data)
             state.mem.store(par_p, data, endness=state.arch.endness())
         elif p[-1] == "s":
@@ -74,17 +74,17 @@ def scanf_handler(state: State, view):
             if p[0] != "s":
                 n = int(p[:-1])
 
-            data = bvs(name + "_STR", 8*(n - 1))
-            state.os.get_stdin().append(z3.Concat(data, bvv(ord("\n"), 8)))
-            state.mem.store(par_p, z3.Concat(data, bvv(0, 8)), 'big')
-            for i in range(0, data.size(), 8):
-                b = z3.Extract(i+7, i, data)
+            data = BVS(name + "_STR", 8*(n - 1))
+            state.os.get_stdin().append(data.Concat(BVV(ord("\n"), 8)))
+            state.mem.store(par_p, data.Concat(BVV(0, 8)), 'big')
+            for i in range(0, data.size, 8):
+                b = data.Extract(i+7, i)
                 state.solver.add_constraints(b != ord("\n"))
 
         scanf_count += 1
         i += 1
 
-    return bvv(1, 32)
+    return BVV(1, 32)
 
 def strcmp_handler(state: State, view):
     str1 = get_arg_k(state, 1, state.arch.bits() // 8, view)
@@ -95,21 +95,21 @@ def strcmp_handler(state: State, view):
 
     b1 = state.mem.load(str1, 1)
     b2 = state.mem.load(str2, 1)
-    cond = z3.BoolVal(True)
+    cond = BoolV(True)
     i = 0
     while i < 40:
-        if not state.solver.symbolic(b1) and state.solver.evaluate_long(b1) == 0:
+        if not state.solver.symbolic(b1) and state.solver.evaluate(b1).value == 0:
             break
-        if not state.solver.symbolic(b2) and state.solver.evaluate_long(b2) == 0:
+        if not state.solver.symbolic(b2) and state.solver.evaluate(b2).value == 0:
             break
-        cond = z3.And(b1 == b2, cond)
+        cond = (b1 == b2).And(cond)
         str1 += 1
         str2 += 1
         b1 = state.mem.load(str1, 1)
         b2 = state.mem.load(str2, 1)
         i += 1
     
-    return z3.simplify(z3.If(cond, bvv(0, 32), bvv(1, 32)))
+    return ITE(cond, BVV(0, 32), BVV(1, 32))
 
 def strlen_handler(state: State, view):
     str1 = get_arg_k(state, 1, state.arch.bits() // 8, view)
@@ -120,7 +120,7 @@ def strlen_handler(state: State, view):
     vals = []
     i = 0
     while i < 40:
-        if not state.solver.symbolic(b1) and state.solver.evaluate_long(b1) == 0:
+        if not state.solver.symbolic(b1) and state.solver.evaluate(b1).value == 0:
             break
         
         vals.append((i, b1))
@@ -129,10 +129,10 @@ def strlen_handler(state: State, view):
         b1 = state.mem.load(str1, 1)
     
     state.solver.add_constraints(b1 == 0)
-    res = bvv(i, state.arch.bits())
+    res = BVV(i, state.arch.bits())
     for i, b in vals[::-1]:
-        res = z3.simplify(z3.If(b == 0, bvv(i, state.arch.bits()), res))
-    return z3.simplify(res)
+        res = ITE(b == 0, BVV(i, state.arch.bits()), res)
+    return res
 
 # ************** atoX models **************
 
@@ -142,7 +142,7 @@ def _atox(state: State, view, size: int):
     if not ATOX_SLOW_MODEL:
         global atox_idx
         atox_idx += 1
-        return bvs('atox_unconstrained_{idx}'.format(atox_idx), size*8)
+        return BVS('atox_unconstrained_{idx}'.format(atox_idx), size*8)
 
     input_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
@@ -154,7 +154,7 @@ def _atox(state: State, view, size: int):
         for n in ascii_numbers:
             n = ord(n)
             conditions.append(b == n)
-        return z3.Or(*conditions)
+        return Or(*conditions)
 
     max_len = len(str(2**(size * 8)))  # max valid number
 
@@ -170,17 +170,17 @@ def _atox(state: State, view, size: int):
 
         cond_1 = build_or_expression(char)
         cond_2 = char == 0
-        cond_3 = z3.BoolVal(False)
+        cond_3 = BoolV(False)
         for old_char in chars:
-            cond_2 = z3.And(
+            cond_2 = And(
                 cond_2,
                 old_char != 0
             )
-            cond_3 = z3.Or(
+            cond_3 = Or(
                 cond_3,
                 old_char == 0
             )
-        cond = z3.Or(
+        cond = Or(
             cond_1, cond_2, cond_3
         )
         state.solver.add_constraints(
@@ -194,33 +194,33 @@ def _atox(state: State, view, size: int):
     chars = [first_char] + chars
     
     # one bit more, to prevent overflow
-    res = z3.ZeroExt(size*8+1-8, first_char) - ord('0')
+    res = first_char.ZeroExt(size*8+1-8) - ord('0')
     for i in range(len(chars)-1, 0, -1):
         char = chars[i]
 
         expr = None
         for j in range(len(chars[:i])):
             # one bit more, to prevent overflow
-            old_char = z3.ZeroExt(size*8+1-8, chars[i-j-1])
+            old_char = chars[i-j-1].ZeroExt(size*8+1-8)
             if expr is not None:
                 expr += (10**j)*(old_char - ord('0'))
             else:
                 expr  = (10**j)*(old_char - ord('0'))
 
-        res = z3.If(
+        res = ITE(
             char == 0,
                 expr,
                 res
             )
 
     # prevent overflow
-    overflow_bit = z3.Extract(size*8, size*8, res)
+    overflow_bit = res.Extract(size*8, size*8)
     state.solver.add_constraints(
         overflow_bit == 0
     )
 
     assert state.solver.satisfiable()
-    return z3.simplify(z3.Extract(size*8-1, 0, res))
+    return res.Extract(size*8-1, 0)
 
 def atoi_handler(state: State, view): 
     return _atox(state, view, 4)
@@ -237,10 +237,10 @@ def malloc_handler(state: State, view):
         if size > MAX_MALLOC:
             size = MAX_MALLOC
     else:
-        size = size.as_long()
+        size = size.value
     
     res = state.mem.allocate(size)
-    return bvv(res, state.arch.bits())
+    return BVV(res, state.arch.bits())
 
 def calloc_handler(state: State, view):
     size = get_arg_k(state, 1, 4, view)
@@ -249,12 +249,12 @@ def calloc_handler(state: State, view):
         if size > MAX_MALLOC:
             size = MAX_MALLOC
     else:
-        size = size.as_long()
+        size = size.value
     
     res = state.mem.allocate(
         size,
         InitData(bytes="\x00"*size, index=0)
     )
-    return bvv(res, state.arch.bits())
+    return BVV(res, state.arch.bits())
 
 # ***************************************

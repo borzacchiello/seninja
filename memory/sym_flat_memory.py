@@ -1,8 +1,8 @@
 from memory.memory_abstract import MemoryAbstract
-from utility.z3_wrap_util import symbolic, split_bv
+from expr import BV, BVV, BVS
+from utility.expr_wrap_util import symbolic, split_bv
 from copy import deepcopy
 import math
-import z3
 
 class Page(object):
     def __init__(self, addr, size, index_bits):
@@ -16,12 +16,12 @@ class Page(object):
     def read(self, index: int):
         assert 0 <= index <= self.max_index
         if index not in self._data:
-            self._data[index] = z3.BitVec('page_%x_i%d' % (self.addr, index), 8)
-        return z3.simplify(self._data[index])
+            self._data[index] = BVS('page_%x_i%d' % (self.addr, index), 8)
+        return self._data[index]
     
-    def write(self, index: int, data: z3.BitVecRef):
+    def write(self, index: int, data: BV):
         assert 0 <= index <= self.max_index
-        assert data.size() == 8
+        assert data.size == 8
         if self._lazycopy:
             self._lazycopy = False
             new_page = Page(self.addr, self.size, self.index_bits)
@@ -50,16 +50,17 @@ class MemoryConcreteFlat(MemoryAbstract):
         for a in range(address // self.page_size, address // self.page_size + size // self.page_size, 1):
             self.pages[a] = Page(a * self.page_size, self.page_size, self.index_bits)
 
-    def _store(self, page_address:int, page_index:int, value:z3.BitVecRef):
-        assert value.size() == 8
+    def _store(self, page_address:int, page_index:int, value:BV):
+        assert value.size == 8
         assert page_address in self.pages
+        value.simplify()
         self.pages[page_address] = self.pages[page_address].write(page_index, value)
 
-    def store(self, address: z3.BitVecRef, value: z3.BitVecRef, endness='big'):
+    def store(self, address: BV, value: BV, endness='big'):
         assert not symbolic(address)
 
-        address = address.as_long()
-        size    = value.size()
+        address = address.value
+        size    = value.size
 
         for i in range(size // 8 - 1, -1, -1):
             if endness == 'little':
@@ -70,16 +71,16 @@ class MemoryConcreteFlat(MemoryAbstract):
             page_address  = addr >> self.index_bits
             page_index    = addr - (page_address << self.index_bits)
 
-            self._store(page_address, page_index, z3.simplify(z3.Extract(8*(i+1)-1, 8*i, value)))
+            self._store(page_address, page_index, value.Extract(8*(i+1)-1, 8*i))
     
     def _load(self, page_address:int, page_index:int):
         assert page_address in self.pages
         return self.pages[page_address].read(page_index)
 
-    def load(self, address: z3.BitVecRef, size: int, endness='big'):
+    def load(self, address: BV, size: int, endness='big'):
         assert not symbolic(address)
 
-        address = address.as_long()
+        address = address.value
 
         ran = range(size - 1, -1, -1) if endness == 'little' else range(size)
         res = None
@@ -89,9 +90,10 @@ class MemoryConcreteFlat(MemoryAbstract):
             page_index    = addr - (page_address << self.index_bits)
 
             tmp = self._load(page_address, page_index)
-            res = tmp if res is None else z3.Concat(res, tmp)
+            res = tmp if res is None else res.Concat(tmp)
         
-        return z3.simplify(res)
+        res.simplify()
+        return res
 
     def get_unmapped(self, size, start_from, from_end):
         raise NotImplementedError

@@ -41,14 +41,20 @@ def get_imported_addresses(view):
 def get_addr_next_inst(view, addr):
     return addr + view.get_instruction_length(addr)
 
+_disasm_cache = {}
 def get_disasm_from_addr(view, addr):
+    global _disasm_cache
+    if addr in _disasm_cache:
+        return _disasm_cache[addr]
     bbs = view.get_basic_blocks_at(addr)
     if len(bbs) == 0:
         return ""
     if len(bbs) > 1:
         print("WARNING: aliasing of basic blocks")
         return ""
-    return bbs[0].view.get_disassembly(addr)
+    res = bbs[0].view.get_disassembly(addr)
+    _disasm_cache[addr] = res
+    return res
 
 def parse_disasm_str(disasm_str):
     inst_name  = disasm_str.split(" ")[0]
