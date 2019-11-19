@@ -8,11 +8,6 @@ class BV(object):
 
     def __repr__(self):
         return self.__str__()
-    # operator.__lt__(a, b)
-    # operator.__le__(a, b)
-    # operator.__ge__(a, b)
-    # operator.__gt__(a, b)
-
 
 class BVExpr(BV):
     def __init__(self, size: int, z3obj):
@@ -122,7 +117,7 @@ class BVExpr(BV):
             assert self.size == other.size
         return BoolExpr(self.z3obj == other.z3obj)
 
-    def __neq__(self, other):
+    def __ne__(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
         else:
@@ -184,6 +179,14 @@ class BVExpr(BV):
             assert isinstance(other, BV)
             assert self.size == other.size
         return BVExpr(self.size, z3.URem(self.z3obj, other.z3obj))
+
+    def SRem(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        return BVExpr(self.size, z3.SRem(self.z3obj, other.z3obj))
     
     def LShL(self, other):
         return self.__lshift__(other)
@@ -291,9 +294,9 @@ class BVS(BVExpr):
 
 class BVV(BV):
     def __init__(self, value: int, size: int):
-        self.value = value
         self.size  = size
         self._mask = 2**size - 1
+        self.value = value & self._mask
         self._signMask = 2**(size-1)
     
     @property
@@ -301,8 +304,9 @@ class BVV(BV):
         return z3.BitVecVal(self.value, self.size)
 
     def __str__(self):
-        return "<BVV{size} 0x{obj:02x}>".format(
-            size=self.size, obj=self.value
+        return "<BVV{size} 0x{obj:0{width}x}>".format(
+            size=self.size, obj=self.value,
+            width=(self.size+3) // 4
         )
     
     def eq(self, other):
@@ -314,7 +318,7 @@ class BVV(BV):
         return self.z3obj.eq(other.z3obj)
     
     def __hash__(self):
-        return self.z3obj.__hash__()
+        return hash((self.value, self.size))
 
     def __add__ (self, other):
         if isinstance(other, int):
@@ -444,7 +448,7 @@ class BVV(BV):
             return BoolV(self.value == other.value)
         return BoolExpr(self.z3obj == other.z3obj)
 
-    def __neq__(self, other):
+    def __ne__(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
         else:
@@ -536,6 +540,26 @@ class BVV(BV):
         if isinstance(other, BVV):
             return BVV((self.value % other.value) & self._mask, self.size)
         return BVExpr(self.size, z3.URem(self.z3obj, other.z3obj))
+
+    def SRem(self, other):
+        if isinstance(other, int):
+            other = BVV(other, self.size)
+        else:
+            assert isinstance(other, BV)
+            assert self.size == other.size
+        if isinstance(other, BVV):
+            signed_left = (self.value - 2**self.size) \
+                if self.value & self._signMask else self.value
+            signed_right = (other.value - 2**other.size) \
+                if other.value & other._signMask else other.value
+            # sign div
+            sign = 1 if signed_left * signed_right > 0 else -1
+            div_abs = abs(signed_left) // abs(signed_right)
+            div = sign * div_abs
+            # sign rem
+            rem = signed_left - (signed_right * div)
+            return BVV(rem, self.size)
+        return BVExpr(self.size, z3.SRem(self.z3obj, other.z3obj))
 
     def LShL(self, other):
         return self.__lshift__(other)

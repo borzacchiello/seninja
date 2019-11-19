@@ -13,7 +13,7 @@ class BoolExpr(Bool):
         self.z3obj = z3obj
 
     def __str__(self):
-        return "<BoolExpr {obj}".format(
+        return "<BoolExpr {obj}>".format(
             obj=str(self.z3obj)
         )
 
@@ -29,7 +29,7 @@ class BoolS(BoolExpr):
         self.z3obj = z3.Bool(name)
 
     def __str__(self):
-        return "<BoolS {name}".format(
+        return "<BoolS {name}>".format(
             name=str(self.name)
         )
 
@@ -42,7 +42,7 @@ class BoolV(Bool):
         return z3.BoolVal(self.value)
 
     def __str__(self):
-        return "<BoolV {val}".format(
+        return "<BoolV {val}>".format(
             val=str(self.value)
         )
 
