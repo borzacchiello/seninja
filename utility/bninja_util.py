@@ -1,12 +1,22 @@
 from binaryninja import SymbolType
-from os_models.linux import Linuxi386, Linuxia64
+from os_models.linux import Linuxi386, Linuxia64, LinuxArmV7
 from os_models.windows import Windows
 
+_function_cache = {}
 def get_function(view, address):
-    func = view.get_function_at(address)
-    if func is None:
-        return view.get_function_at(view.get_previous_function_start_before(address))
-    return func
+    if address in _function_cache:
+        return _function_cache[address]
+    funcs = view.get_functions_at(address)
+    if len(funcs) == 0:
+        address = view.get_previous_function_start_before(address)
+        funcs = view.get_functions_at(address)
+
+    if len(funcs) > 1:
+        print("WARNING: more than one function at {addr:x}".format(
+            addr = address
+        ))
+    _function_cache[address] = funcs[0]
+    return funcs[0]
 
 def get_imported_functions(view):
     res = dict()
@@ -43,16 +53,11 @@ def get_addr_next_inst(view, addr):
 
 _disasm_cache = {}
 def get_disasm_from_addr(view, addr):
-    global _disasm_cache
     if addr in _disasm_cache:
         return _disasm_cache[addr]
-    bbs = view.get_basic_blocks_at(addr)
-    if len(bbs) == 0:
-        return ""
-    if len(bbs) > 1:
-        print("WARNING: aliasing of basic blocks")
-        return ""
-    res = bbs[0].view.get_disassembly(addr)
+    
+    func = get_function(view, addr)
+    res = view.get_disassembly(addr, func.arch)
     _disasm_cache[addr] = res
     return res
 
@@ -68,6 +73,8 @@ def find_os(view):
         return Linuxia64()
     elif platform_name == 'linux-x86':
         return Linuxi386()
+    elif platform_name == 'linux-armv7':
+        return LinuxArmV7()
     elif platform_name == 'windows-x86':
         return Windows()
     elif platform_name == 'windows-x86_64':

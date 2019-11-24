@@ -1,6 +1,6 @@
 from arch.arch_abstract import Arch
 from arch.arch_x86_64_sph import ArchX8664SPH
-import z3
+from expr import And, Or
 
 class x8664Arch(Arch):
     REGS = {
@@ -486,18 +486,18 @@ class x8664Arch(Arch):
         'O':   lambda s: s.regs.flags['o'] == 1,
         'NO':  lambda s: s.regs.flags['o'] == 0,
         'SGE': lambda s: s.regs.flags['s'] == s.regs.flags['o'],
-        'SGT': lambda s: z3.And(
+        'SGT': lambda s: And(
             s.regs.flags['z'] == 0, 
             s.regs.flags['s'] == s.regs.flags['o']),
-        'SLE': lambda s: z3.And(
+        'SLE': lambda s: And(
             s.regs.flags['z'] == 1, 
             s.regs.flags['s'] != s.regs.flags['o']),
         'SLT': lambda s: s.regs.flags['s'] != s.regs.flags['o'],
         'UGE': lambda s: s.regs.flags['c'] == 0,
-        'UGT': lambda s: z3.And(
+        'UGT': lambda s: And(
             s.regs.flags['c'] == 0, 
             s.regs.flags['z'] == 0),
-        'ULE': lambda s: z3.Or(
+        'ULE': lambda s: Or(
             s.regs.flags['z'] == 1, 
             s.regs.flags['c'] == 1),
         'ULT': lambda s: s.regs.flags['c'] == 1
@@ -528,6 +528,18 @@ class x8664Arch(Arch):
 
     def get_stack_pointer_reg(self):
         return 'rsp'
+
+    def get_argument_regs(self, calling_convention):
+        if calling_convention == 'cdecl':
+            return []
+        elif calling_convention == 'sysv':
+            return ['rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9']
+        raise Exception("Unknown calling convention {name}".format(
+            name = calling_convention
+        ))
+    
+    def get_result_reg(self, calling_convention):
+        return 'rax'
 
     def get_flag_cond_lambda(self, cond: str, state):
         assert cond in x8664Arch.FLAGS_CONDS

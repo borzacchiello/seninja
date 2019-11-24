@@ -1,5 +1,6 @@
 from memory.sym_flat_memory import MemoryConcreteFlat
 from expr import BVV, BVS, Bool, ITE
+from copy import deepcopy
 import math
 
 class Regs(object):
@@ -57,7 +58,9 @@ class Regs(object):
 
     def copy(self, state):
         new_regs = Regs(state)
-        new_regs._mem = self._mem.copy(state)
+        new_regs._mem  = self._mem.copy(state)
+        new_regs.flags = deepcopy(self.flags)
+        new_regs._tmp_regs = deepcopy(self._tmp_regs)
         return new_regs
 
     def merge(self, other, merge_condition: Bool):

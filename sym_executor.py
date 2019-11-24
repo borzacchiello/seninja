@@ -5,6 +5,7 @@ from binaryninja import (
 from sym_state import State
 from arch.arch_x86 import x86Arch
 from arch.arch_x86_64 import x8664Arch
+from arch.arch_armv7 import ArmV7Arch
 from models.function_models import library_functions
 from utility.expr_wrap_util import (
     bvv_from_bytes, symbolic
@@ -66,6 +67,8 @@ class SymbolicVisitor(BNILVisitor):
             self.arch = x86Arch()
         elif self.view.arch.name == "x86_64":
             self.arch = x8664Arch()
+        elif self.view.arch.name == "armv7":
+            self.arch = ArmV7Arch()
         
         assert self.arch is not None
         self.state = State(self, arch=self.arch, os=find_os(view), page_size=0x1000)
@@ -74,6 +77,7 @@ class SymbolicVisitor(BNILVisitor):
         print("loading segments...")
         for segment in self.view.segments:
             start = segment.start
+            end   = segment.end
             size  = segment.data_length
             print(segment, hex(start), "->", hex(size))
 
@@ -81,11 +85,11 @@ class SymbolicVisitor(BNILVisitor):
                 continue
             
             self.br.seek(start)
-            data = self.br.read(size)
+            data = self.br.read(end-start)
 
             self.state.mem.mmap(
                 self.state.address_page_aligned(start),
-                self.state.address_page_aligned(start + size + self.state.mem.page_size) - self.state.address_page_aligned(start),
+                self.state.address_page_aligned(end + self.state.mem.page_size - 1) - self.state.address_page_aligned(start),
                 InitData(data, start - self.state.address_page_aligned(start))
             )
         print("loading finished!")
@@ -725,11 +729,19 @@ class SymbolicVisitor(BNILVisitor):
             raise Exception("symbolic IP")
         
         curr_fun = get_function(self.view, self.ip)
-        dest_fun = self.view.get_function_at(dest.value)
+        dest_fun = get_function(self.view, dest.value)
         ret_addr = self.ip + self.view.get_instruction_length(self.ip)
 
         # push ret address
         self.state.stack_push(BVV(ret_addr, self.arch.bits()))
+
+        # check if we have an handler
+        if dest_fun.name in library_functions:
+            res = library_functions[dest_fun.name](self.state, self.view)
+            setattr(self.state.regs, get_result_reg(self.state, self.view, res.size), res)
+            dest = self.state.stack_pop()
+            dest_fun = curr_fun 
+            assert not symbolic(dest)  # cannot happen (right?)
 
         # check if imported
         if dest.value in self.imported_functions:
@@ -745,7 +757,7 @@ class SymbolicVisitor(BNILVisitor):
             assert not symbolic(dest)  # cannot happen (right?)
 
         # change ip
-        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.value))
+        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.value, dest_fun.arch))
 
         self._wasjmp = True
         return True
@@ -759,7 +771,7 @@ class SymbolicVisitor(BNILVisitor):
         if symbolic(dest):
             raise Exception("symbolic IP")
         
-        dest_fun = self.view.get_function_at(dest.value)
+        dest_fun = get_function(self.view, dest.value)
 
         # check if imported
         if dest.value in self.imported_functions:

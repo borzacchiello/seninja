@@ -4,10 +4,11 @@ import models.linux_syscalls as models
 from expr import Bool
 
 class Linux(Os):
-    SYSCALL_TABLE = None
-    SYSCALL_PARAMS = None
+    SYSCALL_TABLE  = {}
+    SYSCALL_PARAMS = {}
 
     def __init__(self):
+        self.devices = []
         raise NotImplementedError  # do not instantiate this class
 
     def get_syscall_by_number(self, n: int):
@@ -97,4 +98,35 @@ class Linuxia64(Linux):
 
     def merge(self, other, merge_condition: Bool):
         assert isinstance(other, Linuxia64)
+        pass  # TODO implement this
+
+class LinuxArmV7(Linux):
+
+    SYSCALL_TABLE = {
+        0x900003: models.read_handler,
+        0x900004: models.write_handler
+    }
+    SYSCALL_PARAMS = [
+        "r0", "r1", "r2", "r3", "r4", "r5", "r6"
+    ]
+
+    def __init__(self):
+        self.devices = {
+            0: [],
+            1: []
+        }  # todo something better
+
+    def get_syscall_n_reg(self):
+        return "r7"
+
+    def get_out_syscall_reg(self):
+        return "r0"
+
+    def copy(self):
+        res = LinuxArmV7()
+        res.devices = deepcopy(self.devices)
+        return res
+
+    def merge(self, other, merge_condition: Bool):
+        assert isinstance(other, LinuxArmV7)
         pass  # TODO implement this

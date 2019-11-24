@@ -8,49 +8,19 @@ def get_arg_k(state, k, size, view):
     func = get_function(view, ip)
     calling_convention = func.calling_convention.name
 
-    if calling_convention == 'sysv':
-        args = ['rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9']
-        if k-1 < len(args):
-            res = getattr(state.regs, args[k-1])
-            return res.Extract(8*size-1, 0)
-        else:
-            stack_pointer = getattr(state.regs, state.arch.get_stack_pointer_reg())
-            assert not symbolic(stack_pointer)
-
-            return state.mem.load(stack_pointer + (state.arch.bits() // 8)*k, size, state.arch.endness())
-    elif calling_convention == 'cdecl':
+    args = state.arch.get_argument_regs(calling_convention)
+    if k-1 < len(args):
+        res = getattr(state.regs, args[k-1])
+        return res.Extract(8*size-1, 0)
+    else:
         stack_pointer = getattr(state.regs, state.arch.get_stack_pointer_reg())
         assert not symbolic(stack_pointer)
 
         return state.mem.load(stack_pointer + (state.arch.bits() // 8)*k, size, state.arch.endness())
-    
-    raise Exception("Unknown calling convention")
 
 def get_result_reg(state, view, size):
     ip = state.get_ip()
     func = get_function(view, ip)
     calling_convention = func.calling_convention.name
 
-    if calling_convention == 'cdecl':
-        if size == 8:
-            return 'al'
-        elif size == 16:
-            return 'ax'
-        elif size == 32:
-            return 'eax'
-        else:
-            raise Exception("invalid size") 
-    elif calling_convention == 'sysv':
-        if size == 8:
-            return 'al'
-        elif size == 16:
-            return 'ax'
-        elif size == 32:
-            return 'eax'
-        elif size == 64:
-            return 'rax'
-        else:
-            raise Exception("invalid size")
-    
-    raise Exception("Unknown calling convention")
-    
+    return state.arch.get_result_reg(calling_convention)

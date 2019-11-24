@@ -181,6 +181,13 @@ class x86Arch(Arch):
     def get_stack_pointer_reg(self):
         return 'esp'
 
+    def get_argument_regs(self, calling_convention):
+        assert calling_convention == 'cdecl'
+        return []
+
+    def get_result_reg(self, calling_convention):
+        return 'eax'
+
     def get_flag_cond_lambda(self, cond: str):
         assert cond in x86Arch.FLAGS_CONDS
         return x86Arch.FLAGS_CONDS[cond]

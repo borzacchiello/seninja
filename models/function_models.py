@@ -2,6 +2,7 @@ import models.others as models_other
 import models.libc as models_libc
 import models.unistd as models_unistd
 import models.string as models_string
+import models.teensy as models_teensy
 
 library_functions = {
     'printf':           models_libc.printf_handler,
@@ -21,5 +22,8 @@ library_functions = {
     'memset':           models_string.memset_handler,
     'time':             models_other.time_handler,
     'stat':             models_unistd.stat_handler,
-    '__xstat':          models_unistd.xstat_handler
+    '__xstat':          models_unistd.xstat_handler,
+
+    # models Teensy Board
+    '_ZN5Print7printlnEi': models_teensy.println_handler  
 }

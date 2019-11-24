@@ -73,7 +73,11 @@ class Memory(MemoryAbstract):
             data_index_f = self.page_size - init_index
 
         i = 0
-        for a in range(address // self.page_size, address // self.page_size + size // self.page_size, 1):
+        for a in range(
+            address // self.page_size, 
+            address // self.page_size + size // self.page_size, 
+            1
+        ):
             if a not in self.pages:
                 init_data = None
                 if init_index is not None:

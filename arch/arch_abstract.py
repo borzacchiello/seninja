@@ -13,6 +13,10 @@ class Arch(object):  # abstract class
         raise NotImplementedError
     def get_stack_pointer_reg(self):
         raise NotImplementedError
+    def get_argument_regs(self, calling_convention):
+        raise NotImplementedError
+    def get_result_reg(self, calling_convention):
+        raise NotImplementedError
     def get_flag_cond_lambda(self, cond: str):
         raise NotImplementedError
     def execute_special_handler(self, disasm_str, sv):
