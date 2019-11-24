@@ -25,7 +25,7 @@ class BV(object):
         return self.__add__(other)
     
     def __rsub__(self, other):
-        return self.__neg__().__sub__(other)
+        return self.__neg__().__add__(other)
     
     def __rmul__(self, other):
         return self.__mul__(other)
