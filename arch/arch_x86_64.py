@@ -538,8 +538,17 @@ class x8664Arch(Arch):
             name = calling_convention
         ))
     
-    def get_result_reg(self, calling_convention):
-        return 'rax'
+    def get_result_reg(self, calling_convention, size):
+        if size == 8:
+            return 'al'
+        elif size == 16:
+            return 'ax'
+        elif size == 32:
+            return 'eax'
+        elif size == 64:
+            return 'rax'
+        else:
+            raise Exception("Wrong size in get_result_reg")
 
     def get_flag_cond_lambda(self, cond: str, state):
         assert cond in x8664Arch.FLAGS_CONDS

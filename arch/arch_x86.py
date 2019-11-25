@@ -186,7 +186,14 @@ class x86Arch(Arch):
         return []
 
     def get_result_reg(self, calling_convention):
-        return 'eax'
+        if size == 8:
+            return 'al'
+        elif size == 16:
+            return 'ax'
+        elif size == 32:
+            return 'eax'
+        else:
+            raise Exception("Wrong size in get_result_reg")
 
     def get_flag_cond_lambda(self, cond: str):
         assert cond in x86Arch.FLAGS_CONDS

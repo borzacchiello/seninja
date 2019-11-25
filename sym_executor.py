@@ -304,6 +304,17 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(src, expr.src)
         if self._check_error(src): return src
 
+        # X86_64 fix
+        if isinstance(self.arch, x8664Arch):
+            if dest in {
+                'eax',  'ebx',  'ecx',  'edx',
+                'edi',  'esi',  'esp',  'ebp',
+                'r8d',  'r9d',  'r10d', 'r11d',
+                'r12d', 'r13d', 'r14d', 'r15d'
+            }:
+                dest = ("r" + dest[1:]) if dest[0] == 'e' else dest[:-1]
+                src  = src.ZeroExt(32)
+
         setattr(self.state.regs, dest, src)
         return True
 
@@ -744,7 +755,7 @@ class SymbolicVisitor(BNILVisitor):
             assert not symbolic(dest)  # cannot happen (right?)
 
         # check if imported
-        if dest.value in self.imported_functions:
+        elif dest.value in self.imported_functions:
             name = self.imported_functions[dest.value]
             if name not in library_functions:
                 raise Exception("unsupported external function '%s'" % name)

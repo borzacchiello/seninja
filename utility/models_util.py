@@ -23,4 +23,4 @@ def get_result_reg(state, view, size):
     func = get_function(view, ip)
     calling_convention = func.calling_convention.name
 
-    return state.arch.get_result_reg(calling_convention)
+    return state.arch.get_result_reg(calling_convention, size)
