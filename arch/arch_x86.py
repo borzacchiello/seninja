@@ -185,7 +185,7 @@ class x86Arch(Arch):
         assert calling_convention == 'cdecl'
         return []
 
-    def get_result_reg(self, calling_convention):
+    def get_result_reg(self, calling_convention, size):
         if size == 8:
             return 'al'
         elif size == 16:

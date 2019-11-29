@@ -1,5 +1,5 @@
 from arch.arch_x86 import x86Arch
-from utility.z3_wrap_util import symbolic
+from utility.expr_wrap_util import symbolic
 from utility.bninja_util import get_function
 
 def get_arg_k(state, k, size, view):
