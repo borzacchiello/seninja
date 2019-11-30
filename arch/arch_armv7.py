@@ -120,7 +120,7 @@ class ArmV7Arch(Arch):
         assert calling_convention == 'cdecl'
         return ['r0', 'r1', 'r2', 'r3']
 
-    def get_result_reg(self, calling_convention):
+    def get_result_reg(self, calling_convention, size):
         return 'r0'
 
     def get_flag_cond_lambda(self, cond: str, state):
