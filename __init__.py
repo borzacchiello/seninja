@@ -105,6 +105,8 @@ def continue_until_branch(bv):
                 print("!ERROR!:")
                 print(traceback.format_exc())
                 break
+            if not sv.state:
+                break
             i = len(sv.fringe.deferred)
             ip = sv.state.get_ip()
             count = (count+1) % 20
@@ -134,6 +136,8 @@ def continue_until_address(bv, address):
             except Exception as e:
                 print("!ERROR!:")
                 print(traceback.format_exc())
+                break
+            if not sv.state:
                 break
             ip = sv.state.get_ip()
             count = (count+1) % 20

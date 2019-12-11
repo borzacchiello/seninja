@@ -25,12 +25,14 @@ from options import (
     SINGLE_LLIL_STEP, 
     DONT_USE_SPECIAL_HANDLERS,
     SAVE_UNSAT,
-    STACK_PAGE_SIZE
+    STACK_PAGE_SIZE,
+    USE_BN_JUMPTABLE_TARGETS
 )
 
 NO_COLOR             = enums.HighlightStandardColor(0)
 CURR_STATE_COLOR     = enums.HighlightStandardColor.GreenHighlightColor
 DEFERRED_STATE_COLOR = enums.HighlightStandardColor.RedHighlightColor
+ERRORED_STATE_COLOR  = enums.HighlightStandardColor.BlackHighlightColor
 
 class BNILVisitor(object):
     # thanks joshwatson (https://github.com/joshwatson/f-ing-around-with-binaryninja/blob/master/ep4-emulator/vm_visitor.py)
@@ -176,7 +178,9 @@ class SymbolicVisitor(BNILVisitor):
         if err in {
             ErrorInstruction.DIVISION_BY_ZERO,
             ErrorInstruction.UNMAPPED_READ,
-            ErrorInstruction.UNMAPPED_WRITE
+            ErrorInstruction.UNMAPPED_WRITE,
+            ErrorInstruction.NO_DEST,
+            ErrorInstruction.UNCONSTRAINED_IP
         }:
             assert self.state is None
             print("WARNING: changing current state due to %s" % err.name)
@@ -184,8 +188,10 @@ class SymbolicVisitor(BNILVisitor):
         
         raise Exception("Unknown error")
     
-    def _handle_symbolic_ip(self):
-        raise NotImplementedError  # implement this
+    def _handle_symbolic_ip(self, expr, max_sol):
+        state = self.state        
+        sols  = state.solver.evaluate_upto(expr, max_sol)
+        return len(sols), sols
     
     def _put_in_deferred(self, state):
         # ip = state.get_ip()
@@ -202,6 +208,7 @@ class SymbolicVisitor(BNILVisitor):
         )
     
     def _set_colors(self, reset=False):
+        # TODO do it in a smarter way
         old_ip = self._last_colored_ip
         if old_ip is not None:
             old_func = get_function(self.view, old_ip)
@@ -212,8 +219,13 @@ class SymbolicVisitor(BNILVisitor):
             func.set_auto_instr_highlight(ip, DEFERRED_STATE_COLOR if not reset else NO_COLOR)
             # func.set_comment_at(ip, str(len(self.fringe._deferred[ip]) if not reset else ""))
         
-        func = get_function(self.view, self.ip)
-        func.set_auto_instr_highlight(self.ip, CURR_STATE_COLOR if not reset else NO_COLOR)
+        for _, state in self.fringe.errored:
+            func = get_function(self.view, state.get_ip())
+            func.set_auto_instr_highlight(state.get_ip(), ERRORED_STATE_COLOR if not reset else NO_COLOR)
+        
+        if self.state:
+            func = get_function(self.view, self.ip)
+            func.set_auto_instr_highlight(self.ip, CURR_STATE_COLOR if not reset else NO_COLOR)
         if not reset:
             self._last_colored_ip = self.ip
 
@@ -265,7 +277,9 @@ class SymbolicVisitor(BNILVisitor):
         
         if self.state is None:
             if self.fringe.is_empty():
-                return
+                self._set_colors()
+                print("WARNING: no more states")
+                return -1
             else:
                 self.select_from_deferred()
                 self._wasjmp = True
@@ -282,6 +296,9 @@ class SymbolicVisitor(BNILVisitor):
         return self.ip
     
     def execute_one(self, no_colors=False):
+        if not self.state:
+            return
+
         if SINGLE_LLIL_STEP:
             self._execute_one(no_colors)
         else:
@@ -806,6 +823,78 @@ class SymbolicVisitor(BNILVisitor):
 
         self._wasjmp = True
         return True
+
+    def visit_LLIL_JUMP_TO(self, expr):
+        destination = self.visit(expr.dest)
+
+        self._check_unsupported(destination, expr.dest)
+        if self._check_error(destination): return destination
+
+        curr_fun = get_function(self.view, self.ip)
+
+        if not symbolic(destination):
+            # fast path. The destination is concrete
+            self.update_ip(curr_fun, curr_fun.get_instruction_start(destination.value))
+            self._wasjmp = True
+            return True
+
+        # symbolic IP path
+        if USE_BN_JUMPTABLE_TARGETS:
+            max_num = len(expr.targets)
+        else:
+            max_num = 256
+        num_ips, dest_ips = self._handle_symbolic_ip(destination, max_num)
+
+        if num_ips == 256:
+            self._put_in_errored(self.state, "Probably unconstrained IP")
+            self.state = None
+            return ErrorInstruction.UNCONSTRAINED_IP
+
+        if num_ips == 0:
+            self._put_in_errored(self.state, "No valid destination")
+            self.state = None
+            return ErrorInstruction.NO_DEST
+
+        for ip in dest_ips[1:]:
+            new_state = self.state.copy()
+            new_state.solver.add_constraints(
+                destination == ip
+            )
+            new_state.set_ip(ip.value)
+            new_state.llil_ip = curr_fun.llil.get_instruction_start(ip.value)
+            self._put_in_deferred(new_state)
+        
+        self.update_ip(curr_fun, curr_fun.llil.get_instruction_start(dest_ips[0].value))
+        self.state.solver.add_constraints(dest_ips[0] == destination)
+        self._wasjmp = True
+        return True
+
+        # llil_indexes = expr.targets
+        # current_constraint = None
+        # for llil_index in llil_indexes:
+
+        #     dst_ip = curr_fun.llil[llil_index].address
+        #     if self.state.solver.satisfiable([
+        #         destination == dst_ip
+        #     ]):
+        #         if current_constraint is None:
+        #             current_constraint = destination == dst_ip
+        #             self.update_ip(curr_fun, llil_index)
+        #         else:
+        #             new_state = self.state.copy()
+        #             new_state.solver.add_constraints(
+        #                 destination == dst_ip
+        #             )
+        #             new_state.set_ip(dst_ip)
+        #             new_state.llil_ip = llil_index
+        #             self._put_in_deferred(new_state)
+
+        # if current_constraint is None:
+        #     return ErrorInstruction.NO_DEST
+        
+        # self.state.solver.add_constraints(current_constraint)
+        # self._wasjmp = True
+        # return True
     
     def visit_LLIL_IF(self, expr):
         condition = self.visit(expr.condition)
@@ -975,10 +1064,33 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(dest): return dest
 
         if symbolic(dest):
-            raise Exception("symbolic IP")
+            num_ips, dest_ips = self._handle_symbolic_ip(dest, 256)
+
+            if num_ips == 256:
+                self._put_in_errored(self.state, "Probably unconstrained IP")
+                self.state = None
+                return ErrorInstruction.UNCONSTRAINED_IP
+            if num_ips == 0:
+                self._put_in_errored(self.state, "No valid destination")
+                self.state = None
+                return ErrorInstruction.NO_DEST
+            
+            for ip in dest_ips[1:]:
+                dest_fun = get_function(self.view, ip)
+                new_state = self.state.copy()
+                new_state.solver.add_constraints(
+                    dest == ip
+                )
+                new_state.set_ip(ip.value)
+                new_state.llil_ip = dest_fun.llil.get_instruction_start(ip.value)
+                self._put_in_deferred(new_state)
+            
+            dest_ip = dest_ips[0]
+        else:
+            dest_ip = dest.value
         
-        dest_fun = get_function(self.view, dest.value)
-        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.value))
+        dest_fun = get_function(self.view, dest_ip)
+        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest_ip))
 
         self._wasjmp = True
         return True
