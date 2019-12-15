@@ -53,7 +53,7 @@ class MemoryConcreteFlat(MemoryAbstract):
     def _store(self, page_address:int, page_index:int, value:BV):
         assert value.size == 8
         assert page_address in self.pages
-        value.simplify()
+        value = value.simplify()
         self.pages[page_address] = self.pages[page_address].write(page_index, value)
 
     def store(self, address: BV, value: BV, endness='big'):
@@ -92,8 +92,7 @@ class MemoryConcreteFlat(MemoryAbstract):
             tmp = self._load(page_address, page_index)
             res = tmp if res is None else res.Concat(tmp)
         
-        res.simplify()
-        return res
+        return res.simplify()
 
     def get_unmapped(self, size, start_from, from_end):
         raise NotImplementedError

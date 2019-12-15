@@ -41,7 +41,12 @@ class BVExpr(BV):
         )
     
     def simplify(self):
-        self.z3obj = z3.simplify(self.z3obj)
+        simplified = z3.simplify(self.z3obj)
+        if simplified.decl().kind() == z3.Z3_OP_BNUM:
+            return BVV(simplified.as_long(), self.size)
+        if not simplified.eq(self.z3obj):
+            return BVExpr(self.size, simplified)
+        return self
 
     def eq(self, other):
         if not isinstance(other, BV):
@@ -321,6 +326,9 @@ class BVS(BVExpr):
         return "<BVS{size} {obj}>".format(
             size=self.size, obj=str(self.z3obj)
         )
+    
+    def simplify(self):
+        return self
 
 class BVV(BV):
     def __init__(self, value: int, size: int):
@@ -328,6 +336,9 @@ class BVV(BV):
         self._mask = 2**size - 1
         self.value = value & self._mask
         self._signMask = 2**(size-1)
+
+    def simplify(self):
+        return self
     
     @property
     def z3obj(self):
@@ -338,8 +349,6 @@ class BVV(BV):
             size=self.size, obj=self.value,
             width=(self.size+3) // 4
         )
-    def simplify(self):
-        return
     
     def eq(self, other):
         if not isinstance(other, BV):

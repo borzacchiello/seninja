@@ -39,7 +39,7 @@ class Page(object):
             new_page.mo = self.mo.copy()
             return new_page.store(index, value)
 
-        index.simplify()
+        index = index.simplify()
         self.mo.store(index, value, condition)
         return self
     
@@ -142,7 +142,7 @@ class Memory(MemoryAbstract):
         assert page_address in self.pages
         assert value.size == 8
         
-        value.simplify()
+        value = value.simplify()
         self.pages[page_address] = self.pages[page_address].store(page_index, value, condition)
     
     def store(self, address, value: BV, endness='big'):
@@ -256,8 +256,7 @@ class Memory(MemoryAbstract):
         assert res is not None
         assert res.size // 8 == size
 
-        res.simplify()
-        return res
+        return res.simplify()
 
     def get_unmapped(self, size: int, start_from: int=None, from_end: int=True):
         start_from = start_from >> self.index_bits if start_from is not None else None

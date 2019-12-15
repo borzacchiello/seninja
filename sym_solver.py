@@ -27,7 +27,7 @@ class Solver(object):
         self._invalidate_cache()
         for c in constraints:
             assert isinstance(c, Bool)
-            c.simplify()
+            c = c.simplify()
             cz3 = c.z3obj
             if not z3.BoolVal(True).eq(cz3):
                 self._solver.add(cz3)
@@ -184,7 +184,7 @@ class Solver(object):
         
         if only_self is not None and only_other is not None:
             cond = Or(only_self, only_other)
-            cond.simplify()
+            cond = cond.simplify()
             if not cond.z3obj.eq(z3.BoolVal(True)):
                 new_z3_solver.add(cond.z3obj)
                 self.assertions.append(cond)

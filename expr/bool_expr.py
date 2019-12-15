@@ -18,7 +18,15 @@ class BoolExpr(Bool):
         )
     
     def simplify(self):
-        self.z3obj = z3.simplify(self.z3obj)
+        simplified = z3.simplify(self.z3obj)
+        if simplified.decl().kind() == z3.Z3_OP_TRUE:
+            return BoolV(True)
+        elif simplified.decl().kind() == z3.Z3_OP_FALSE:
+            return BoolV(False)
+
+        if simplified.eq(self.z3obj):
+            return self
+        return BoolExpr(simplified)
 
     def eq(self, other: Bool):
         return self.z3obj == other.z3obj
@@ -46,6 +54,9 @@ class BoolS(BoolExpr):
     def __init__(self, name):
         self.name  = name
         self.z3obj = z3.Bool(name)
+    
+    def simplify(self):
+        return self
 
     def __str__(self):
         return "<BoolS {name}>".format(
@@ -61,7 +72,7 @@ class BoolV(Bool):
         return z3.BoolVal(self.value)
     
     def simplify(self):
-        return
+        return self
 
     def __str__(self):
         return "<BoolV {val}>".format(
