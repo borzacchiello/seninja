@@ -5,7 +5,8 @@ from memory.memory_abstract import MemoryAbstract
 from collections import namedtuple
 from options import (
     HEURISTIC_UNCONSTRAINED_MEM_ACCESS,
-    CHECK_IF_MEM_ACCESS_IS_TOO_LARGE
+    CHECK_IF_MEM_ACCESS_IS_TOO_LARGE,
+    CONCRETIZE_MEM_ACCESSES
 )
 from utility.error_codes import ErrorInstruction
 import math
@@ -93,6 +94,16 @@ class Memory(MemoryAbstract):
             i+=1
     
     def _handle_symbolic_address(self, address: BV, size: int, op_type: str):
+
+        if isinstance(address, BVV):
+            return address
+
+        if CONCRETIZE_MEM_ACCESSES:
+            print("WARNING: %s, concretizing mem access (no symbolic address reasoning mode)" % op_type)
+            address_conc = self.state.solver.evaluate(address)
+            self.state.solver.add_constraints(address == address_conc)
+            return address_conc
+
         max_addr = self.state.solver.max(address)
         min_addr = self.state.solver.min(address)
         if (

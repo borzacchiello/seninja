@@ -824,6 +824,22 @@ class SymbolicVisitor(BNILVisitor):
         self._wasjmp = True
         return True
 
+    def visit_LLIL_JUMP(self, expr):
+        destination = self.visit(expr.dest)
+
+        self._check_unsupported(destination, expr.dest)
+        if self._check_error(destination): return destination
+
+        curr_fun = get_function(self.view, self.ip)
+
+        if not symbolic(destination):
+            # fast path. The destination is concrete
+            self.update_ip(curr_fun, curr_fun.get_instruction_start(destination.value))
+            self._wasjmp = True
+            return True
+        
+        assert False  # implement this
+
     def visit_LLIL_JUMP_TO(self, expr):
         destination = self.visit(expr.dest)
 
@@ -895,7 +911,7 @@ class SymbolicVisitor(BNILVisitor):
         # self.state.solver.add_constraints(current_constraint)
         # self._wasjmp = True
         # return True
-    
+
     def visit_LLIL_IF(self, expr):
         condition = self.visit(expr.condition)
         true_llil_index = expr.true
