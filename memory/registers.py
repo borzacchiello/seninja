@@ -24,10 +24,10 @@ class Regs(object):
             reg_info = regs_data[reg_name]
             self._mem.mmap(reg_info["addr"], reg_info["size"])
 
-            self._regs[reg_name] = reg_info["addr"], reg_info["size"]
+            self._regs[reg_name] = BVV(reg_info["addr"], self.bits), reg_info["size"]
             for subreg_name in reg_info["sub"]:
                 subreg_info = reg_info["sub"][subreg_name]
-                self._regs[subreg_name] = reg_info["addr"] + subreg_info["offset"], subreg_info["size"]
+                self._regs[subreg_name] = BVV(reg_info["addr"] + subreg_info["offset"], self.bits), subreg_info["size"]
         
         for flag_name in state.arch.flags_data():
             self.flags[flag_name] = BVS(flag_name, 1) 
@@ -38,23 +38,24 @@ class Regs(object):
     def __getattribute__(self, k):
         if k in Regs.attr:
             return super().__getattribute__(k)
-        if k not in self._regs and k not in self._tmp_regs:
-            raise AttributeError("'%s' object has not attribute '%s'" % (self.__class__.__name__, k))
-        if k in self._regs:
+        elif k in self._regs:
             reg_addr, reg_size = self._regs[k]
-            return self._mem.load(BVV(reg_addr, self.bits), reg_size, endness='big')
-        return self._tmp_regs[k]
+            return self._mem.load(reg_addr, reg_size, endness='big')
+        elif k in self._tmp_regs:
+            return self._tmp_regs[k]
+        raise AttributeError("'%s' object has not attribute '%s'" % (self.__class__.__name__, k))
     
     def __setattr__(self, k, val):
         if k in Regs.attr:
             return super().__setattr__(k, val)
-        if k not in self._regs and "temp" not in k:
-            raise AttributeError("'%s' object has not attribute '%s'" % (self.__class__.__name__, k))
-        if k in self._regs:
+        elif k in self._regs:
             reg_addr, reg_size = self._regs[k]
             assert reg_size * 8 == val.size
-            self._mem.store(BVV(reg_addr, self.bits), val, endness='big')
-        self._tmp_regs[k] = val
+            self._mem.store(reg_addr, val, endness='big')
+        elif "temp" in k:
+            self._tmp_regs[k] = val
+        else:
+            raise AttributeError("'%s' object has not attribute '%s'" % (self.__class__.__name__, k))
 
     def copy(self, state):
         new_regs = Regs(state)

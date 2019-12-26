@@ -62,11 +62,11 @@ class MemoryConcreteFlat(MemoryAbstract):
         address = address.value
         size    = value.size
 
-        for i in range(size // 8 - 1, -1, -1):
+        for i in range((size >> 3) - 1, -1, -1):
             if endness == 'little':
                 addr = address + i
             else:
-                addr = address + size // 8 - i - 1
+                addr = address + (size >> 3) - i - 1
 
             page_address  = addr >> self.index_bits
             page_index    = addr - (page_address << self.index_bits)

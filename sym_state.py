@@ -19,9 +19,11 @@ class State(object):
         self.events         = list()
         self.llil_ip        = None
         self.executor       = executor
+        self._ipreg         = self.arch.getip_reg()
+        self._bits          = self.arch.bits()
     
     def get_ip(self):
-        ip = getattr(self.regs, self.arch.getip_reg())
+        ip = getattr(self.regs, self._ipreg)
         assert not symbolic(ip)
         return ip.value
     
@@ -29,24 +31,24 @@ class State(object):
         return addr >> self.mem.index_bits << self.mem.index_bits
 
     def initialize_stack(self, stack_base):
-        setattr(self.regs, self.arch.get_stack_pointer_reg(), BVV(stack_base, self.arch.bits()))
-        setattr(self.regs, self.arch.get_base_pointer_reg(),  BVV(stack_base, self.arch.bits()))
+        setattr(self.regs, self.arch.get_stack_pointer_reg(), BVV(stack_base, self._bits))
+        setattr(self.regs, self.arch.get_base_pointer_reg(),  BVV(stack_base, self._bits))
 
     def stack_push(self, val: BV):
         stack_pointer     = getattr(self.regs, self.arch.get_stack_pointer_reg())
-        new_stack_pointer = stack_pointer - self.arch.bits() // 8
+        new_stack_pointer = stack_pointer - self._bits // 8
         self.mem.store(new_stack_pointer, val, endness=self.arch.endness())
         setattr(self.regs, self.arch.get_stack_pointer_reg(), new_stack_pointer)
   
     def stack_pop(self):
         stack_pointer = getattr(self.regs, self.arch.get_stack_pointer_reg())
-        res = self.mem.load(stack_pointer, self.arch.bits() // 8, endness=self.arch.endness())
-        new_stack_pointer = stack_pointer + self.arch.bits() // 8
+        res = self.mem.load(stack_pointer, self._bits // 8, endness=self.arch.endness())
+        new_stack_pointer = stack_pointer + self._bits // 8
         setattr(self.regs, self.arch.get_stack_pointer_reg(), new_stack_pointer)
         return res
     
     def set_ip(self, new_ip):
-        setattr(self.regs, self.arch.getip_reg(), BVV(new_ip, self.arch.bits()))
+        setattr(self.regs, self._ipreg, BVV(new_ip, self._bits))
 
     def copy(self, solver_copy_fast=False):
         new_state = State(self.executor, self.os.copy(), self.arch, self.page_size)
