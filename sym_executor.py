@@ -12,10 +12,11 @@ from utility.expr_wrap_util import (
 )
 from expr import BV, BVV, BVS, Bool, ITE
 from utility.bninja_util import (
-    get_function, get_imported_functions, 
-    get_imported_addresses, find_os,
-    get_disasm_from_addr, parse_disasm_str
+    get_imported_functions_and_addresses,
+    find_os,
+    parse_disasm_str
 )
+from utility.binary_ninja_cache import BNCache
 from utility.models_util import get_result_reg
 from memory.sym_memory import InitData
 from multipath.fringe import Fringe
@@ -54,13 +55,13 @@ class SymbolicVisitor(BNILVisitor):
         self.view    = view
         self.bw      = BinaryWriter(view)
         self.br      = BinaryReader(view)
+        self.bncache = BNCache(view)
         self.vars    = set()
         self.fringe  = Fringe()
         self.ip      = addr
         self.llil_ip = None 
         self.arch    = None
-        self.imported_functions = get_imported_functions(view)
-        self.imported_addresses = get_imported_addresses(view)
+        self.imported_functions, self.imported_addresses = get_imported_functions_and_addresses(view)
 
         self._last_colored_ip = None
 
@@ -96,7 +97,7 @@ class SymbolicVisitor(BNILVisitor):
             )
         print("loading finished!")
 
-        current_function = get_function(view, addr)
+        current_function = self.bncache.get_function(addr)
 
         # initialize stack
         unmapped_page_init = self.state.mem.get_unmapped(
@@ -211,20 +212,20 @@ class SymbolicVisitor(BNILVisitor):
         # TODO do it in a smarter way
         old_ip = self._last_colored_ip
         if old_ip is not None:
-            old_func = get_function(self.view, old_ip)
+            old_func = self.bncache.get_function(old_ip) # get_function(self.view, old_ip)
             old_func.set_auto_instr_highlight(old_ip, NO_COLOR)
 
         for ip in self.fringe._deferred:
-            func = get_function(self.view, ip)
+            func = self.bncache.get_function(ip) # get_function(self.view, ip)
             func.set_auto_instr_highlight(ip, DEFERRED_STATE_COLOR if not reset else NO_COLOR)
             # func.set_comment_at(ip, str(len(self.fringe._deferred[ip]) if not reset else ""))
         
         for _, state in self.fringe.errored:
-            func = get_function(self.view, state.get_ip())
+            func = self.bncache.get_function(state.get_ip())  # get_function(self.view, state.get_ip())
             func.set_auto_instr_highlight(state.get_ip(), ERRORED_STATE_COLOR if not reset else NO_COLOR)
         
         if self.state:
-            func = get_function(self.view, self.ip)
+            func = self.bncache.get_function(self.ip)  # get_function(self.view, self.ip)
             func.set_auto_instr_highlight(self.ip, CURR_STATE_COLOR if not reset else NO_COLOR)
         if not reset:
             self._last_colored_ip = self.ip
@@ -239,7 +240,7 @@ class SymbolicVisitor(BNILVisitor):
         llil_ip = state.llil_ip
 
         self.state = state
-        new_func = get_function(self.view, ip) 
+        new_func = self.bncache.get_function(ip) #  get_function(self.view, ip) 
         self.ip = ip
         self.llil_ip = new_func.llil.get_instruction_start(ip) if llil_ip is None else llil_ip
 
@@ -253,23 +254,24 @@ class SymbolicVisitor(BNILVisitor):
         self.set_current_state(state)
         return True
     
-    def update_ip(self, function, new_llil_ip):
+    def update_ip(self, funcion_name, new_llil_ip):
         self.llil_ip = new_llil_ip
-        self.ip = function.llil[new_llil_ip].address
+        self.ip = self.bncache.get_address(funcion_name, new_llil_ip) # function.llil[new_llil_ip].address
         self.state.set_ip(self.ip)
         self.state.llil_ip = new_llil_ip
     
     def _execute_one(self, no_colors=False):
-        func = get_function(self.view, self.ip)
+        # func = self.bncache.get_function(self.ip) # get_function(self.view, self.ip)
+        func_name = self.bncache.get_function_name(self.ip)
 
         # check if a special handler is defined
-        disasm_str = get_disasm_from_addr(self.view, self.ip)
+        disasm_str = self.bncache.get_disasm(self.ip) # get_disasm_from_addr(self.view, self.ip)
         if (
             DONT_USE_SPECIAL_HANDLERS or
             not self.arch.execute_special_handler(disasm_str, self)
         ):
-            expr = func.llil[self.llil_ip]
-            res = self.visit(expr)
+            expr = self.bncache.get_llil(func_name, self.llil_ip) # func.llil[self.llil_ip]
+            res  = self.visit(expr)
 
             self._check_unsupported(res, expr)
             if self._check_error(res):
@@ -286,7 +288,7 @@ class SymbolicVisitor(BNILVisitor):
         
         if not self._wasjmp:
             # go on by 1 instruction
-            self.update_ip(func, self.llil_ip + 1)
+            self.update_ip(func_name, self.llil_ip + 1)
         else:
             self._wasjmp = False
 
@@ -756,19 +758,22 @@ class SymbolicVisitor(BNILVisitor):
         if symbolic(dest):
             raise Exception("symbolic IP")
         
-        curr_fun = get_function(self.view, self.ip)
-        dest_fun = get_function(self.view, dest.value)
+        curr_fun_name = self.bncache.get_function_name(self.ip) # get_function(self.view, self.ip)
+        if dest.value in self.imported_functions:
+            dest_fun_name = self.imported_functions[dest.value]
+        else:
+            dest_fun_name = self.bncache.get_function_name(dest.value) # get_function(self.view, dest.value)
         ret_addr = self.ip + self.view.get_instruction_length(self.ip)
 
         # push ret address
         self.state.stack_push(BVV(ret_addr, self.arch.bits()))
 
         # check if we have an handler
-        if dest_fun.name in library_functions:
-            res = library_functions[dest_fun.name](self.state, self.view)
+        if dest_fun_name in library_functions:
+            res = library_functions[dest_fun_name](self.state, self.view)
             setattr(self.state.regs, get_result_reg(self.state, self.view, res.size), res)
             dest = self.state.stack_pop()
-            dest_fun = curr_fun 
+            dest_fun_name = curr_fun_name 
             assert not symbolic(dest)  # cannot happen (right?)
 
         # check if imported
@@ -781,11 +786,11 @@ class SymbolicVisitor(BNILVisitor):
             setattr(self.state.regs, get_result_reg(self.state, self.view, res.size), res)
             
             dest = self.state.stack_pop()
-            dest_fun = curr_fun 
+            dest_fun_name = curr_fun_name 
             assert not symbolic(dest)  # cannot happen (right?)
 
         # change ip
-        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.value, dest_fun.arch))
+        self.update_ip(dest_fun_name, self.bncache.get_llil_address(dest_fun_name, dest.value)) #  dest_fun.llil.get_instruction_start(dest.value, dest_fun.arch))
 
         self._wasjmp = True
         return True
@@ -799,7 +804,10 @@ class SymbolicVisitor(BNILVisitor):
         if symbolic(dest):
             raise Exception("symbolic IP")
         
-        dest_fun = get_function(self.view, dest.value)
+        if dest.value in self.imported_addresses:
+            dest_fun_name = self.imported_addresses[dest.value]
+        else:
+            dest_fun_name = self.bncache.get_function_name(dest.value) # get_function(self.view, dest.value)
 
         # check if imported
         if dest.value in self.imported_functions:
@@ -814,12 +822,10 @@ class SymbolicVisitor(BNILVisitor):
             if symbolic(dest):
                 raise Exception("symbolic IP") 
 
-            bbs = self.view.get_basic_blocks_at(dest.value)
-            assert len(bbs) == 1
-            dest_fun = bbs[0].function
+            dest_fun_name = self.bncache.get_function_name(dest.value)
 
         # change ip
-        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest.value))
+        self.update_ip(dest_fun_name, self.bncache.get_llil_address(dest_fun_name, dest.value))
 
         self._wasjmp = True
         return True
@@ -830,11 +836,11 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(destination, expr.dest)
         if self._check_error(destination): return destination
 
-        curr_fun = get_function(self.view, self.ip)
+        curr_fun_name = self.bncache.get_function_name(self.ip) #  get_function(self.view, self.ip)
 
         if not symbolic(destination):
             # fast path. The destination is concrete
-            self.update_ip(curr_fun, curr_fun.get_instruction_start(destination.value))
+            self.update_ip(curr_fun_name, self.bncache.get_llil_address(curr_fun_name, destination.value))
             self._wasjmp = True
             return True
         
@@ -846,11 +852,11 @@ class SymbolicVisitor(BNILVisitor):
         self._check_unsupported(destination, expr.dest)
         if self._check_error(destination): return destination
 
-        curr_fun = get_function(self.view, self.ip)
+        curr_fun_name = self.bncache.get_function_name(self.ip) # get_function(self.view, self.ip)
 
         if not symbolic(destination):
             # fast path. The destination is concrete
-            self.update_ip(curr_fun, curr_fun.get_instruction_start(destination.value))
+            self.update_ip(curr_fun_name, self.bncache.get_llil_address(curr_fun_name, destination.value))
             self._wasjmp = True
             return True
 
@@ -877,10 +883,10 @@ class SymbolicVisitor(BNILVisitor):
                 destination == ip
             )
             new_state.set_ip(ip.value)
-            new_state.llil_ip = curr_fun.llil.get_instruction_start(ip.value)
+            new_state.llil_ip = self.bncache.get_llil_address(curr_fun_name, ip.value) # curr_fun.llil.get_instruction_start(ip.value)
             self._put_in_deferred(new_state)
         
-        self.update_ip(curr_fun, curr_fun.llil.get_instruction_start(dest_ips[0].value))
+        self.update_ip(curr_fun_name, self.bncache.get_llil_address(curr_fun_name, dest_ips[0].value)) # curr_fun.llil.get_instruction_start(dest_ips[0].value))
         self.state.solver.add_constraints(dest_ips[0] == destination)
         self._wasjmp = True
         return True
@@ -923,7 +929,7 @@ class SymbolicVisitor(BNILVisitor):
         if isinstance(condition, BV):
             assert condition.size == 1
             condition = condition == 1
-        curr_fun = get_function(self.view, self.ip)
+        curr_fun_name = self.bncache.get_function_name(self.ip) # get_function(self.view, self.ip)
         false_unsat = False
         if self.state.solver.satisfiable(extra_constraints=[
             condition.Not()
@@ -935,14 +941,14 @@ class SymbolicVisitor(BNILVisitor):
 
         self.state.solver.add_constraints(condition)
         if self.state.solver.satisfiable():
-            self.update_ip(curr_fun, true_llil_index)
+            self.update_ip(curr_fun_name, true_llil_index)
         else:
             self._put_in_unsat(self.state)
             self.state = None
 
         if not false_unsat:
             false_state.solver.add_constraints(condition.Not())
-            false_state.set_ip(curr_fun.llil[false_llil_index].address)
+            false_state.set_ip(self.bncache.get_address(curr_fun_name, false_llil_index)) # curr_fun.llil[false_llil_index].address)
             false_state.llil_ip = false_llil_index
             if self.state is None:
                 self.set_current_state(false_state)
@@ -1067,8 +1073,8 @@ class SymbolicVisitor(BNILVisitor):
     def visit_LLIL_GOTO(self, expr):
         dest = expr.dest
 
-        curr_fun = get_function(self.view, self.ip)
-        self.update_ip(curr_fun, dest)
+        curr_fun_name = self.bncache.get_function_name(self.ip) # get_function(self.view, self.ip)
+        self.update_ip(curr_fun_name, dest)
         
         self._wasjmp = True
         return True
@@ -1092,21 +1098,21 @@ class SymbolicVisitor(BNILVisitor):
                 return ErrorInstruction.NO_DEST
             
             for ip in dest_ips[1:]:
-                dest_fun = get_function(self.view, ip)
+                dest_fun_name = self.bncache.get_function_name(ip) # get_function(self.view, ip)
                 new_state = self.state.copy()
                 new_state.solver.add_constraints(
                     dest == ip
                 )
                 new_state.set_ip(ip.value)
-                new_state.llil_ip = dest_fun.llil.get_instruction_start(ip.value)
+                new_state.llil_ip = self.bncache.get_llil_address(dest_fun_name, ip.value) # dest_fun.llil.get_instruction_start(ip.value)
                 self._put_in_deferred(new_state)
             
             dest_ip = dest_ips[0]
         else:
             dest_ip = dest.value
         
-        dest_fun = get_function(self.view, dest_ip)
-        self.update_ip(dest_fun, dest_fun.llil.get_instruction_start(dest_ip))
+        dest_fun_name = self.bncache.get_function_name(dest_ip) # get_function(self.view, dest_ip)
+        self.update_ip(dest_fun_name, self.bncache.get_llil_address(dest_fun_name, dest_ip))  #dest_fun.llil.get_instruction_start(dest_ip))
 
         self._wasjmp = True
         return True

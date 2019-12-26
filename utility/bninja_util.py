@@ -15,11 +15,13 @@ def get_function(view, address):
         print("WARNING: more than one function at {addr:x}".format(
             addr = address
         ))
+
     _function_cache[address] = funcs[0]
     return funcs[0]
 
-def get_imported_functions(view):
-    res = dict()
+def get_imported_functions_and_addresses(view):
+    res_functions = dict()
+    res_addresses = dict()
 
     symbols = view.symbols
     for name in symbols:
@@ -29,24 +31,54 @@ def get_imported_functions(view):
         
         for symb_type in symb_types:
             if symb_type.type == SymbolType.ImportedFunctionSymbol:
-                res[symb_type.address] = symb_type.name
-    
-    return res
-
-def get_imported_addresses(view):
-    res = dict()
-
-    symbols = view.symbols
-    for name in symbols:
-        symb_types = symbols[name]
-        if not isinstance(symb_types, list):
-            symb_types = [symb_types]
-        
-        for symb_type in symb_types:
+                res_functions[symb_type.address] = symb_type.name
             if symb_type.type == SymbolType.ImportAddressSymbol:
-                res[symb_type.address] = symb_type.name
+                res_addresses[symb_type.address] = symb_type.name
+
+                if "@IAT" in symb_type.name:
+                    addr = int.from_bytes(
+                                view.read(symb_type.address, view.arch.address_size), 
+                                'little' if view.arch.endianness.name == 'LittleEndian' else 'big'
+                            )
+                    res_functions[addr] = symb_type.name.replace("@IAT", "")
     
-    return res
+    return res_functions, res_addresses
+
+# def get_imported_functions(view):
+#     res = dict()
+
+#     symbols = view.symbols
+#     for name in symbols:
+#         symb_types = symbols[name]
+#         if not isinstance(symb_types, list):
+#             symb_types = [symb_types]
+        
+#         for symb_type in symb_types:
+#             if symb_type.type == SymbolType.ImportedFunctionSymbol:
+#                 res[symb_type.address] = symb_type.name
+    
+#     return res
+
+# def get_imported_addresses(view):
+#     res = dict()
+
+#     symbols = view.symbols
+#     for name in symbols:
+#         symb_types = symbols[name]
+#         if not isinstance(symb_types, list):
+#             symb_types = [symb_types]
+        
+#         for symb_type in symb_types:
+#             if symb_type.type == SymbolType.ImportAddressSymbol:
+#                 res[symb_type.address] = symb_type.name
+#                 assert "@" in symb_type.name  # it always happen?
+#                 res[
+#                     int.from_bytes(
+#                         view.read(symb_type.address, view.arch.address_size), 
+#                         'little' if view.arch.endianness.name == 'LittleEndian' else 'big')
+#                 ] = symb_type.name[:symb_type.name.find("@")]
+    
+#     return res
 
 def get_addr_next_inst(view, addr):
     return addr + view.get_instruction_length(addr)
