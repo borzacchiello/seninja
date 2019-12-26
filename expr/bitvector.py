@@ -333,9 +333,9 @@ class BVS(BVExpr):
 class BVV(BV):
     def __init__(self, value: int, size: int):
         self.size  = size
-        self._mask = 2**size - 1
+        self._mask = (2<<(size-1)) - 1
         self.value = value & self._mask
-        self._signMask = 2**(size-1)
+        self._signMask = 2<<(size-1-1) if size > 1 else 0
 
     def simplify(self):
         return self
@@ -717,16 +717,16 @@ class BVV(BV):
     def Extract(self, high: int, low: int):
         assert high >= low
         new_size = high-low+1
-        new_value = (self.value >> low) & (2**new_size-1)
+        new_value = (self.value >> low) & ((2<<(new_size-1))-1)
         return BVV(new_value, new_size)
 
     def SignExt(self, n: int):
         assert n >= 0
         if self._signMask & self.value:
-            new = ((2**n-1) << self.size) + self.value
+            new = (((2<<(n-1))-1) << self.size) + self.value
         else:
             new = self.value
-        mask = 2**(self.size+n)-1
+        mask = (2<<(self.size+n-1))-1
         return BVV(new & mask, self.size + n)
     
     def ZeroExt(self, n: int):
