@@ -929,33 +929,60 @@ class SymbolicVisitor(BNILVisitor):
             assert condition.size == 1
             condition = condition == 1
         curr_fun_name = self.bncache.get_function_name(self.ip)
-        false_unsat = False
-        if self.state.solver.satisfiable(extra_constraints=[
+
+        true_sat = True
+        false_sat = True
+        if not self.state.solver.satisfiable(extra_constraints=[
+            condition
+        ]):
+            true_sat = False
+        if not self.state.solver.satisfiable(extra_constraints=[
             condition.Not()
         ]):
+            false_sat = False
+        
+        if true_sat and false_sat:
+            true_state = self.state
             false_state = self.state.copy()
-        else:
-            false_unsat = True
-            false_state = self.state.copy(solver_copy_fast=True) if SAVE_UNSAT else None
 
-        self.state.solver.add_constraints(condition)
-        if self.state.solver.satisfiable():
+            true_state.solver.add_constraints(condition)
             self.update_ip(curr_fun_name, true_llil_index)
+
+            false_state.solver.add_constraints(condition.Not())
+            self._put_in_deferred(false_state)
+        elif true_sat and not false_sat:
+            true_state = self.state
+            false_state = self.state.copy() if SAVE_UNSAT else None
+
+            true_state.solver.add_constraints(condition)
+            self.update_ip(curr_fun_name, true_llil_index)
+
+            if SAVE_UNSAT:
+                false_state.solver.add_constraints(condition.Not())
+                self._put_in_unsat(false_state)
+        elif not true_sat and false_sat:
+            false_state = self.state
+            true_state = self.state.copy() if SAVE_UNSAT else None
+
+            false_state.solver.add_constraints(condition.Not())
+            self.state = false_state
+            self.update_ip(curr_fun_name, false_llil_index)
+
+            if SAVE_UNSAT:
+                true_state.solver.add_constraints(condition)
+                self._put_in_unsat(true_state)
         else:
-            self._put_in_unsat(self.state)
+            true_state  = self.state.copy() if SAVE_UNSAT else None
+            false_state = self.state.copy() if SAVE_UNSAT else None
+
+            if SAVE_UNSAT:
+                true_state.solver.add_constraints(condition)
+                self._put_in_unsat(true_state)
+                false_state.solver.add_constraints(condition.Not())
+                self._put_in_unsat(false_state)
+            
             self.state = None
 
-        if not false_unsat:
-            false_state.solver.add_constraints(condition.Not())
-            false_state.set_ip(self.bncache.get_address(curr_fun_name, false_llil_index))
-            false_state.llil_ip = false_llil_index
-            if self.state is None:
-                self.set_current_state(false_state)
-            else:
-                self._put_in_deferred(false_state)
-        else:
-            self._put_in_unsat(false_state)
-        
         self._wasjmp = True
         return True
 

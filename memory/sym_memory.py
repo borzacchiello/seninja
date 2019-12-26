@@ -97,6 +97,8 @@ class Memory(MemoryAbstract):
 
         if isinstance(address, BVV):
             return address
+        if not self.state.solver.symbolic(address):  # check with solver
+            return self.state.solver.evaluate(address)
 
         if CONCRETIZE_MEM_ACCESSES:
             print("WARNING: %s, concretizing mem access (no symbolic address reasoning mode)" % op_type)
