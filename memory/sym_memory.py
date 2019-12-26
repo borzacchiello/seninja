@@ -106,6 +106,9 @@ class Memory(MemoryAbstract):
 
         max_addr = self.state.solver.max(address)
         min_addr = self.state.solver.min(address)
+        if min_addr == max_addr:
+            return BVV(min_addr, address.size)
+
         if (
             HEURISTIC_UNCONSTRAINED_MEM_ACCESS and
             symbolic(address) and

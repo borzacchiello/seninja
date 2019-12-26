@@ -517,6 +517,11 @@ class x8664Arch(Arch):
     def flags_data(self):
         return x8664Arch.FLAGS
 
+    def flags_default(self, flag):
+        if flag == 'd':
+            return 0
+        return None
+
     def endness(self):
         return 'little'
 

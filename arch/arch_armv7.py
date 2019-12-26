@@ -103,6 +103,9 @@ class ArmV7Arch(Arch):
     def flags_data(self):
         return ArmV7Arch.FLAGS
 
+    def flags_default(self, flag):
+        return None
+
     def endness(self):
         # is this correct? Not always...
         return 'little'

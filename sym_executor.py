@@ -1067,7 +1067,7 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(left):  return left
         if self._check_error(right): return right
         
-        return left.UGE(left, right)
+        return left.UGE(right)
 
     def visit_LLIL_GOTO(self, expr):
         dest = expr.dest

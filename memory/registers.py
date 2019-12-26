@@ -30,7 +30,8 @@ class Regs(object):
                 self._regs[subreg_name] = BVV(reg_info["addr"] + subreg_info["offset"], self.bits), subreg_info["size"]
         
         for flag_name in state.arch.flags_data():
-            self.flags[flag_name] = BVS(flag_name, 1) 
+            default = state.arch.flags_default(flag_name)
+            self.flags[flag_name] = BVS(flag_name, 1) if default is None else BVV(default, 1)
     
     def has_reg(self, reg_name: str):
         return reg_name in self._regs

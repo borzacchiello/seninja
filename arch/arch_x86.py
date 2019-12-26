@@ -168,6 +168,11 @@ class x86Arch(Arch):
     
     def flags_data(self):
         return x86Arch.FLAGS
+    
+    def flags_default(self, flag):
+        if flag == 'd':
+            return 0
+        return None
 
     def endness(self):
         return 'little'

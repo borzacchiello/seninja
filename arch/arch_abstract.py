@@ -5,6 +5,8 @@ class Arch(object):  # abstract class
         raise NotImplementedError
     def flags_data(self):
         raise NotImplementedError
+    def flags_default(self, flag):
+        raise NotImplementedError
     def endness(self):
         raise NotImplementedError
     def getip_reg(self):
