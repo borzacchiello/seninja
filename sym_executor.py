@@ -949,6 +949,8 @@ class SymbolicVisitor(BNILVisitor):
             self.update_ip(curr_fun_name, true_llil_index)
 
             false_state.solver.add_constraints(condition.Not())
+            false_state.set_ip(self.bncache.get_address(curr_fun_name, false_llil_index))
+            false_state.llil_ip = false_llil_index
             self._put_in_deferred(false_state)
         elif true_sat and not false_sat:
             true_state = self.state
@@ -959,6 +961,8 @@ class SymbolicVisitor(BNILVisitor):
 
             if SAVE_UNSAT:
                 false_state.solver.add_constraints(condition.Not())
+                false_state.set_ip(self.bncache.get_address(curr_fun_name, false_llil_index))
+                false_state.llil_ip = false_llil_index
                 self._put_in_unsat(false_state)
         elif not true_sat and false_sat:
             false_state = self.state
@@ -970,6 +974,8 @@ class SymbolicVisitor(BNILVisitor):
 
             if SAVE_UNSAT:
                 true_state.solver.add_constraints(condition)
+                true_state.set_ip(self.bncache.get_address(curr_fun_name, true_llil_index))
+                true_state.llil_ip = true_llil_index
                 self._put_in_unsat(true_state)
         else:
             true_state  = self.state.copy() if SAVE_UNSAT else None
@@ -977,8 +983,12 @@ class SymbolicVisitor(BNILVisitor):
 
             if SAVE_UNSAT:
                 true_state.solver.add_constraints(condition)
+                true_state.set_ip(self.bncache.get_address(curr_fun_name, true_llil_index))
+                true_state.llil_ip = true_llil_index
                 self._put_in_unsat(true_state)
                 false_state.solver.add_constraints(condition.Not())
+                false_state.set_ip(self.bncache.get_address(curr_fun_name, false_llil_index))
+                false_state.llil_ip = false_llil_index
                 self._put_in_unsat(false_state)
             
             self.state = None
