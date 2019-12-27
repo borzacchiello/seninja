@@ -113,3 +113,27 @@ class ArchX86SPH(SpecialInstructionHandler):
 
     def paddsq_handler(self, sv, parameters):
         return False
+
+    # ----- mmx -----
+    def movd_handler(self, sv, parameters):
+        dst_p = parameters[0]
+        src_p = parameters[1]
+
+        # get src (32bit)
+        src = get_src(sv.state, src_p)
+        assert src.size == 32
+
+        store_to_dst(sv.state, dst_p, src.ZeroExt(16*8-32))
+        return True
+
+    def movq_handler(self, sv, parameters):
+        dst_p = parameters[0]
+        src_p = parameters[1]
+
+        # get src (64bit)
+        src = get_src(sv.state, src_p)
+        assert src.size == 64
+
+        store_to_dst(sv.state, dst_p, src.ZeroExt(16*8-64))
+        return True
+    # ----------------

@@ -11,7 +11,7 @@ from binaryninja import (
     BackgroundTaskThread,
     PluginCommand
 )
-from utility.z3_wrap_util import bvv, bvs
+from utility.expr_wrap_util import split_bv_in_list
 from utility.string_util import (
     int_to_str, 
     str_to_int, 
