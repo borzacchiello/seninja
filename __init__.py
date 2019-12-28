@@ -206,9 +206,33 @@ def get_current_state():
     
     return sv.state
 
-PluginCommand.register_for_address("seninja: start symbolic execution", "", start_se)
-PluginCommand.register_for_address("seninja: change current state", "", change_current_state)
-PluginCommand.register("seninja: step", "", step)
-PluginCommand.register("seninja: continue until branch", "", continue_until_branch)
-PluginCommand.register_for_address("seninja: continue until address", "", continue_until_address)
-PluginCommand.register_for_address("seninja: merge states", "", merge_states)
+PluginCommand.register_for_address(
+    "SENinja\\0 - Start symbolic execution", 
+    "create the first state for symbolic execution at current address", 
+    start_se
+)
+PluginCommand.register_for_address(
+    "SENinja\\1 - Change current state", 
+    "change current state with the deferred one at current address (if any)", 
+    change_current_state
+)
+PluginCommand.register(
+    "SENinja\\2 - Step", 
+    "execute one instruction with the current state", 
+    step
+)
+PluginCommand.register(
+    "SENinja\\3 - Continue until branch", 
+    "execute instructions in the current state until a fork occurs", 
+    continue_until_branch
+)
+PluginCommand.register_for_address(
+    "SENinja\\4 - Continue until address", 
+    "execute instructions in the current state until the currently selected address is reached", 
+    continue_until_address
+)
+PluginCommand.register_for_address(
+    "SENinja\\5 - Merge states", 
+    "merge all states at current address in one state", 
+    merge_states
+)
