@@ -2,13 +2,36 @@ from sym_state import State
 from utility.expr_wrap_util import symbolic
 from expr import BVV, BVS, BoolV, ITE, Or, And
 from utility.models_util import get_arg_k
+from utility.string_util import as_bytes, str_to_bv_list
 from memory.sym_memory import InitData
-from options import ATOX_SLOW_MODEL, MAX_MALLOC
+from options import ATOX_SLOW_MODEL, MAX_MALLOC, MAX_SYMB_STR
 import re
 
 ascii_numbers = ["0","1","2","3","4","5","6","7","8","9"]
 
-def printf_handler(state: State, view):  # TODO think about stdout
+def _intbv_to_strbv16(intbv):
+    # int bv to string bv in hex
+    res = [BVV(ord("0"), 8), BVV("x", 8)]
+    for b in as_bytes(intbv):
+        low = b.Extract(3, 0).ZeroExt(4)
+        hig = b.Extract(7, 4).ZeroExt(4)
+
+        rb_low = ITE(
+            low.ULT(10),
+            BVV(ord("0"), 8) + low,
+            BVV(ord("A"), 8) - 10 + low
+        )
+        rb_hig = ITE(
+            hig.ULT(10),
+            BVV(ord("0"), 8) + hig,
+            BVV(ord("A"), 8) - 10 + hig
+        )
+        v = rb_hig.Concat(rb_low)
+        res.append(v)
+    
+    return res
+
+def printf_handler(state: State, view):  # only concrete
     format_str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
     assert not symbolic(format_str_p) or not state.solver.symbolic(format_str_p)
@@ -24,7 +47,52 @@ def printf_handler(state: State, view):  # TODO think about stdout
         "printf with format '%s'" % format_str
     )
 
-    return BVV(len(format_str), 32)
+    res = list()
+    last_idx = 0
+    param_idx = 2
+    params = re.finditer("%([0-9]*s|d|x|c)", format_str)  # TODO generalize
+    for param in params:
+        index = param.start()
+        match = param.group()
+
+        val = list()
+        if match[-1] == "s":
+            # string
+            param_p = get_arg_k(state, param_idx, state.arch.bits() // 8, view)
+            l = int(match[1:-1]) if len(match) > 2 else MAX_SYMB_STR
+
+            i = 0
+            c = state.mem.load(param_p, 1)
+            while i < l:
+                if not symbolic(c) and c.value == 0:
+                    break
+                val.append(c)
+                param_p += 1
+                c = state.mem.load(param_p, 1)
+                i += 1
+
+        elif match == "%d" or match == "%x":
+            int_val = get_arg_k(state, param_idx, 4, view)
+
+            val = _intbv_to_strbv16(int_val)
+
+        elif match == "%c":
+            c = get_arg_k(state, param_idx, 1, view)
+
+            val = [c]
+
+        param_idx += 1
+
+        format_substr = format_str[last_idx:index]
+        last_idx = index + len(match)
+        res.extend(str_to_bv_list(format_substr))
+        res.extend(val)
+    
+    format_substr = format_str[last_idx:]
+    res.extend(str_to_bv_list(format_substr))
+
+    state.os.get_stdout().extend(res)
+    return BVV(len(res), 32)
 
 getchar_count = 0
 def getchar_handler(state: State, view):

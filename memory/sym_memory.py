@@ -300,7 +300,6 @@ class Memory(MemoryAbstract):
             count = 0
 
             while idx <= last_page:
-                print(idx)
                 if idx not in self.pages:
                     count += 1
                     if count == size:

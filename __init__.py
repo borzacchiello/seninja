@@ -246,6 +246,12 @@ def get_current_state():
     
     return sv.state
 
+def register_hook(address, func):
+    if not __check_sv():
+        return
+
+    sv.user_hooks[address] = func
+
 PluginCommand.register_for_address(
     "SENinja\\0 - Start symbolic execution", 
     "create the first state for symbolic execution at current address", 

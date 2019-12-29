@@ -1,4 +1,4 @@
-from expr import BV
+from expr import BV, BVV
 
 def str_to_int(s):
     res = ""
@@ -6,6 +6,12 @@ def str_to_int(s):
         res += hex(ord(c))[2:]
     res += "00"
     return int(res, 16)
+
+def str_to_bv_list(s):
+    res = list()
+    for c in s:
+        res.append(BVV(ord(c), 8))
+    return res
 
 def int_to_str(i):
     s = hex(i)[2:]

@@ -539,6 +539,8 @@ class x8664Arch(Arch):
             return []
         elif calling_convention == 'sysv':
             return ['rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9']
+        elif calling_convention == 'win64':
+            return ['rcx', 'rdx', 'r8', 'r9']
         raise Exception("Unknown calling convention {name}".format(
             name = calling_convention
         ))

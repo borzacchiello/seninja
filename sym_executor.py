@@ -52,15 +52,16 @@ class SymbolicVisitor(BNILVisitor):
     def __init__(self, view, addr):
         super(SymbolicVisitor, self).__init__()
 
-        self.view    = view
-        self.bw      = BinaryWriter(view)
-        self.br      = BinaryReader(view)
-        self.bncache = BNCache(view)
-        self.vars    = set()
-        self.fringe  = Fringe()
-        self.ip      = addr
-        self.llil_ip = None 
-        self.arch    = None
+        self.view       = view
+        self.bw         = BinaryWriter(view)
+        self.br         = BinaryReader(view)
+        self.bncache    = BNCache(view)
+        self.vars       = set()
+        self.fringe     = Fringe()
+        self.ip         = addr
+        self.llil_ip    = None 
+        self.arch       = None
+        self.user_hooks = dict()
         self.imported_functions, self.imported_addresses = get_imported_functions_and_addresses(view)
         self._last_colored_ip = None
 
@@ -265,19 +266,49 @@ class SymbolicVisitor(BNILVisitor):
     def _execute_one(self, no_colors=False):
         func_name = self.bncache.get_function_name(self.ip)
 
-        # check if a special handler is defined
-        disasm_str = self.bncache.get_disasm(self.ip)
-        if (
-            DONT_USE_SPECIAL_HANDLERS or
-            not self.arch.execute_special_handler(disasm_str, self)
-        ):
-            expr = self.bncache.get_llil(func_name, self.llil_ip)
-            res  = self.visit(expr)
+        # handle user hooks
+        if self.ip in self.user_hooks:
+            old_ip = self.ip
+            new_state, new_deferred, new_errored = self.user_hooks[self.ip](self.state)
 
-            self._check_unsupported(res, expr)
-            if self._check_error(res):
-                self._handle_error(res)
-        
+            for s in new_deferred:
+                self._put_in_deferred(s)
+            for s, msg in new_errored:
+                self._put_in_errored(s, msg)
+
+            if new_state is not None:
+                self.state = new_state
+
+                if old_ip == self.state.get_ip():
+                    new_ip = self.ip + self.bncache.get_instruction_len(self.ip)
+                else:
+                    new_ip = self.state.get_ip()
+
+                dest_func_name = self.bncache.get_function_name(
+                    new_ip
+                )
+                self.update_ip(
+                    dest_func_name,
+                    self.bncache.get_llil_address(dest_func_name, new_ip)
+                )
+                if not no_colors:
+                    self._set_colors()
+                return self.ip
+
+        else:
+            # check if a special handler is defined
+            disasm_str = self.bncache.get_disasm(self.ip)
+            if (
+                DONT_USE_SPECIAL_HANDLERS or
+                not self.arch.execute_special_handler(disasm_str, self)
+            ):
+                expr = self.bncache.get_llil(func_name, self.llil_ip)
+                res  = self.visit(expr)
+
+                self._check_unsupported(res, expr)
+                if self._check_error(res):
+                    self._handle_error(res)
+            
         if self.state is None:
             if self.fringe.is_empty():
                 self._set_colors()
@@ -764,7 +795,7 @@ class SymbolicVisitor(BNILVisitor):
             dest_fun_name = self.imported_functions[dest.value]
         else:
             dest_fun_name = self.bncache.get_function_name(dest.value)
-        ret_addr = self.ip + self.view.get_instruction_length(self.ip)
+        ret_addr = self.ip + self.bncache.get_instruction_len(self.ip)
 
         # push ret address
         self.state.stack_push(BVV(ret_addr, self.arch.bits()))

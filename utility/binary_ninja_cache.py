@@ -5,13 +5,14 @@ from utility.bninja_util import (
 class BNCache(object):
     def __init__(self, bv):
         self.bv = bv
-        self.addr_to_func_cache = dict()
-        self.name_to_func_cache = dict()
-        self.func_name_cache    = dict()
-        self.llil_cache         = dict()
-        self.llil_addr_cache    = dict()
-        self.addr_cache         = dict()
-        self.disasm_cache       = dict()
+        self.addr_to_func_cache    = dict()
+        self.name_to_func_cache    = dict()
+        self.func_name_cache       = dict()
+        self.llil_cache            = dict()
+        self.llil_addr_cache       = dict()
+        self.addr_cache            = dict()
+        self.disasm_cache          = dict()
+        self.instruction_len_cache = dict()
 
     def get_function(self, address):
         if address in self.addr_to_func_cache:
@@ -71,3 +72,11 @@ class BNCache(object):
         disasm = self.bv.get_disassembly(address, func.arch)
         self.disasm_cache[address] = disasm
         return disasm
+
+    def get_instruction_len(self, address):
+        if address in self.instruction_len_cache:
+            return self.instruction_len_cache[address]
+        
+        ret_len = self.bv.get_instruction_length(address)
+        self.instruction_len_cache[address] = ret_len
+        return ret_len
