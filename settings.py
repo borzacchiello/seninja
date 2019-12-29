@@ -1,5 +1,7 @@
 from binaryninja import Settings
 
+# https://github.com/Vector35/binaryninja-api/blob/7971d55486180e07a8bd3a0741bac7b03b6fe460/examples/triage/triage.cpp
+
 Settings().register_group("seninja", "SENinja")
 Settings().register_setting("seninja.symb_address_mode", """
     {

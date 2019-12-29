@@ -3,6 +3,7 @@ class Fringe(object):
         self.unsat     = list()
         self.errored   = list()
         self._deferred = dict()
+        self.last_added = None
 
     @property
     def deferred(self):
@@ -38,6 +39,7 @@ class Fringe(object):
         return state
 
     def add_deferred(self, state):
+        self.last_added = state
         if state.get_ip() not in self._deferred:
             self._deferred[state.get_ip()] = [state]
         else:

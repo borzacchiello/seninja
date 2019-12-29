@@ -62,7 +62,6 @@ class SymbolicVisitor(BNILVisitor):
         self.llil_ip = None 
         self.arch    = None
         self.imported_functions, self.imported_addresses = get_imported_functions_and_addresses(view)
-
         self._last_colored_ip = None
 
         self._wasjmp = False
@@ -229,6 +228,9 @@ class SymbolicVisitor(BNILVisitor):
             func.set_auto_instr_highlight(self.ip, CURR_STATE_COLOR if not reset else NO_COLOR)
         if not reset:
             self._last_colored_ip = self.ip
+
+    def _reset(self):
+        self._set_colors(reset=True)
 
     def set_current_state(self, state):
         if self.state is not None:
@@ -803,9 +805,19 @@ class SymbolicVisitor(BNILVisitor):
         if symbolic(dest):
             raise Exception("symbolic IP")
         
-        if dest.value in self.imported_addresses:
-            dest_fun_name = self.imported_addresses[dest.value]
+        if dest.value in self.imported_functions:
+            dest_fun_name = self.imported_functions[dest.value]
         else:
+            dest_fun_name = self.bncache.get_function_name(dest.value)
+
+        # check if we have an handler
+        if dest_fun_name in library_functions:
+            res = library_functions[dest_fun_name](self.state, self.view)
+            setattr(self.state.regs, get_result_reg(self.state, self.view, res.size), res)
+            dest = self.state.stack_pop()
+            if symbolic(dest):
+                raise Exception("symbolic IP") 
+
             dest_fun_name = self.bncache.get_function_name(dest.value)
 
         # check if imported

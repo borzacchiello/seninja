@@ -110,7 +110,7 @@ class Memory(MemoryAbstract):
         min_addr = self.state.solver.min(address)
         if min_addr == max_addr:
             return BVV(min_addr, address.size)
-
+        
         if (
             HEURISTIC_UNCONSTRAINED_MEM_ACCESS and
             symbolic(address) and
@@ -300,13 +300,15 @@ class Memory(MemoryAbstract):
             count = 0
 
             while idx <= last_page:
+                print(idx)
                 if idx not in self.pages:
                     count += 1
                     if count == size:
                         return res
                 else:
                     count = 0
-                    res = idx+1
+                    idx += count+1
+                    res = idx
 
             return -1
     
