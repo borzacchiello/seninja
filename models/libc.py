@@ -47,6 +47,7 @@ def printf_handler(state: State, view):  # only concrete
         "printf with format '%s'" % format_str
     )
 
+    match = ""
     res = list()
     last_idx = 0
     param_idx = 2
@@ -88,7 +89,7 @@ def printf_handler(state: State, view):  # only concrete
         res.extend(str_to_bv_list(format_substr))
         res.extend(val)
     
-    format_substr = format_str[last_idx:]
+    format_substr = format_str[last_idx + len(match):]
     res.extend(str_to_bv_list(format_substr))
 
     state.os.get_stdout().extend(res)

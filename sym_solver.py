@@ -1,5 +1,4 @@
 from copy import deepcopy
-import utility.z3_wrap_util as z3w
 from utility.expr_wrap_util import symbolic
 from expr import BV, BVV, Bool, And, Or
 import z3
@@ -77,7 +76,7 @@ class Solver(object):
             r = model.evaluate(var.z3obj, model_completion=True)
             r = BVV(r.as_long(), var.size)
             res.append(r)
-            self.add_constraints(var != r)
+            self.add_constraints(var != r, must_add=False)
             n -= 1
         
         self._solver.pop()

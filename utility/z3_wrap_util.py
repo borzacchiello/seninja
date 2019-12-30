@@ -44,14 +44,3 @@ def heuristic_find_base(val: z3.BitVecRef):
             return el.value
         fringe.extend(el.children())
     return -1
-
-# dirty, but works
-_m = None
-def simplify_concrete(expr: z3.BitVecRef):
-    global _m
-    if _m is None:
-        s = z3.Solver()
-        s.check()
-        _m = s.model()
-    
-    return _m.eval(expr)
