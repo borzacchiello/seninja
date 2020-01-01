@@ -21,6 +21,7 @@ from utility.string_util import (
 import options as seninja_opts
 import models.function_models as seninja_models
 from expr import *
+import settings
 
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):

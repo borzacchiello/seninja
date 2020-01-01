@@ -1,6 +1,7 @@
 from utility.bninja_util import (
     get_function
 )
+from binaryninja import Settings
 
 class BNCache(object):
     def __init__(self, bv):
@@ -13,6 +14,7 @@ class BNCache(object):
         self.addr_cache            = dict()
         self.disasm_cache          = dict()
         self.instruction_len_cache = dict()
+        self.settings              = dict()
 
     def get_function(self, address):
         if address in self.addr_to_func_cache:
@@ -80,3 +82,11 @@ class BNCache(object):
         ret_len = self.bv.get_instruction_length(address)
         self.instruction_len_cache[address] = ret_len
         return ret_len
+
+    def get_setting(self, name: str):
+        if name in self.settings:
+            return self.settings[name]
+        
+        val = Settings().get_string("seninja." + name)
+        self.settings[name] = val
+        return val

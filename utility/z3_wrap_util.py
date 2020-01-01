@@ -26,7 +26,7 @@ def bvv_from_bytes(val: bytes):  # DONT USE IT TO CREATE LONG BV!!
 def split_bv(bv: z3.BitVecRef, split_index: int):
     return (
         z3.simplify(z3.Extract(bv.size - 1, split_index, bv)),  # most significant
-        z3.simplify(z3.Extract(split_index - 1, 0, bv))           # least significant
+        z3.simplify(z3.Extract(split_index - 1, 0, bv))         # least significant
     )
 
 def symbolic(val: z3.BitVecRef) -> bool:

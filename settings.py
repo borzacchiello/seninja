@@ -3,7 +3,7 @@ from binaryninja import Settings
 # https://github.com/Vector35/binaryninja-api/blob/7971d55486180e07a8bd3a0741bac7b03b6fe460/examples/triage/triage.cpp
 
 Settings().register_group("seninja", "SENinja")
-Settings().register_setting("seninja.symb_address_mode", """
+Settings().register_setting("seninja.mem.symb_address_mode", """
     {
         "title" : "Symbolic access mode",
         "type" : "string",
@@ -12,7 +12,15 @@ Settings().register_setting("seninja.symb_address_mode", """
         "enum": ["concretization", "limit_pages", "fully_symbolic"]
     }
     """)
-Settings().register_setting("seninja.concretize_unconstrained", """
+Settings().register_setting("seninja.mem.limit_pages_limit", """
+    {
+        "title" : "Limit pages, page limit",
+        "type" : "number",
+        "default" : 3,
+        "description" : "If the symbolic access policy is set to 'limit_pages', the maximum width of a symbolic access (in pages)."
+    }
+    """)
+Settings().register_setting("seninja.mem.concretize_unconstrained", """
     {
         "title" : "Concretize unconstrained memory accesses",
         "type" : "boolean",
@@ -20,7 +28,7 @@ Settings().register_setting("seninja.concretize_unconstrained", """
         "description" : "When a memory access on a unconstrained symbolic address occurs, allocate a new page and concretize the address to it."
     }
     """)
-Settings().register_setting("seninja.use_heuristic_find_base", """
+Settings().register_setting("seninja.mem.use_heuristic_find_base", """
     {
         "title" : "Use find-base heuristic on symbolic memory accesses",
         "type" : "boolean",
