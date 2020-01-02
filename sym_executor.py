@@ -66,7 +66,8 @@ class SymbolicVisitor(BNILVisitor):
             self.arch = ArmV7Arch()
         
         assert self.arch is not None
-        self.state = State(self, arch=self.arch, os=find_os(view), page_size=0x1000)
+        page_size = int(self.bncache.get_setting("memory.page_size"))
+        self.state = State(self, arch=self.arch, os=find_os(view), page_size=page_size)
 
         # load memory
         print("loading segments...")
@@ -131,7 +132,7 @@ class SymbolicVisitor(BNILVisitor):
 
             if abs(offset) > self.state.page_size * (stack_page_size - 1):
                 print("ERROR: not enough space in stack. Increase stack size")
-                return None
+                raise Exception("Not enough space in stack. Increase stack size")
 
             if s_type.confidence != 255:
                 continue

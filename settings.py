@@ -42,6 +42,14 @@ Settings().register_setting("seninja.memory.check_unmapped", """
         "description" : "Check if symbolic memory accesses can access unmapped memory pages. Performance may decrease."
     }
     """)
+Settings().register_setting("seninja.memory.page_size", """
+    {
+        "title" : "Size of a memory page",
+        "type" : "string",
+        "default" : "4096",
+        "description" : "Size (in bytes) of a memory page. It must be a power of 2."
+    }
+    """)
 
 Settings().register_setting("seninja.stack_size", """
     {

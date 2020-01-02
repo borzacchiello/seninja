@@ -52,9 +52,14 @@ def _async_start_se(bv, address):
     
     def f(tb):
         global sv, _running
-        sv = SymbolicVisitor(bv, address)
-        if sv is None:
+        try:
+            sv = SymbolicVisitor(bv, address)
+        except Exception as e:
+            print("!ERROR!")
+            print(traceback.format_exc())
+            _running = False
             return
+
         bv.file.navigate(bv.file.view, sv.state.get_ip())
         _running = False
     
