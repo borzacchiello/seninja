@@ -18,7 +18,6 @@ from utility.string_util import (
     as_bytes,
     get_byte
 )
-import options as seninja_opts
 import models.function_models as seninja_models
 from expr import *
 import settings
@@ -252,6 +251,12 @@ def register_hook(address, func):
         return
 
     sv.user_hooks[address] = func
+
+def reload_settings():
+    if not __check_sv():
+        return
+    
+    sv.bncache.settings = {}
 
 PluginCommand.register_for_address(
     "SENinja\\0 - Start symbolic execution", 

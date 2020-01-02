@@ -21,14 +21,6 @@ from utility.models_util import get_result_reg
 from memory.sym_memory import InitData
 from multipath.fringe import Fringe
 from utility.error_codes import ErrorInstruction
-from options import (
-    CHECK_DIVISION_BY_ZERO, 
-    SINGLE_LLIL_STEP, 
-    DONT_USE_SPECIAL_HANDLERS,
-    SAVE_UNSAT,
-    STACK_PAGE_SIZE,
-    USE_BN_JUMPTABLE_TARGETS
-)
 
 NO_COLOR             = enums.HighlightStandardColor(0)
 CURR_STATE_COLOR     = enums.HighlightStandardColor.GreenHighlightColor
@@ -100,13 +92,16 @@ class SymbolicVisitor(BNILVisitor):
         current_function = self.bncache.get_function(addr)
 
         # initialize stack
+
+        stack_page_size = int(self.bncache.get_setting("stack_size"))
+
         unmapped_page_init = self.state.mem.get_unmapped(
-            STACK_PAGE_SIZE, 
+            stack_page_size, 
             start_from=(0x80 << (self.arch.bits() - 8)))
         self.state.mem.mmap(
             unmapped_page_init*self.state.page_size, 
-            self.state.page_size * STACK_PAGE_SIZE)
-        p = unmapped_page_init + STACK_PAGE_SIZE - 1 # leave one page for upper stack portion
+            self.state.page_size * stack_page_size)
+        p = unmapped_page_init + stack_page_size - 1 # leave one page for upper stack portion
         stack_base = p * self.state.page_size - self.arch.bits() // 8
 
         self.state.initialize_stack(stack_base)
@@ -199,8 +194,8 @@ class SymbolicVisitor(BNILVisitor):
         self.fringe.add_deferred(state)
     
     def _put_in_unsat(self, state):
-        # ip = state.get_ip()
-        if SAVE_UNSAT:
+        save_unsat = self.bncache.get_setting("save_unsat") == 'true'
+        if save_unsat:
             self.fringe.add_unsat(state)
     
     def _put_in_errored(self, state, msg: str):
@@ -297,9 +292,11 @@ class SymbolicVisitor(BNILVisitor):
 
         else:
             # check if a special handler is defined
+
+            dont_use_special_handlers = self.bncache.get_setting("dont_use_special_handlers") == 'true'
             disasm_str = self.bncache.get_disasm(self.ip)
             if (
-                DONT_USE_SPECIAL_HANDLERS or
+                dont_use_special_handlers or
                 not self.arch.execute_special_handler(disasm_str, self)
             ):
                 expr = self.bncache.get_llil(func_name, self.llil_ip)
@@ -333,7 +330,8 @@ class SymbolicVisitor(BNILVisitor):
         if not self.state:
             return
 
-        if SINGLE_LLIL_STEP:
+        single_llil_step = self.bncache.get_setting("single_llil_step") == 'true'
+        if single_llil_step:
             self._execute_one(no_colors)
         else:
             old_ip = self.ip
@@ -526,9 +524,11 @@ class SymbolicVisitor(BNILVisitor):
         if self._check_error(right): return right
 
         assert left.size == 2*right.size
+
+        check_division_by_zero = self.bncache.get_setting("check_division_by_zero") == 'true'
         
         right = right.ZeroExt(left.size - right.size)
-        if CHECK_DIVISION_BY_ZERO and self.state.solver.satisfiable(extra_constraints=[right == 0]):
+        if check_division_by_zero and self.state.solver.satisfiable(extra_constraints=[right == 0]):
             print("WARNING: division by zero detected")
             errored = self.state.copy(solver_copy_fast=True)
             errored.solver.add_constraints(right == 0)
@@ -557,8 +557,10 @@ class SymbolicVisitor(BNILVisitor):
 
         assert left.size == 2*right.size
 
+        check_division_by_zero = self.bncache.get_setting("check_division_by_zero") == 'true'
+
         right = right.SignExt(left.size - right.size)
-        if CHECK_DIVISION_BY_ZERO and self.state.solver.satisfiable(extra_constraints=[right == 0]):
+        if check_division_by_zero and self.state.solver.satisfiable(extra_constraints=[right == 0]):
             print("WARNING: division by zero detected")
             errored = self.state.copy(solver_copy_fast=True)
             errored.solver.add_constraints(right == 0)
@@ -587,8 +589,10 @@ class SymbolicVisitor(BNILVisitor):
 
         assert left.size == 2*right.size
 
+        check_division_by_zero = self.bncache.get_setting("check_division_by_zero") == 'true'
+
         right = right.ZeroExt(left.size - right.size)
-        if CHECK_DIVISION_BY_ZERO and self.state.solver.satisfiable(extra_constraints=[right == 0]):
+        if check_division_by_zero and self.state.solver.satisfiable(extra_constraints=[right == 0]):
             print("WARNING: division by zero detected")
             errored = self.state.copy(solver_copy_fast=True)
             errored.solver.add_constraints(right == 0)
@@ -617,8 +621,10 @@ class SymbolicVisitor(BNILVisitor):
 
         assert left.size == 2*right.size
 
+        check_division_by_zero = self.bncache.get_setting("check_division_by_zero") == 'true'
+
         right = right.SignExt(left.size - right.size)
-        if CHECK_DIVISION_BY_ZERO and self.state.solver.satisfiable(extra_constraints=[right == 0]):
+        if check_division_by_zero and self.state.solver.satisfiable(extra_constraints=[right == 0]):
             print("WARNING: division by zero detected")
             errored = self.state.copy(solver_copy_fast=True)
             errored.solver.add_constraints(right == 0)
@@ -903,7 +909,7 @@ class SymbolicVisitor(BNILVisitor):
             return True
 
         # symbolic IP path
-        if USE_BN_JUMPTABLE_TARGETS:
+        if self.bncache.get_setting("use_bn_jumptable_targets") == 'true':
             max_num = len(expr.targets)
         else:
             max_num = 256
@@ -967,6 +973,8 @@ class SymbolicVisitor(BNILVisitor):
 
         self._check_unsupported(condition, expr.condition)
         if self._check_error(condition): return condition
+
+        save_unsat = self.bncache.get_setting("save_unsat") == 'true'
         
         if isinstance(condition, BV):
             assert condition.size == 1
@@ -997,34 +1005,34 @@ class SymbolicVisitor(BNILVisitor):
             self._put_in_deferred(false_state)
         elif true_sat and not false_sat:
             true_state = self.state
-            false_state = self.state.copy() if SAVE_UNSAT else None
+            false_state = self.state.copy() if save_unsat else None
 
             true_state.solver.add_constraints(condition)
             self.update_ip(curr_fun_name, true_llil_index)
 
-            if SAVE_UNSAT:
+            if save_unsat:
                 false_state.solver.add_constraints(condition.Not())
                 false_state.set_ip(self.bncache.get_address(curr_fun_name, false_llil_index))
                 false_state.llil_ip = false_llil_index
                 self._put_in_unsat(false_state)
         elif not true_sat and false_sat:
             false_state = self.state
-            true_state = self.state.copy() if SAVE_UNSAT else None
+            true_state = self.state.copy() if save_unsat else None
 
             false_state.solver.add_constraints(condition.Not())
             self.state = false_state
             self.update_ip(curr_fun_name, false_llil_index)
 
-            if SAVE_UNSAT:
+            if save_unsat:
                 true_state.solver.add_constraints(condition)
                 true_state.set_ip(self.bncache.get_address(curr_fun_name, true_llil_index))
                 true_state.llil_ip = true_llil_index
                 self._put_in_unsat(true_state)
         else:
-            true_state  = self.state.copy() if SAVE_UNSAT else None
-            false_state = self.state.copy() if SAVE_UNSAT else None
+            true_state  = self.state.copy() if save_unsat else None
+            false_state = self.state.copy() if save_unsat else None
 
-            if SAVE_UNSAT:
+            if save_unsat:
                 true_state.solver.add_constraints(condition)
                 true_state.set_ip(self.bncache.get_address(curr_fun_name, true_llil_index))
                 true_state.llil_ip = true_llil_index

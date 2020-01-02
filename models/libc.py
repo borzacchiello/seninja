@@ -4,7 +4,6 @@ from expr import BVV, BVS, BoolV, ITE, Or, And
 from utility.models_util import get_arg_k
 from utility.string_util import as_bytes, str_to_bv_list
 from memory.sym_memory import InitData
-from options import ATOX_SLOW_MODEL, MAX_MALLOC, MAX_SYMB_STR
 import re
 
 ascii_numbers = ["0","1","2","3","4","5","6","7","8","9"]
@@ -60,7 +59,8 @@ def printf_handler(state: State, view):  # only concrete
         if match[-1] == "s":
             # string
             param_p = get_arg_k(state, param_idx, state.arch.bits() // 8, view)
-            l = int(match[1:-1]) if len(match) > 2 else MAX_SYMB_STR
+            max_symb_str = int(state.executor.bncache.get_setting("models.max_size_symb_string"))
+            l = int(match[1:-1]) if len(match) > 2 else max_symb_str
 
             i = 0
             c = state.mem.load(param_p, 1)
@@ -208,7 +208,8 @@ def strlen_handler(state: State, view):
 # SLOW... but cool :)
 atox_idx = 0
 def _atox(state: State, view, size: int):
-    if not ATOX_SLOW_MODEL:
+    atox_slow_model = state.executor.bncache.get_setting("models.use_atox_slow_model") == 'true'
+    if not atox_slow_model:
         global atox_idx
         atox_idx += 1
         return BVS('atox_unconstrained_{idx}'.format(atox_idx), size*8)
@@ -301,10 +302,11 @@ def atol_handler(state: State, view):
 
 def malloc_handler(state: State, view):
     size = get_arg_k(state, 1, 4, view)
+    max_malloc = int(state.executor.bncache.get_setting("models.max_malloc_size"))
     if symbolic(size):
         size = state.solver.max(size)
-        if size > MAX_MALLOC:
-            size = MAX_MALLOC
+        if size > max_malloc:
+            size = max_malloc
     else:
         size = size.value
     
@@ -313,10 +315,11 @@ def malloc_handler(state: State, view):
 
 def calloc_handler(state: State, view):
     size = get_arg_k(state, 1, 4, view)
+    max_malloc = int(state.executor.bncache.get_setting("models.max_malloc_size"))
     if symbolic(size):
         size = state.solver.max(size)
-        if size > MAX_MALLOC:
-            size = MAX_MALLOC
+        if size > max_malloc:
+            size = max_malloc
     else:
         size = size.value
     
