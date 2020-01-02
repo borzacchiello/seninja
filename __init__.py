@@ -53,6 +53,8 @@ def _async_start_se(bv, address):
     def f(tb):
         global sv, _running
         sv = SymbolicVisitor(bv, address)
+        if sv is None:
+            return
         bv.file.navigate(bv.file.view, sv.state.get_ip())
         _running = False
     
@@ -227,7 +229,7 @@ def change_current_state(bv, address):
     sv.set_current_state(state)
     bv.file.navigate(bv.file.view, sv.state.get_ip())
 
-def reset_se(bv):
+def reset_se(bv=None):
     global sv
     if not __check_sv():
         return

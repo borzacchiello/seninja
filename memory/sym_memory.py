@@ -104,17 +104,6 @@ class Memory(MemoryAbstract):
         max_addr                    = None
         heuristic_base              = None
 
-        if symb_access_mode == "concretization":
-            print("WARNING: memory %s, concretizing mem access (\"concretization\" policy)" % op_type)
-            heuristic_base = heuristic_find_base(address) if heuristic_base is None else heuristic_base
-            if use_heuristic_find_base and heuristic_base != -1 and self.state.solver.satisfiable([address == heuristic_base]):
-                print("WARNING: memory %s, heuristic address 0x%x" % (op_type, heuristic_base))
-                address_conc = BVV(heuristic_base, address.size)
-            else:
-                address_conc = self.state.solver.evaluate(address)
-            self.state.solver.add_constraints(address == address_conc)
-            return address_conc
-        
         if concretize_unconstrained:
             min_addr = self.state.solver.min(address) if min_addr is None else min_addr
             max_addr = self.state.solver.max(address) if max_addr is None else max_addr
@@ -128,6 +117,17 @@ class Memory(MemoryAbstract):
                 address = BVV(address_conc, address.size)
                 return address
 
+        if symb_access_mode == "concretization":
+            print("WARNING: memory %s, concretizing mem access (\"concretization\" policy)" % op_type)
+            heuristic_base = heuristic_find_base(address) if heuristic_base is None else heuristic_base
+            if use_heuristic_find_base and heuristic_base != -1 and self.state.solver.satisfiable([address == heuristic_base]):
+                print("WARNING: memory %s, heuristic address 0x%x" % (op_type, heuristic_base))
+                address_conc = BVV(heuristic_base, address.size)
+            else:
+                address_conc = self.state.solver.evaluate(address)
+            self.state.solver.add_constraints(address == address_conc)
+            return address_conc
+        
         if symb_access_mode == "fully_symbolic":
             return address
 
@@ -200,6 +200,8 @@ class Memory(MemoryAbstract):
                 page_address, page_index = split_bv(address + size // 8 - i - 1, self.index_bits)
 
             if not symbolic(page_address) or not self.state.solver.symbolic(page_address):  # syntactic check + check with path constraint
+                if symbolic(page_address):
+                    page_address = self.state.solver.evaluate(page_address)
                 page_address = page_address.value
                 if page_address not in self.pages:
                     self.state.executor._put_in_errored(
@@ -256,6 +258,8 @@ class Memory(MemoryAbstract):
         for i in ran:
             page_address, page_index = split_bv(address + i, self.index_bits)
             if not symbolic(page_address) or not self.state.solver.symbolic(page_address):  # syntactic check + check with path constraint
+                if symbolic(page_address):
+                    page_address = self.state.solver.evaluate(page_address)
                 page_address = page_address.value
                 if page_address not in self.pages:
                     self.state.executor._put_in_errored(

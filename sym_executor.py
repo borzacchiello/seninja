@@ -129,6 +129,10 @@ class SymbolicVisitor(BNILVisitor):
             offset = var.storage
             s_type = var.type
 
+            if abs(offset) > self.state.page_size * (stack_page_size - 1):
+                print("ERROR: not enough space in stack. Increase stack size")
+                return None
+
             if s_type.confidence != 255:
                 continue
             
