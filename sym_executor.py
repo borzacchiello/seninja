@@ -44,16 +44,17 @@ class SymbolicVisitor(BNILVisitor):
     def __init__(self, view, addr):
         super(SymbolicVisitor, self).__init__()
 
-        self.view       = view
-        self.bw         = BinaryWriter(view)
-        self.br         = BinaryReader(view)
-        self.bncache    = BNCache(view)
-        self.vars       = set()
-        self.fringe     = Fringe()
-        self.ip         = addr
-        self.llil_ip    = None 
-        self.arch       = None
-        self.user_hooks = dict()
+        self.view         = view
+        self.bw           = BinaryWriter(view)
+        self.br           = BinaryReader(view)
+        self.bncache      = BNCache(view)
+        self.vars         = set()
+        self.fringe       = Fringe()
+        self.ip           = addr
+        self.llil_ip      = None 
+        self.arch         = None
+        self.user_hooks   = dict()
+        self.user_loggers = dict()
         self.imported_functions, self.imported_addresses = get_imported_functions_and_addresses(view)
         self._last_colored_ip = None
 
@@ -183,7 +184,7 @@ class SymbolicVisitor(BNILVisitor):
             ErrorInstruction.NO_DEST,
             ErrorInstruction.UNCONSTRAINED_IP
         }:
-            assert self.state is None
+            self.state = None
             print("WARNING: changing current state due to %s" % err.name)
             return
         
@@ -266,7 +267,9 @@ class SymbolicVisitor(BNILVisitor):
     def _execute_one(self, no_colors=False):
         func_name = self.bncache.get_function_name(self.ip)
 
-        # handle user hooks
+        # handle user hooks and loggers
+        if self.ip in self.user_loggers:
+            self.user_loggers[self.ip](self.state)
         if self.ip in self.user_hooks:
             old_ip = self.ip
             new_state, new_deferred, new_errored = self.user_hooks[self.ip](self.state)
@@ -544,8 +547,7 @@ class SymbolicVisitor(BNILVisitor):
 
         self.state.solver.add_constraints(right != 0)
         if not self.state.solver.satisfiable():
-            self._put_in_unsat(self.state)
-            self.state = None
+            self._put_in_errored(self.state, "division by zero")
             return ErrorInstruction.DIVISION_BY_ZERO
 
         div = left.UDiv(right)
@@ -576,8 +578,7 @@ class SymbolicVisitor(BNILVisitor):
 
         self.state.solver.add_constraints(right != 0)
         if not self.state.solver.satisfiable():
-            self._put_in_unsat(self.state)
-            self.state = None
+            self._put_in_errored(self.state, "division by zero")
             return ErrorInstruction.DIVISION_BY_ZERO
         
         div = left / right
@@ -608,8 +609,7 @@ class SymbolicVisitor(BNILVisitor):
 
         self.state.solver.add_constraints(right != 0)
         if not self.state.solver.satisfiable():
-            self._put_in_unsat(self.state)
-            self.state = None
+            self._put_in_errored(self.state, "division by zero")
             return ErrorInstruction.DIVISION_BY_ZERO
 
         mod = left.URem(right)
@@ -640,8 +640,7 @@ class SymbolicVisitor(BNILVisitor):
 
         self.state.solver.add_constraints(right != 0)
         if not self.state.solver.satisfiable():
-            self._put_in_unsat(self.state)
-            self.state = None
+            self._put_in_errored(self.state, "division by zero")
             return ErrorInstruction.DIVISION_BY_ZERO
 
         mod = left.SRem(right)
@@ -922,12 +921,10 @@ class SymbolicVisitor(BNILVisitor):
 
         if num_ips == 256:
             self._put_in_errored(self.state, "Probably unconstrained IP")
-            self.state = None
             return ErrorInstruction.UNCONSTRAINED_IP
 
         if num_ips == 0:
             self._put_in_errored(self.state, "No valid destination")
-            self.state = None
             return ErrorInstruction.NO_DEST
 
         for ip in dest_ips[1:]:
@@ -1182,11 +1179,9 @@ class SymbolicVisitor(BNILVisitor):
 
             if num_ips == 256:
                 self._put_in_errored(self.state, "Probably unconstrained IP")
-                self.state = None
                 return ErrorInstruction.UNCONSTRAINED_IP
             if num_ips == 0:
                 self._put_in_errored(self.state, "No valid destination")
-                self.state = None
                 return ErrorInstruction.NO_DEST
             
             for ip in dest_ips[1:]:
