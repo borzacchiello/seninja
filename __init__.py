@@ -264,6 +264,12 @@ def register_hook(address, func):
 
     sv.user_hooks[address] = func
 
+def register_logger(address, func):
+    if not __check_sv():
+        return
+    
+    sv.user_loggers[address] = func
+
 def reload_settings():
     if not __check_sv():
         return

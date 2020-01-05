@@ -155,54 +155,6 @@ def scanf_handler(state: State, view):
 
     return BVV(1, 32)
 
-def strcmp_handler(state: State, view):
-    str1 = get_arg_k(state, 1, state.arch.bits() // 8, view)
-    str2 = get_arg_k(state, 2, state.arch.bits() // 8, view)
-
-    assert not symbolic(str1) or not state.solver.symbolic(str1)
-    assert not symbolic(str2) or not state.solver.symbolic(str2)
-
-    b1 = state.mem.load(str1, 1)
-    b2 = state.mem.load(str2, 1)
-    cond = BoolV(True)
-    i = 0
-    while i < 40:
-        if not state.solver.symbolic(b1) and state.solver.evaluate(b1).value == 0:
-            break
-        if not state.solver.symbolic(b2) and state.solver.evaluate(b2).value == 0:
-            break
-        cond = (b1 == b2).And(cond)
-        str1 += 1
-        str2 += 1
-        b1 = state.mem.load(str1, 1)
-        b2 = state.mem.load(str2, 1)
-        i += 1
-    
-    return ITE(cond, BVV(0, 32), BVV(1, 32))
-
-def strlen_handler(state: State, view):
-    str1 = get_arg_k(state, 1, state.arch.bits() // 8, view)
-
-    assert not symbolic(str1) or not state.solver.symbolic(str1)
-
-    b1 = state.mem.load(str1, 1)
-    vals = []
-    i = 0
-    while i < 40:
-        if not state.solver.symbolic(b1) and state.solver.evaluate(b1).value == 0:
-            break
-        
-        vals.append((i, b1))
-        i += 1
-        str1 += 1
-        b1 = state.mem.load(str1, 1)
-    
-    state.solver.add_constraints(b1 == 0)
-    res = BVV(i, state.arch.bits())
-    for i, b in vals[::-1]:
-        res = ITE(b == 0, BVV(i, state.arch.bits()), res)
-    return res
-
 # ************** atoX models **************
 
 # SLOW... but cool :)

@@ -207,7 +207,6 @@ class Memory(MemoryAbstract):
                     self.state.executor._put_in_errored(
                         self.state, "write unmapped"
                     )
-                    self.state.executor.state = None
                     return ErrorInstruction.UNMAPPED_WRITE
                 self._store(page_address, page_index, value.Extract(8*(i+1)-1, 8*i))
             else: # symbolic access
@@ -227,7 +226,6 @@ class Memory(MemoryAbstract):
                     self.state.executor._put_in_errored(
                         self.state, "write unmapped"
                     )
-                    self.state.executor.state = None
                     return ErrorInstruction.UNMAPPED_WRITE
             if conditions:
                 check_unmapped = self.state.executor.bncache.get_setting("memory.check_unmapped")
@@ -265,7 +263,6 @@ class Memory(MemoryAbstract):
                     self.state.executor._put_in_errored(
                         self.state, "read unmapped"
                     )
-                    self.state.executor.state = None
                     return ErrorInstruction.UNMAPPED_READ
                 tmp = self._load(page_address, page_index)
             else: # symbolic access
@@ -286,7 +283,6 @@ class Memory(MemoryAbstract):
                     self.state.executor._put_in_errored(
                         self.state, "read unmapped"
                     )
-                    self.state.executor.state = None
                     return ErrorInstruction.UNMAPPED_READ
             res = tmp if res is None else res.Concat(tmp)
 
