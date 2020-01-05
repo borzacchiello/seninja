@@ -17,6 +17,9 @@ class BoolExpr(Bool):
             obj=str(self.z3obj)
         )
     
+    def __hash__(self):
+        return self.z3obj.__hash__()
+    
     def simplify(self):
         simplified = z3.simplify(self.z3obj)
         if simplified.decl().kind() == z3.Z3_OP_TRUE:
@@ -78,6 +81,9 @@ class BoolV(Bool):
         return "<BoolV {val}>".format(
             val=str(self.value)
         )
+    
+    def __hash__(self):
+        return hash(self.value)
     
     def eq(self, other: Bool):
         return isinstance(other, BoolV) and other.value == self.value
