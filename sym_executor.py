@@ -1190,7 +1190,7 @@ class SymbolicVisitor(BNILVisitor):
                 return ErrorInstruction.NO_DEST
             
             for ip in dest_ips[1:]:
-                dest_fun_name = self.bncache.get_function_name(ip) 
+                dest_fun_name = self.bncache.get_function_name(ip.value) 
                 new_state = self.state.copy()
                 new_state.solver.add_constraints(
                     dest == ip
@@ -1199,7 +1199,7 @@ class SymbolicVisitor(BNILVisitor):
                 new_state.llil_ip = self.bncache.get_llil_address(dest_fun_name, ip.value) 
                 self._put_in_deferred(new_state)
             
-            dest_ip = dest_ips[0]
+            dest_ip = dest_ips[0].value
         else:
             dest_ip = dest.value
         

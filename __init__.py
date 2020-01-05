@@ -196,12 +196,12 @@ def start_se(bv, address):
     sv = SymbolicVisitor(bv, address)
     bv.file.navigate(bv.file.view, sv.state.get_ip())
 
-def continue_until_branch():
+def continue_until_branch(bv=None):
     global _stop
     if not __check_sv():
         return
 
-    k = len(sv.fringe.deferred)
+    k = sv.fringe.last_added
     i = k
     while not _stop and i == k:
         try:
@@ -212,27 +212,32 @@ def continue_until_branch():
             break
         if not sv.state:
             break
-        i = len(sv.fringe.deferred)
+        i = sv.fringe.last_added
 
-    sv.view.file.navigate(sv.view.file.view, sv.state.get_ip())
+    if bv:
+        sv.view.file.navigate(bv.file.view, sv.state.get_ip())
     sv._set_colors()
     _running = False
     _stop = False
 
     return sv.state, sv.fringe.last_added
 
-def change_current_state(bv, address):
+def change_current_state(address_or_state, bv=None):
     # take only the first one at the given address. TODO
     if not __check_sv():
         return
 
-    state = sv.fringe.get_deferred_by_address(address)
+    if not isinstance(address_or_state, State):
+        state = sv.fringe.get_deferred_by_address(address_or_state)
+    else:
+        state = address_or_state
     if state is None:
         log_alert("no such deferred state")
         return
     
     sv.set_current_state(state)
-    bv.file.navigate(bv.file.view, sv.state.get_ip())
+    if bv:
+        bv.file.navigate(bv.file.view, sv.state.get_ip())
 
 def reset_se(bv=None):
     global sv
@@ -273,7 +278,7 @@ PluginCommand.register_for_address(
 PluginCommand.register_for_address(
     "SENinja\\1 - Change current state", 
     "change current state with the deferred one at current address (if any)", 
-    change_current_state
+    lambda bv, address: change_current_state(address, bv)
 )
 PluginCommand.register(
     "SENinja\\2 - Step", 

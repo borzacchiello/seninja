@@ -1,4 +1,5 @@
 from copy import deepcopy
+from collections import OrderedDict
 from utility.expr_wrap_util import symbolic
 from expr import BV, BVV, Bool, And, Or
 import z3
@@ -8,16 +9,16 @@ class Solver(object):
         self.state       = state
         self.assertions  = []
         self._solver     = z3.Solver()
-        self._min_cache  = {}
-        self._max_cache  = {}
-        self._eval_cache = {}
-        self._symb_check_cache = {}
+        self._min_cache  = OrderedDict()
+        self._max_cache  = OrderedDict()
+        self._eval_cache = OrderedDict()
+        self._symb_check_cache = OrderedDict()
     
     def _invalidate_cache(self):
-        self._min_cache = {}
-        self._max_cache = {}
-        self._eval_cache = {}
-        self._symb_check_cache = {}
+        self._min_cache = OrderedDict()
+        self._max_cache = OrderedDict()
+        self._eval_cache = OrderedDict()
+        self._symb_check_cache = OrderedDict()
     
     def get_path_constraint(self):
         return self.assertions
@@ -88,7 +89,7 @@ class Solver(object):
             return self._symb_check_cache[val]
         
         res = len(self.evaluate_upto(val, 2)) != 1
-        self._symb_check_cache[val.z3obj] = res
+        self._symb_check_cache[val] = res
         return res
     
     def max(self, val: BV):
@@ -135,6 +136,32 @@ class Solver(object):
             extra_constraints = []
         return res
 
+    def _copy_cache(self, new, max_num_elem=3):
+        i = 0
+        for key in reversed(self._min_cache.keys()):
+            if i > max_num_elem:
+                break
+            new._min_cache[key] = self._min_cache[key]
+            i += 1
+        i = 0
+        for key in reversed(self._max_cache.keys()):
+            if i > max_num_elem:
+                break
+            new._max_cache[key] = self._max_cache[key]
+            i += 1
+        i = 0
+        for key in reversed(self._eval_cache.keys()):
+            if i > max_num_elem:
+                break
+            new._eval_cache[key] = self._eval_cache[key]
+            i += 1
+        i = 0
+        for key in reversed(self._symb_check_cache.keys()):
+            if i > max_num_elem:
+                break
+            new._symb_check_cache[key] = self._symb_check_cache[key]
+            i += 1
+
     def copy(self, state, fast_copy=False):
         fast_copy = True  # deepcopy seems broken
 
@@ -146,7 +173,9 @@ class Solver(object):
         else:
             for a in self._solver.assertions():
                 res._solver.add(a)
+        
         res.assertions = deepcopy(self.assertions)
+        self._copy_cache(res, 3)
         return res
     
     def compute_solvers_difference(self, other):  # can be quite slow
