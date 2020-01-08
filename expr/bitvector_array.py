@@ -1,7 +1,8 @@
-from copy import deepcopy
-from expr.bitvector import BV, BVV, BVExpr
-from expr.bool_expr import Bool, BoolV
 import z3
+
+from copy import deepcopy
+from .bitvector import BV, BVV, BVExpr
+from .bool_expr import Bool, BoolV
 
 class BVArray(object):
     """ Wrapper of z3's Array. Beware: this is not immutable, differently from z3 """

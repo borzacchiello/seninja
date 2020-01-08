@@ -1,6 +1,7 @@
-from arch.arch_abstract import Arch
-from arch.arch_x86_sph import ArchX86SPH
 import z3
+
+from .arch_abstract import Arch
+from .arch_x86_sph import ArchX86SPH
 
 class x86Arch(Arch):
     REGS = {

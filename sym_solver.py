@@ -1,8 +1,9 @@
+import z3
+
 from copy import deepcopy
 from collections import OrderedDict
-from utility.expr_wrap_util import symbolic
-from expr import BV, BVV, Bool, And, Or
-import z3
+from .utility.expr_wrap_util import symbolic
+from .expr import BV, BVV, Bool, And, Or
 
 class Solver(object):
     def __init__(self, state):

@@ -1,9 +1,9 @@
-from arch.arch_abstract import SpecialInstructionHandler
-from utility.bninja_util import get_function, get_addr_next_inst
-from utility.x86_native_handlers_util import (
+from ..utility.bninja_util import get_function, get_addr_next_inst
+from ..utility.x86_native_handlers_util import (
     store_to_dst, get_src
 )
-from expr import ITE, BVV
+from ..expr import ITE, BVV
+from .arch_abstract import SpecialInstructionHandler
 
 class ArchX86SPH(SpecialInstructionHandler):
     def __init__(self):

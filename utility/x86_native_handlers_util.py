@@ -1,4 +1,4 @@
-from expr import BVV
+from ..expr import BVV
 
 _size_dict = {
     "byte":     1,

@@ -6,3 +6,4 @@ class ErrorInstruction(Enum):
     UNMAPPED_WRITE   = 2
     NO_DEST          = 3
     UNCONSTRAINED_IP = 4
+    UNSAT_STATE      = 5

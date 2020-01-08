@@ -1,6 +1,6 @@
-from arch.arch_x86 import x86Arch
-from utility.expr_wrap_util import symbolic
-from utility.bninja_util import get_function
+from ..arch.arch_x86 import x86Arch
+from .expr_wrap_util import symbolic
+from .bninja_util import get_function
 
 def get_arg_k(state, k, size, view):
     

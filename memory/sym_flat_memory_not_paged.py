@@ -1,8 +1,6 @@
-from memory.memory_abstract import MemoryAbstract
-from utility.expr_wrap_util import symbolic, split_bv
-from expr import BVV, BV, BVS
-from copy import deepcopy
-import math
+from ..utility.expr_wrap_util import symbolic
+from ..expr import BV, BVS
+from .memory_abstract import MemoryAbstract
 
 class MemoryConcreteFlatNotPaged(MemoryAbstract):
     def __init__(self, state, bits=64):
@@ -28,7 +26,7 @@ class MemoryConcreteFlatNotPaged(MemoryAbstract):
 
     def load(self, address: BV, size: int, endness='big'):
         assert not symbolic(address)
-        
+
         address = address.value
 
         ran = range(size - 1, -1, -1) if endness == 'little' else range(size)
@@ -39,12 +37,12 @@ class MemoryConcreteFlatNotPaged(MemoryAbstract):
 
             tmp = self.values[address+i]
             res = tmp if res is None else res.Concat(tmp)
-        
+
         return res
 
     def get_unmapped(self, size, start_from, from_end):
         raise NotImplementedError
-    
+
     def allocate(self, size):
         raise NotImplementedError
 
@@ -53,4 +51,3 @@ class MemoryConcreteFlatNotPaged(MemoryAbstract):
         for addr in self.values:
             new_memory.values[addr] = self.values[addr]
         return new_memory
-

@@ -1,12 +1,11 @@
-from arch.arch_abstract import Arch
-from arch.arch_x86_64 import x8664Arch
-from os_models.os_abstract import Os
-from os_models.linux import Linuxia64
-from memory.registers import Regs
-from memory.sym_memory import Memory
-from sym_solver import Solver
-from utility.expr_wrap_util import symbolic
-from expr import BV, BVV
+from .arch.arch_abstract import Arch
+from .arch.arch_x86_64 import x8664Arch
+from .os_models.os_abstract import Os
+from .memory.registers import Regs
+from .memory.sym_memory import Memory
+from .sym_solver import Solver
+from .utility.expr_wrap_util import symbolic
+from .expr import BV, BVV
 
 class State(object):
     def __init__(self, executor, os: Os, arch: Arch=x8664Arch(), page_size: int=0x1000):
@@ -21,12 +20,12 @@ class State(object):
         self.executor       = executor
         self._ipreg         = self.arch.getip_reg()
         self._bits          = self.arch.bits()
-    
+
     def get_ip(self):
         ip = getattr(self.regs, self._ipreg)
         assert not symbolic(ip)
         return ip.value
-    
+
     def address_page_aligned(self, addr):
         return addr >> self.mem.index_bits << self.mem.index_bits
 
@@ -39,14 +38,14 @@ class State(object):
         new_stack_pointer = stack_pointer - self._bits // 8
         self.mem.store(new_stack_pointer, val, endness=self.arch.endness())
         setattr(self.regs, self.arch.get_stack_pointer_reg(), new_stack_pointer)
-  
+
     def stack_pop(self):
         stack_pointer = getattr(self.regs, self.arch.get_stack_pointer_reg())
         res = self.mem.load(stack_pointer, self._bits // 8, endness=self.arch.endness())
         new_stack_pointer = stack_pointer + self._bits // 8
         setattr(self.regs, self.arch.get_stack_pointer_reg(), new_stack_pointer)
         return res
-    
+
     def set_ip(self, new_ip):
         setattr(self.regs, self._ipreg, BVV(new_ip, self._bits))
 

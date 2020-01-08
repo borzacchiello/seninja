@@ -1,7 +1,7 @@
 from copy import deepcopy
-from os_models.os_abstract import Os
-import models.linux_syscalls as models
-from expr import Bool
+from ..models import linux_syscalls as models
+from ..expr import Bool
+from .os_abstract import Os
 
 class Linux(Os):
     SYSCALL_TABLE  = {}

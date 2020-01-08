@@ -1,7 +1,8 @@
-from expr.bitvector import BV, BVV, BVS, BVExpr
-from expr.bool_expr import Bool, BoolExpr, BoolS, BoolV
-from expr.bitvector_array import BVArray
 import z3
+
+from .bitvector import BV, BVV, BVS, BVExpr
+from .bool_expr import Bool, BoolExpr, BoolS, BoolV
+from .bitvector_array import BVArray
 
 def ITE(cond: Bool, iftrue: BV, iffalse: BV):
     assert iftrue.size == iffalse.size

@@ -1,10 +1,11 @@
-from utility.expr_wrap_util import symbolic, split_bv, heuristic_find_base
-from expr import BV, BVV, Bool, Or, ITE
-from memory.memory_object import MemoryObj
-from memory.memory_abstract import MemoryAbstract
-from collections import namedtuple
-from utility.error_codes import ErrorInstruction
 import math
+
+from collections import namedtuple
+from ..utility.expr_wrap_util import symbolic, split_bv, heuristic_find_base 
+from ..expr import BV, BVV, Bool, Or, ITE
+from ..utility.error_codes import ErrorInstruction
+from .memory_object import MemoryObj
+from .memory_abstract import MemoryAbstract
 
 InitData = namedtuple('InitData', ['bytes', 'index'])  # bytes: byte array; index: int
 

@@ -1,7 +1,7 @@
-from utility.bninja_util import (
+from binaryninja import Settings
+from .bninja_util import (
     get_function
 )
-from binaryninja import Settings
 
 class BNCache(object):
     def __init__(self, bv):

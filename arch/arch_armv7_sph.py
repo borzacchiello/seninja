@@ -1,9 +1,9 @@
-from utility.armv7_native_handlers_util import (
+from ..utility.armv7_native_handlers_util import (
     parse_mnemonic, parse_immediate, 
     parse_rot_shift, ArmV7Mnemonic,
     ArmV7RotShift
 )
-from arch.arch_abstract import SpecialInstructionHandler
+from .arch_abstract import SpecialInstructionHandler
 
 class ArmV7SPH(SpecialInstructionHandler):
     def __init__(self):

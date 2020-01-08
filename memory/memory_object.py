@@ -1,4 +1,4 @@
-from expr import BV, BVArray, Bool, ITE
+from ..expr import BV, BVArray, Bool, ITE
 
 class MemoryObj(object):
     def __init__(self, name, bits=64, bvarray=None):

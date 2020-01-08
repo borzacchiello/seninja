@@ -1,9 +1,9 @@
-from arch.arch_x86_sph import ArchX86SPH
-from utility.x86_native_handlers_util import (
+from .arch_x86_sph import ArchX86SPH
+from ..utility.x86_native_handlers_util import (
     get_src, store_to_dst
 )
-from utility.expr_wrap_util import split_bv_in_list
-from expr import BVArray, ITE, BVV
+from ..utility.expr_wrap_util import split_bv_in_list
+from ..expr import BVArray, ITE, BVV
 
 class ArchX8664SPH(ArchX86SPH):
     def __init__(self):

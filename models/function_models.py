@@ -1,8 +1,8 @@
-import models.others as models_other
-import models.libc as models_libc
-import models.unistd as models_unistd
-import models.string as models_string
-import models.teensy as models_teensy
+from . import others as models_other
+from . import libc as models_libc
+from . import unistd as models_unistd
+from . import string as models_string
+from . import teensy as models_teensy
 
 library_functions = {
     'printf':           models_libc.printf_handler,

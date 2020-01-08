@@ -1,6 +1,6 @@
 from binaryninja import SymbolType
-from os_models.linux import Linuxi386, Linuxia64, LinuxArmV7
-from os_models.windows import Windows
+from ..os_models.linux import Linuxi386, Linuxia64, LinuxArmV7
+from ..os_models.windows import Windows
 
 def get_function(view, address):
     funcs = view.get_functions_at(address)

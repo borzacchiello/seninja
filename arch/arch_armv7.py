@@ -1,5 +1,5 @@
-from arch.arch_abstract import Arch
-from arch.arch_armv7_sph import ArmV7SPH
+from .arch_abstract import Arch
+from .arch_armv7_sph import ArmV7SPH
 
 class ArmV7Arch(Arch):
     REGS = {

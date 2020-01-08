@@ -1,5 +1,5 @@
-from utility.expr_wrap_util import symbolic
-from expr import BVV, BVS
+from ..utility.expr_wrap_util import symbolic
+from ..expr import BVV, BVS
 
 MAX_READ = 100
 

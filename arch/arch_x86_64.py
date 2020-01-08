@@ -1,6 +1,6 @@
-from arch.arch_abstract import Arch
-from arch.arch_x86_64_sph import ArchX8664SPH
-from expr import And, Or
+from ..expr import And, Or
+from .arch_abstract import Arch
+from .arch_x86_64_sph import ArchX8664SPH
 
 class x8664Arch(Arch):
     REGS = {

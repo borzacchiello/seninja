@@ -1,6 +1,6 @@
 from copy import deepcopy
-from os_models.os_abstract import Os
-from expr import Bool
+from ..expr import Bool
+from .os_abstract import Os
 
 class Windows(Os):
     def __init__(self):

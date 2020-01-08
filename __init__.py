@@ -1,26 +1,24 @@
 import traceback
-import sys
 import os
-path = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, path)
-
-from sym_executor import *
 from binaryninja import (
-    log_alert, 
+    log_alert,
     log_info,
     BackgroundTaskThread,
     PluginCommand
 )
-from utility.expr_wrap_util import split_bv_in_list
-from utility.string_util import (
-    int_to_str, 
-    str_to_int, 
+
+from .sym_executor import SymbolicExecutor
+from .utility.expr_wrap_util import split_bv_in_list
+from .utility.string_util import (
+    int_to_str,
+    str_to_int,
     as_bytes,
     get_byte
 )
-import models.function_models as seninja_models
-from expr import *
-import settings
+from .sym_state import State
+from .models import function_models as seninja_models
+from .expr import *
+from . import settings
 
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):
@@ -33,12 +31,12 @@ class TaskInBackground(BackgroundTaskThread):
         self.bv.update_analysis_and_wait()
         self.callback(self)
 
-sv = None
+executor = None
 _stop = False
 _running = False
 
-def __check_sv():
-    if sv is None:
+def __check_executor():
+    if executor is None:
         log_alert("seninja not running")
         return False
     return True
@@ -46,21 +44,22 @@ def __check_sv():
 # --- async functions ---
 def _async_start_se(bv, address):
     global _running
-    if sv is not None:
+    if executor is not None:
         log_alert("seninja is already running")
         return False
     
     def f(tb):
-        global sv, _running
+        global executor, _running
         try:
-            sv = SymbolicVisitor(bv, address)
+            executor = SymbolicExecutor(bv, address)
         except Exception as e:
             print("!ERROR!")
             print(traceback.format_exc())
             _running = False
             return
 
-        bv.file.navigate(bv.file.view, sv.state.get_ip())
+        executor.set_colors()
+        bv.file.navigate(bv.file.view, executor.state.get_ip())
         _running = False
     
     if not _running:
@@ -70,18 +69,19 @@ def _async_start_se(bv, address):
 
 def _async_step(bv):
     global _running
-    if not __check_sv():
+    if not __check_executor():
         return
-    
+
     def f(tb):
         global _running
         try:
-            sv.execute_one()
+            executor.execute_one()
         except Exception as e:
             print("!ERROR!")
             print(traceback.format_exc())
-        
-        bv.file.navigate(bv.file.view, sv.state.get_ip())
+
+        executor.set_colors()
+        bv.file.navigate(bv.file.view, executor.state.get_ip())
         _running = False
 
     if not _running:
@@ -91,34 +91,36 @@ def _async_step(bv):
 
 def _async_continue_until_branch(bv):
     global _running
-    if not __check_sv():
+    if not __check_executor():
         return
-    
+
     def f(tb):
         global _running, _stop
 
-        k = len(sv.fringe.deferred)
+        k = len(executor.fringe.deferred)
         i = k
         count = 0
         while not _stop and i == k:
             try:
-                sv.execute_one(no_colors=(count != 0))
+                executor.execute_one()
             except Exception as e:
                 print("!ERROR!:")
                 print(traceback.format_exc())
                 break
-            if not sv.state:
+            if not executor.state:
                 break
-            i = len(sv.fringe.deferred)
-            ip = sv.state.get_ip()
+            i = len(executor.fringe.deferred)
+            ip = executor.state.get_ip()
             count = (count+1) % 20
+            if count == 0:
+                executor.set_colors()
             tb.progress = "seninja: continue until branch: %s" % hex(ip)
-        
-        bv.file.navigate(bv.file.view, sv.state.get_ip())
-        sv._set_colors()
+
+        executor.set_colors()
+        bv.file.navigate(bv.file.view, executor.state.get_ip())
         _running = False
         _stop = False
-    
+
     if not _running:
         _running = True
         background_task = TaskInBackground(bv, "seninja: continue until branch", f)
@@ -126,32 +128,34 @@ def _async_continue_until_branch(bv):
 
 def _async_continue_until_address(bv, address):
     global _running
-    if not __check_sv():
+    if not __check_executor():
         return
-    
+
     def f(tb):
         global _running, _stop
-        ip = sv.state.get_ip()
+        ip = executor.state.get_ip()
 
         count = 0
         while not _stop and ip != address:
             try:
-                sv.execute_one(no_colors=(count != 0))
+                executor.execute_one()
             except Exception as e:
                 print("!ERROR!:")
                 print(traceback.format_exc())
                 break
-            if not sv.state:
+            if not executor.state:
                 break
-            ip = sv.state.get_ip()
+            ip = executor.state.get_ip()
             count = (count+1) % 20
+            if count == 0:
+                executor.set_colors()
             tb.progress = "seninja: continue until address: %s" % hex(ip)
-        
-        bv.file.navigate(bv.file.view, sv.state.get_ip())
-        sv._set_colors()
+
+        executor.set_colors()
+        bv.file.navigate(bv.file.view, executor.state.get_ip())
         _running = False
         _stop = False
-    
+
     if not _running:
         _running = True
         background_task = TaskInBackground(bv, "seninja: continue until address", f)
@@ -160,28 +164,28 @@ def _async_continue_until_address(bv, address):
 def _async_merge_states(bv, address):
     # merge all states at address and put them in current state. Current state must be at address
     global _running
-    if not __check_sv():
+    if not __check_executor():
         return
 
-    if sv.state.get_ip() != address:
+    if executor.state.get_ip() != address:
         log_alert("current state is not at this address")
         return
 
-    to_be_merged = sv.fringe.get_all_deferred_by_address(address)
+    to_be_merged = executor.fringe.get_all_deferred_by_address(address)
     if to_be_merged is None:
         log_alert("no deferred state at this address")
         return
-    
+
     def f(tb):
         global _running
         tot = len(to_be_merged)
         i = 0
         for s in to_be_merged:
-            sv.state.merge(s)
+            executor.state.merge(s)
             i += 1
             tb.progress = "seninja: merging states %d/%d" % (i, tot)
         _running = False
-    
+
     if not _running:
         _running = True
         background_task = TaskInBackground(bv, "seninja: merging states", f)
@@ -189,63 +193,64 @@ def _async_merge_states(bv, address):
 # --- end async functions ---
 
 def start_se(bv, address):
-    global sv
-    if sv is not None:
+    global executor
+    if executor is not None:
         log_alert("seninja is already running")
         return False
-    sv = SymbolicVisitor(bv, address)
-    bv.file.navigate(bv.file.view, sv.state.get_ip())
+    executor = SymbolicExecutor(bv, address)
+    bv.file.navigate(bv.file.view, executor.state.get_ip())
 
 def continue_until_branch(bv=None):
     global _stop
-    if not __check_sv():
+    if not __check_executor():
         return
 
-    k = sv.fringe.last_added
+    k = executor.fringe.last_added
     i = k
     while not _stop and i == k:
         try:
-            sv.execute_one(no_colors=True)
+            executor.execute_one()
         except Exception as e:
             print("!ERROR!:")
             print(traceback.format_exc())
             break
-        if not sv.state:
+        if not executor.state:
             break
-        i = sv.fringe.last_added
+        i = executor.fringe.last_added
 
     if bv:
-        sv.view.file.navigate(bv.file.view, sv.state.get_ip())
-    sv._set_colors()
+        executor.view.file.navigate(bv.file.view, executor.state.get_ip())
+        executor.set_colors()
     _running = False
     _stop = False
 
-    return sv.state, sv.fringe.last_added
+    return executor.state, executor.fringe.last_added
 
 def change_current_state(address_or_state, bv=None):
     # take only the first one at the given address. TODO
-    if not __check_sv():
+    if not __check_executor():
         return
 
     if not isinstance(address_or_state, State):
-        state = sv.fringe.get_deferred_by_address(address_or_state)
+        state = executor.fringe.get_deferred_by_address(address_or_state)
     else:
         state = address_or_state
     if state is None:
         log_alert("no such deferred state")
         return
-    
-    sv.set_current_state(state)
+
+    executor.set_current_state(state)
     if bv:
-        bv.file.navigate(bv.file.view, sv.state.get_ip())
+        bv.file.navigate(bv.file.view, executor.state.get_ip())
+        executor.set_colors()
 
 def reset_se(bv=None):
-    global sv
-    if not __check_sv():
+    global executor
+    if not __check_executor():
         return
-    
-    sv._reset()
-    sv = None
+
+    executor.reset()
+    executor = None
 
 def stop():
     global _stop
@@ -253,61 +258,61 @@ def stop():
         _stop = True
 
 def get_current_state():
-    if not __check_sv():
+    if not __check_executor():
         return
-    
-    return sv.state
+
+    return executor.state
 
 def register_hook(address, func):
-    if not __check_sv():
+    if not __check_executor():
         return
 
-    sv.user_hooks[address] = func
+    executor.user_hooks[address] = func
 
 def register_logger(address, func):
-    if not __check_sv():
+    if not __check_executor():
         return
-    
-    sv.user_loggers[address] = func
+
+    executor.user_loggers[address] = func
 
 def reload_settings():
-    if not __check_sv():
+    if not __check_executor():
         return
-    
-    sv.bncache.settings = {}
+
+    executor.bncache.settings = {}
 
 PluginCommand.register_for_address(
-    "SENinja\\0 - Start symbolic execution", 
-    "create the first state for symbolic execution at current address", 
+    "SENinja\\0 - Start symbolic execution",
+    "create the first state for symbolic execution at current address",
     _async_start_se
 )
 PluginCommand.register_for_address(
-    "SENinja\\1 - Change current state", 
-    "change current state with the deferred one at current address (if any)", 
+    "SENinja\\1 - Change current state",
+    "change current state with the deferred one at current address (if any)",
     lambda bv, address: change_current_state(address, bv)
 )
 PluginCommand.register(
-    "SENinja\\2 - Step", 
-    "execute one instruction with the current state", 
+    "SENinja\\2 - Step",
+    "execute one instruction with the current state",
     _async_step
 )
 PluginCommand.register(
-    "SENinja\\3 - Continue until branch", 
-    "execute instructions in the current state until a fork occurs", 
+    "SENinja\\3 - Continue until branch",
+    "execute instructions in the current state until a fork occurs",
     _async_continue_until_branch
 )
 PluginCommand.register_for_address(
-    "SENinja\\4 - Continue until address", 
-    "execute instructions in the current state until the currently selected address is reached", 
+    "SENinja\\4 - Continue until address",
+    "execute instructions in the current state until the currently selected address is reached",
     _async_continue_until_address
 )
 PluginCommand.register_for_address(
-    "SENinja\\5 - Merge states", 
-    "merge all states at current address in one state", 
+    "SENinja\\5 - Merge states",
+    "merge all states at current address in one state",
     _async_merge_states
 )
 PluginCommand.register(
-    "SENinja\\6 - Reset symbolic execution", 
-    "delete all states", 
+    "SENinja\\6 - Reset symbolic execution",
+    "delete all states",
     reset_se
 )

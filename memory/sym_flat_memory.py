@@ -1,8 +1,9 @@
-from memory.memory_abstract import MemoryAbstract
-from expr import BV, BVV, BVS
-from utility.expr_wrap_util import symbolic, split_bv
-from copy import deepcopy
 import math
+
+from copy import deepcopy
+from .memory_abstract import MemoryAbstract
+from ..expr import BV, BVS
+from ..utility.expr_wrap_util import symbolic
 
 class Page(object):
     def __init__(self, addr, size, index_bits):

@@ -1,7 +1,6 @@
-from memory.sym_flat_memory import MemoryConcreteFlat
-from expr import BVV, BVS, Bool, ITE
 from copy import deepcopy
-import math
+from .sym_flat_memory import MemoryConcreteFlat
+from ..expr import BVV, BVS, Bool, ITE
 
 class Regs(object):
 

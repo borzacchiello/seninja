@@ -1,5 +1,6 @@
-from expr.bool_expr import BoolExpr, BoolV
 import z3
+
+from .bool_expr import BoolExpr, BoolV
 
 class BV(object):
     def __init__(self):
