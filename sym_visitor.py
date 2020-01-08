@@ -45,6 +45,11 @@ class SymbolicVisitor(BNILVisitor):
         super(SymbolicVisitor, self).__init__()
         self.executor = executor
 
+    def _handle_symbolic_ip(self, expr, max_sol):
+        state = self.state
+        sols  = state.solver.evaluate_upto(expr, max_sol)
+        return len(sols), sols
+
     # --- HANDLERS ---
 
     def visit_LLIL_CONST(self, expr):

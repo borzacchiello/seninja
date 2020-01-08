@@ -24,7 +24,7 @@ class Solver(object):
     def get_path_constraint(self):
         return self.assertions
 
-    def add_constraints(self, *constraints, must_add=True):
+    def add_constraints(self, *constraints):
         self._invalidate_cache()
         for c in constraints:
             assert isinstance(c, Bool)
@@ -32,26 +32,32 @@ class Solver(object):
             cz3 = c.z3obj
             if not z3.BoolVal(True).eq(cz3):
                 self._solver.add(cz3)
-                if must_add:
-                    self.assertions.append(c)
+                self.assertions.append(c)
+
+    def _add_tmp_constraints(self, *constraints):
+        for c in constraints:
+            assert isinstance(c, Bool)
+            c = c.simplify()
+            cz3 = c.z3obj
+            if not z3.BoolVal(True).eq(cz3):
+                self._solver.add(cz3)
     
-    def satisfiable(self, extra_constraints: list=[]):
+    def satisfiable(self, extra_constraints: list=None):
         if extra_constraints:
             self._solver.push()
-            self.add_constraints(must_add=False, *extra_constraints)
+            self._add_tmp_constraints(*extra_constraints)
         
         res = self._solver.check().r == 1
         
         if extra_constraints:
             self._solver.pop()
-            extra_constraints = []
         return res
     
-    def evaluate(self, var, extra_constraints: list=[]) -> int:
+    def evaluate(self, var, extra_constraints: list=None) -> int:
         assert self.satisfiable(extra_constraints)
         if extra_constraints:
             self._solver.push()
-            self.add_constraints(must_add=False, *extra_constraints)
+            self._add_tmp_constraints(*extra_constraints)
         elif var in self._eval_cache:
             return self._eval_cache[var]
 
@@ -61,16 +67,15 @@ class Solver(object):
         
         if extra_constraints:
             self._solver.pop()
-            extra_constraints = []
         else:
             self._eval_cache[var] = res
         return res
     
-    def evaluate_upto(self, var, n, extra_constraints: list=[]) -> list:
+    def evaluate_upto(self, var, n, extra_constraints: list=None) -> list:
         assert self.satisfiable(extra_constraints)
         self._solver.push()
         if extra_constraints:
-            self.add_constraints(must_add=False, *extra_constraints)
+            self._add_tmp_constraints(*extra_constraints)
         
         res = list()
         while n > 0 and self.satisfiable():
@@ -78,11 +83,10 @@ class Solver(object):
             r = model.evaluate(var.z3obj, model_completion=True)
             r = BVV(r.as_long(), var.size)
             res.append(r)
-            self.add_constraints(var != r, must_add=False)
+            self._add_tmp_constraints(var != r)
             n -= 1
         
         self._solver.pop()
-        extra_constraints = []
         return res
     
     def symbolic(self, val: BV):
@@ -125,16 +129,15 @@ class Solver(object):
         self._min_cache[val] = lb
         return lb
     
-    def model(self, extra_constraints: list=[]):
+    def model(self, extra_constraints: list=None):
         assert self.satisfiable(extra_constraints)
         if extra_constraints:
             self._solver.push()
-            self.add_constraints(must_add=False, *extra_constraints)
+            self._add_tmp_constraints(*extra_constraints)
         
         res = self._solver.model()
         if extra_constraints:
             self._solver.pop()
-            extra_constraints = []
         return res
 
     def _copy_cache(self, new, max_num_elem=3):

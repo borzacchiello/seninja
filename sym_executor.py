@@ -170,11 +170,6 @@ class SymbolicExecutor(object):
 
         raise Exception("Unknown error")
 
-    def _handle_symbolic_ip(self, expr, max_sol):
-        state = self.state
-        sols  = state.solver.evaluate_upto(expr, max_sol)
-        return len(sols), sols
-
     def put_in_deferred(self, state):
         self.fringe.add_deferred(state)
 
