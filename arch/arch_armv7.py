@@ -87,6 +87,11 @@ class ArmV7Arch(Arch):
 
     FLAGS = {'n': 0, 'z': 0, 'c': 0, 'v': 0, 'e': 0, 't': 0, 'm': 0, 'j': 0}
 
+    REG_NAMES = [
+        "pc", "sp", "r0", "r1", "r2",  "r3",  "r4",  "r5",
+        "r6", "r7", "r8", "r9", "r10", "r11", "r12", "lr"
+    ]
+
     FLAGS_CONDS = {}
 
     sph = ArmV7SPH()
@@ -99,6 +104,9 @@ class ArmV7Arch(Arch):
 
     def regs_data(self):
         return ArmV7Arch.REGS
+
+    def reg_names(self):
+        return ArmV7Arch.REG_NAMES
     
     def flags_data(self):
         return ArmV7Arch.FLAGS

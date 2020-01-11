@@ -157,12 +157,15 @@ class BVArray(object):
         
         # symbolic mode
         # no need to switch to symbolic mode! (is this right?)
-        return BVExpr(self.value_width,
+        res = BVExpr(self.value_width,
             z3.Select(
                 self.z3obj,
                 index.z3obj
             )
         )
+        if isinstance(index, BVV):
+            self._conc_store[index.value] = res
+        return res
 
     def copy(self):
         new = BVArray(self.name, self.index_width, self.value_width)

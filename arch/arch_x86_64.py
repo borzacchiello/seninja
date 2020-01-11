@@ -477,6 +477,14 @@ class x8664Arch(Arch):
     }
 
     FLAGS = { 'c': 0, 'p': 2, 'a': 4, 'z': 6, 's': 7, 'd': 10, 'o': 11, 'c0': 32, 'c1': 33, 'c2': 34, 'c3': 35 }
+
+    REG_NAMES = [
+        "rip", "rsp", "rbp", "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13",
+        "r14", "r15", "mmx0", "mmx1", "mmx2", "mmx3", "mmx4", "mmx5", "mmx6", "mmx7", "zmm0", "zmm1", "zmm2",
+        "zmm3", "zmm4", "zmm5", "zmm6", "zmm7", "zmm8", "zmm9", "zmm10", "zmm11", "zmm12", "zmm13", "zmm14",
+        "zmm15", "zmm16", "zmm17", "zmm18", "zmm19", "zmm20", "zmm21", "zmm22", "zmm23", "zmm24", "zmm25",
+        "zmm26", "zmm27", "zmm28", "zmm29", "zmm30", "zmm31"
+    ]
     
     FLAGS_CONDS = {
         'E':   lambda s: s.regs.flags['z'] == 0,
@@ -513,7 +521,10 @@ class x8664Arch(Arch):
 
     def regs_data(self):
         return x8664Arch.REGS
-    
+
+    def reg_names(self):
+        return x8664Arch.REG_NAMES
+
     def flags_data(self):
         return x8664Arch.FLAGS
 

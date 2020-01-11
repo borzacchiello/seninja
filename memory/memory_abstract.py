@@ -15,3 +15,7 @@ class MemoryAbstract(object):
         raise NotImplementedError
     def merge(self, other, merge_condition):
         raise NotImplementedError
+    def register_read_hook(self, function):
+        raise NotImplementedError
+    def register_store_hook(self, function):
+        raise NotImplementedError

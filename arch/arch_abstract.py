@@ -3,6 +3,8 @@ class Arch(object):  # abstract class
         raise NotImplementedError
     def regs_data(self):
         raise NotImplementedError
+    def reg_names(self):
+        raise NotImplementedError
     def flags_data(self):
         raise NotImplementedError
     def flags_default(self, flag):

@@ -44,6 +44,7 @@ class SymbolicExecutor(object):
         self.imported_functions, self.imported_addresses = \
             get_imported_functions_and_addresses(view)
         self._last_colored_ip = None
+        self._last_error  = None
 
         self._wasjmp = False
         if self.view.arch.name == "x86":
@@ -150,11 +151,11 @@ class SymbolicExecutor(object):
                     BVV(stack_base + offset, self.arch.bits()),
                     symb,
                     endness=self.arch.endness())
-        
+
         # set eip
         self.state.set_ip(addr)
         self.llil_ip = current_function.llil.get_instruction_start(addr)
-    
+
     def _handle_error(self, err):
         if err in {
             ErrorInstruction.DIVISION_BY_ZERO,
@@ -165,6 +166,7 @@ class SymbolicExecutor(object):
             ErrorInstruction.UNSAT_STATE
         }:
             self.state = None
+            self._last_error = err
             print("WARNING: changing current state due to %s" % err.name)
             return
 
@@ -237,6 +239,7 @@ class SymbolicExecutor(object):
         self.state.llil_ip = new_llil_ip
 
     def _execute_one(self):
+        self._last_error = None
         func_name = self.bncache.get_function_name(self.ip)
 
         # handle user hooks and loggers

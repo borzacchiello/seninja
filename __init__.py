@@ -19,6 +19,7 @@ from .sym_state import State
 from .models import function_models as seninja_models
 from .expr import *
 from . import settings
+from .ui import ui_set_arch, ui_sync_view, ui_reset_view
 
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):
@@ -41,6 +42,23 @@ def __check_executor():
         return False
     return True
 
+def initialize_ui():
+    if not __check_executor():
+        return
+    ui_set_arch(executor.arch)
+
+def sync_ui(bv, delta=True):
+    if not __check_executor():
+        return
+    executor.set_colors()
+    ui_sync_view(executor.state, delta)
+    bv.file.navigate(bv.file.view, executor.state.get_ip())
+
+def reset_ui():
+    if not __check_executor():
+        return
+    ui_reset_view()
+
 # --- async functions ---
 def _async_start_se(bv, address):
     global _running
@@ -58,8 +76,8 @@ def _async_start_se(bv, address):
             _running = False
             return
 
-        executor.set_colors()
-        bv.file.navigate(bv.file.view, executor.state.get_ip())
+        initialize_ui()
+        sync_ui(bv)
         _running = False
     
     if not _running:
@@ -80,8 +98,7 @@ def _async_step(bv):
             print("!ERROR!")
             print(traceback.format_exc())
 
-        executor.set_colors()
-        bv.file.navigate(bv.file.view, executor.state.get_ip())
+        sync_ui(bv, executor._last_error == None)
         _running = False
 
     if not _running:
@@ -116,8 +133,7 @@ def _async_continue_until_branch(bv):
                 executor.set_colors()
             tb.progress = "seninja: continue until branch: %s" % hex(ip)
 
-        executor.set_colors()
-        bv.file.navigate(bv.file.view, executor.state.get_ip())
+        sync_ui(bv, executor._last_error == None)
         _running = False
         _stop = False
 
@@ -151,8 +167,7 @@ def _async_continue_until_address(bv, address):
                 executor.set_colors()
             tb.progress = "seninja: continue until address: %s" % hex(ip)
 
-        executor.set_colors()
-        bv.file.navigate(bv.file.view, executor.state.get_ip())
+        sync_ui(bv, executor._last_error == None)
         _running = False
         _stop = False
 
@@ -184,6 +199,8 @@ def _async_merge_states(bv, address):
             executor.state.merge(s)
             i += 1
             tb.progress = "seninja: merging states %d/%d" % (i, tot)
+        
+        sync_ui(bv)
         _running = False
 
     if not _running:
@@ -192,13 +209,15 @@ def _async_merge_states(bv, address):
         background_task.start()
 # --- end async functions ---
 
+# APIs (other file?)
+
 def start_se(bv, address):
     global executor
     if executor is not None:
         log_alert("seninja is already running")
         return False
     executor = SymbolicExecutor(bv, address)
-    bv.file.navigate(bv.file.view, executor.state.get_ip())
+    sync_ui(bv)
 
 def continue_until_branch(bv=None):
     global _stop
@@ -219,8 +238,7 @@ def continue_until_branch(bv=None):
         i = executor.fringe.last_added
 
     if bv:
-        executor.view.file.navigate(bv.file.view, executor.state.get_ip())
-        executor.set_colors()
+        sync_ui(bv, executor._last_error == None)
     _running = False
     _stop = False
 
@@ -241,8 +259,12 @@ def change_current_state(address_or_state, bv=None):
 
     executor.set_current_state(state)
     if bv:
-        bv.file.navigate(bv.file.view, executor.state.get_ip())
-        executor.set_colors()
+        sync_ui(bv, delta=False)
+
+def focus_on_current_state(bv):
+    if not __check_executor():
+        return
+    bv.file.navigate(bv.file.view, executor.state.get_ip())
 
 def reset_se(bv=None):
     global executor
@@ -250,6 +272,7 @@ def reset_se(bv=None):
         return
 
     executor.reset()
+    reset_ui()
     executor = None
 
 def stop():

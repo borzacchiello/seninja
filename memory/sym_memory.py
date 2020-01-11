@@ -51,11 +51,13 @@ class Page(object):
 class Memory(MemoryAbstract):
     def __init__(self, state, page_size=0x1000, bits=64):
         assert (page_size & (page_size - 1)) == 0  # page_size must be a power of 2
-        self.bits       = bits
-        self.state      = state
-        self.pages      = dict()
-        self.page_size  = page_size
-        self.index_bits = math.ceil(math.log(page_size, 2))
+        self.bits        = bits
+        self.state       = state
+        self.pages       = dict()
+        self.page_size   = page_size
+        self.index_bits  = math.ceil(math.log(page_size, 2))
+        self.load_hooks  = []
+        self.store_hooks = []
     
     def mmap(self, address: int, size: int, init: InitData=None):
         assert address % self.page_size == 0
@@ -71,8 +73,8 @@ class Memory(MemoryAbstract):
 
         i = 0
         for a in range(
-            address // self.page_size, 
-            address // self.page_size + size // self.page_size, 
+            address // self.page_size,
+            address // self.page_size + size // self.page_size,
             1
         ):
             if a not in self.pages:
@@ -189,6 +191,9 @@ class Memory(MemoryAbstract):
             address = BVV(address, self.state.arch.bits())
         assert address.size == self.bits
 
+        for f in self.store_hooks:
+            f(address, value.size)
+
         address = self._handle_symbolic_address(address, value.size, "store")
 
         conditions     = list()
@@ -205,7 +210,7 @@ class Memory(MemoryAbstract):
                     page_address = self.state.solver.evaluate(page_address)
                 page_address = page_address.value
                 if page_address not in self.pages:
-                    self.state.executor._put_in_errored(
+                    self.state.executor.put_in_errored(
                         self.state, "write unmapped"
                     )
                     return ErrorInstruction.UNMAPPED_WRITE
@@ -224,7 +229,7 @@ class Memory(MemoryAbstract):
                         conditions.append(condition)
                         self._store(p, page_index, value.Extract(8*(i+1)-1, 8*i), condition)
                 if not at_least_one_page:
-                    self.state.executor._put_in_errored(
+                    self.state.executor.put_in_errored(
                         self.state, "write unmapped"
                     )
                     return ErrorInstruction.UNMAPPED_WRITE
@@ -235,7 +240,7 @@ class Memory(MemoryAbstract):
                 ]):
                     errored_state = self.state.copy()
                     errored_state.solver.add_constraints(Or(*conditions).Not())
-                    self.state.executor._put_in_errored(
+                    self.state.executor.put_in_errored(
                         errored_state, "write unmapped"
                     )
                 self.state.solver.add_constraints(Or(*conditions))
@@ -249,6 +254,9 @@ class Memory(MemoryAbstract):
             address = BVV(address, self.state.arch.bits())
         assert address.size == self.bits
 
+        for f in self.load_hooks:
+            f(address, size)
+
         address = self._handle_symbolic_address(address, size, "load")
 
         res = None
@@ -261,7 +269,7 @@ class Memory(MemoryAbstract):
                     page_address = self.state.solver.evaluate(page_address)
                 page_address = page_address.value
                 if page_address not in self.pages:
-                    self.state.executor._put_in_errored(
+                    self.state.executor.put_in_errored(
                         self.state, "read unmapped"
                     )
                     return ErrorInstruction.UNMAPPED_READ
@@ -281,7 +289,7 @@ class Memory(MemoryAbstract):
                         ) if tmp is not None else self._load(p, page_index)
                 
                 if tmp is None:
-                    self.state.executor._put_in_errored(
+                    self.state.executor.put_in_errored(
                         self.state, "read unmapped"
                     )
                     return ErrorInstruction.UNMAPPED_READ
@@ -294,7 +302,7 @@ class Memory(MemoryAbstract):
             ]):
                 errored_state = self.state.copy()
                 errored_state.solver.add_constraints(Or(*conditions).Not())
-                self.state.executor._put_in_errored(
+                self.state.executor.put_in_errored(
                     errored_state, "read unmapped"
                 )
             self.state.solver.add_constraints(Or(*conditions))
@@ -376,3 +384,9 @@ class Memory(MemoryAbstract):
                 other_page.mo,
                 merge_condition
             )
+
+    def register_read_hook(self, function):
+        self.read_hooks.append(function)
+
+    def register_store_hook(self, function):
+        self.store_hooks.append(function)

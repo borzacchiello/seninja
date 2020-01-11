@@ -10,7 +10,7 @@ ascii_numbers = ["0","1","2","3","4","5","6","7","8","9"]
 
 def _intbv_to_strbv16(intbv):
     # int bv to string bv in hex
-    res = [BVV(ord("0"), 8), BVV("x", 8)]
+    res = [BVV(ord("0"), 8), BVV(ord("x"), 8)]
     for b in as_bytes(intbv):
         low = b.Extract(3, 0).ZeroExt(4)
         hig = b.Extract(7, 4).ZeroExt(4)

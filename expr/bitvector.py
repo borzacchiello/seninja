@@ -35,16 +35,18 @@ class BVExpr(BV):
     def __init__(self, size: int, z3obj):
         self.z3obj = z3obj
         self.size  = size
-    
+
     def __str__(self):
         return "<BVExpr{size} {obj}>".format(
             size=self.size, obj=str(self.z3obj)
         )
-    
+
     def simplify(self):
         simplified = z3.simplify(self.z3obj)
         if simplified.decl().kind() == z3.Z3_OP_BNUM:
             return BVV(simplified.as_long(), self.size)
+        if simplified.decl().kind() == z3.Z3_OP_UNINTERPRETED:  # it seems to work.
+            return BVS(simplified.sexpr(), self.size)
         if not simplified.eq(self.z3obj):
             return BVExpr(self.size, simplified)
         return self

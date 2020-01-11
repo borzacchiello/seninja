@@ -130,6 +130,11 @@ class x86Arch(Arch):
     }
 
     FLAGS = { 'c': 0, 'p': 2, 'a': 4, 'z': 6, 's': 7, 'd': 10, 'o': 11, 'c0': 32, 'c1': 33, 'c2': 34, 'c3': 35 }
+
+    REG_NAMES = [
+        "eip", "esp", "ebp", "eax", "ebx", "ecx", "edx", "esi", "edi",
+        "mmx0", "mmx1", "mmx2", "mmx3", "mmx4", "mmx5", "mmx6", "mmx7"
+    ]
     
     FLAGS_CONDS = {
         'E':   lambda s: s.regs.flags['z'] == 0,
@@ -166,7 +171,10 @@ class x86Arch(Arch):
 
     def regs_data(self):
         return x86Arch.REGS
-    
+
+    def reg_names(self):
+        return x86Arch.REG_NAMES
+
     def flags_data(self):
         return x86Arch.FLAGS
     
