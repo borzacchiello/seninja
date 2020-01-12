@@ -13,12 +13,12 @@ from PySide2 import QtCore
 from PySide2.QtCore import Qt
 from PySide2.QtGui import QBrush, QColor
 from PySide2.QtWidgets import (
-    QApplication, 
-    QVBoxLayout, 
-    QWidget, 
-    QComboBox, 
-    QTableWidget, 
-    QTableWidgetItem, 
+    QApplication,
+    QVBoxLayout,
+    QWidget,
+    QComboBox,
+    QTableWidget,
+    QTableWidgetItem,
     QMenu
 )
 
@@ -38,6 +38,7 @@ class RegisterView(QWidget, DockContextHandler):
 
     dirty_color = QBrush(QColor(255, 153, 51))
     symbolic_color = QBrush(QColor(245, 66, 72))
+    no_color = QBrush(QColor(255, 255, 255))
 
     def __init__(self, parent, name, data):
         QWidget.__init__(self, parent)
@@ -111,6 +112,8 @@ class RegisterView(QWidget, DockContextHandler):
         table_item.setText(val_str)
         if color is not None:
             table_item.setForeground(color)
+        else:
+            table_item.setForeground(self.no_color)
 
     def set_reg_values(self, state):
         self.current_state = state
