@@ -19,7 +19,13 @@ from .sym_state import State
 from .models import function_models as seninja_models
 from .expr import *
 from . import settings
-from .ui import ui_set_arch, ui_sync_view, ui_reset_view
+from .ui import (
+    ui_set_arch, 
+    ui_sync_view, 
+    ui_reset_view, 
+    enable_widgets, 
+    disable_widgets
+)
 
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):
@@ -78,6 +84,7 @@ def _async_start_se(bv, address):
 
         initialize_ui()
         sync_ui(bv)
+        enable_widgets()
         _running = False
     
     if not _running:
@@ -92,6 +99,7 @@ def _async_step(bv):
 
     def f(tb):
         global _running
+        disable_widgets()
         try:
             executor.execute_one()
         except Exception as e:
@@ -99,6 +107,7 @@ def _async_step(bv):
             print(traceback.format_exc())
 
         sync_ui(bv, executor._last_error == None)
+        enable_widgets()
         _running = False
 
     if not _running:
@@ -113,6 +122,7 @@ def _async_continue_until_branch(bv):
 
     def f(tb):
         global _running, _stop
+        disable_widgets()
 
         k = len(executor.fringe.deferred)
         i = k
@@ -134,6 +144,7 @@ def _async_continue_until_branch(bv):
             tb.progress = "seninja: continue until branch: %s" % hex(ip)
 
         sync_ui(bv, executor._last_error == None)
+        enable_widgets()
         _running = False
         _stop = False
 
@@ -149,6 +160,7 @@ def _async_continue_until_address(bv, address):
 
     def f(tb):
         global _running, _stop
+        disable_widgets()
         ip = executor.state.get_ip()
 
         count = 0
@@ -168,6 +180,7 @@ def _async_continue_until_address(bv, address):
             tb.progress = "seninja: continue until address: %s" % hex(ip)
 
         sync_ui(bv, executor._last_error == None)
+        enable_widgets()
         _running = False
         _stop = False
 
@@ -193,6 +206,7 @@ def _async_merge_states(bv, address):
 
     def f(tb):
         global _running
+        disable_widgets()
         tot = len(to_be_merged)
         i = 0
         for s in to_be_merged:
@@ -201,11 +215,56 @@ def _async_merge_states(bv, address):
             tb.progress = "seninja: merging states %d/%d" % (i, tot)
         
         sync_ui(bv)
+        enable_widgets()
         _running = False
 
     if not _running:
         _running = True
         background_task = TaskInBackground(bv, "seninja: merging states", f)
+        background_task.start()
+
+def _async_change_current_state(bv, address):
+    global _running
+    if not __check_executor():
+        return
+    
+    state = executor.fringe.get_deferred_by_address(address)
+    if state is None:
+        log_alert("no such deferred state")
+        return
+    
+    def f(tb):
+        global _running
+        disable_widgets()
+
+        executor.set_current_state(state)
+        sync_ui(bv, delta=False)
+
+        enable_widgets()
+        _running = False
+
+    if not _running:
+        _running = True
+        background_task = TaskInBackground(bv, "seninja: changing current state", f)
+        background_task.start()
+
+def _async_reset_se(bv):
+    global _running
+    if not __check_executor():
+        return
+    
+    def f(tb):
+        global _running, executor
+
+        disable_widgets()
+        executor.reset()
+        reset_ui()
+        executor = None
+        _running = False
+    
+    if not _running:
+        _running = True
+        background_task = TaskInBackground(bv, "seninja: resetting symbolic execution", f)
         background_task.start()
 # --- end async functions ---
 
@@ -217,9 +276,8 @@ def start_se(bv, address):
         log_alert("seninja is already running")
         return False
     executor = SymbolicExecutor(bv, address)
-    sync_ui(bv)
 
-def continue_until_branch(bv=None):
+def continue_until_branch():
     global _stop
     if not __check_executor():
         return
@@ -237,14 +295,10 @@ def continue_until_branch(bv=None):
             break
         i = executor.fringe.last_added
 
-    if bv:
-        sync_ui(bv, executor._last_error == None)
-    _running = False
     _stop = False
-
     return executor.state, executor.fringe.last_added
 
-def change_current_state(address_or_state, bv=None):
+def change_current_state(address_or_state):
     # take only the first one at the given address. TODO
     if not __check_executor():
         return
@@ -258,10 +312,8 @@ def change_current_state(address_or_state, bv=None):
         return
 
     executor.set_current_state(state)
-    if bv:
-        sync_ui(bv, delta=False)
 
-def focus_on_current_state(bv):
+def focus_current_state(bv):
     if not __check_executor():
         return
     bv.file.navigate(bv.file.view, executor.state.get_ip())
@@ -312,7 +364,7 @@ PluginCommand.register_for_address(
 PluginCommand.register_for_address(
     "SENinja\\1 - Change current state",
     "change current state with the deferred one at current address (if any)",
-    lambda bv, address: change_current_state(address, bv)
+    _async_change_current_state
 )
 PluginCommand.register(
     "SENinja\\2 - Step",
@@ -337,5 +389,5 @@ PluginCommand.register_for_address(
 PluginCommand.register(
     "SENinja\\6 - Reset symbolic execution",
     "delete all states",
-    reset_se
+    _async_reset_se
 )

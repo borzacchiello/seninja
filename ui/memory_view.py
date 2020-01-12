@@ -54,6 +54,7 @@ class MemoryView(QWidget, DockContextHandler):
         self.button.clicked.connect(self.on_monitor_button_click)
 
         self.hexWidget = HexViewWidget(menu_handler=self.on_customContextMenuRequested)
+        self.hexWidget.data_edited.connect(self._handle_data_edited)
         
         self._layout.addWidget(self.button)
         self._layout.addWidget(self.hexWidget)
@@ -91,10 +92,7 @@ class MemoryView(QWidget, DockContextHandler):
         self.update_mem(self.current_state)
 
     def set_arch(self, arch):
-        return
         self.arch = arch
-        self._memhex.set_address_width(arch.bits() // 4)
-        self._memhex.redraw()
     
     def update_mem(self, state):
         self.current_state = state
@@ -138,6 +136,13 @@ class MemoryView(QWidget, DockContextHandler):
         self.hexWidget.full_data_changed.emit(
             0, {}, 0
         )
+    
+    def _handle_data_edited(self, address, value):
+        if not self.current_state or not self.address_start:
+            return
+        
+        self.current_state.mem.store(address, BVV(value, 8))
+        self.hexWidget.single_data_changed.emit(address - self.address_start, hex(value)[2:])
 
     def _show_reg_expression(self, address, expr):
         show_message_box("Expression at %s" % hex(address), str(expr.z3obj))
@@ -191,6 +196,7 @@ class MemoryView(QWidget, DockContextHandler):
                 size
             )
         )
+        self.symb_idx += 1
         self.update_mem_delta(self.current_state)
     
     @staticmethod

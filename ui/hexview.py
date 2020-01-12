@@ -62,8 +62,9 @@ class HexItemDelegate(QItemDelegate):
     def __init__(self, model, parent, *args):
         super(HexItemDelegate, self).__init__(parent)
         self._model = model
-    
+
     # def editorEvent(self, event, model, option, index):
+    #     print(event, model, option, index)
     #     return True
     
     # def setEditorData(self, editor, index):
@@ -78,6 +79,7 @@ class HexTableModel(QAbstractTableModel):
         self.rows = 512 // 16
         self.buf_size = 0
         self.start_address = 0
+        self.parent = parent
 
     @staticmethod
     def qindex2index(index):
@@ -138,11 +140,33 @@ class HexTableModel(QAbstractTableModel):
             return None
         else:
             return None
+    
+    def setData(self, index, value, role = Qt.EditRole):
+        if role == Qt.EditRole:
+            if index.column() == 0x10:
+                return False
+            is_ascii = False
+            if index.column() > 0x10:
+                is_ascii = True
+            if not is_ascii and is_int(value) and int(value, 16) <= 255 and int(value, 16) >= 0:
+                off = self.qindex2index(index)
+                self.buf[off] = value.lower()
+                self.parent.data_edited.emit(off, int(value, 16))
+                # memory_view will send a dataChanged signal
+                return True
+            elif is_ascii and len(value) == 1 and ord(value) < 128:
+                off = self.qindex2index(index)
+                self.buf[off] = "{:02x}".format(ord(value))
+                self.parent.data_edited.emit(off, ord(value))
+        return False
 
     @property
     def data_length(self):
         return self.buf_size
 
+    def flags(self, index):
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+    
     def headerData(self, section, orientation, role):
         if role != Qt.DisplayRole:
             return None
@@ -437,6 +461,10 @@ class HexTableView(QTableView):
                 self.selectKeyPressed.emit(select_key)
                 return
 
+    # def closeEditor(self, a, b):
+    #     print(a, b)
+    #     super(HexTableView, self).closeEditor(a, b)
+
     def _handle_mouse_press(self, key_event):
         self._reset_press_state()
 
@@ -461,12 +489,13 @@ class HexTableView(QTableView):
 class HexViewWidget(QWidget):
     full_data_changed = Signal(list, list, int)
     single_data_changed = Signal(object, list)
+    data_edited = Signal(object, int)
 
     def __init__(self, parent=None, menu_handler=None):
         super(HexViewWidget, self).__init__()
         self.setupUi(self)
 
-        self._model = HexTableModel()
+        self._model = HexTableModel(self)
         self.view = HexTableView()
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
@@ -522,9 +551,14 @@ class HexViewWidget(QWidget):
 
         self.full_data_changed.connect(self._handle_data_changed)
         self.single_data_changed.connect(self._handle_single_data_changed)
+        # self.data_edited.connect(self._handle_data_edited)
 
         self.statusLabel.setText("")
     
+    def _handle_data_edited(self, address, data):
+        pass
+        # print("edited address data", address, data)
+
     def _handle_data_changed(self, new_address, new_data, new_data_size):
         self._model.buf = new_data
         self._model.buf_size = new_data_size
