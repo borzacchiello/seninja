@@ -12,6 +12,7 @@ def _get_registerview_widget(name, parent, data):
     if RW is not None:
         return RW
     RW = RegisterView(parent, name, data)
+    RW.setEnabled(False)
     return RW
 
 def _get_memoryview_widget(name, parent, data):
@@ -19,6 +20,7 @@ def _get_memoryview_widget(name, parent, data):
     if MW is not None:
         return MW
     MW = MemoryView(parent, name, data)
+    MW.setEnabled(False)
     return MW
 
 def _registerDynamicWidgets():
@@ -38,6 +40,20 @@ def _registerDynamicWidgets():
         Qt.Horizontal,
         False
     )
+
+def enable_widgets():
+    assert RW is not None
+    assert MW is not None
+
+    RW.setEnabled(True)
+    MW.setEnabled(True)
+
+def disable_widgets():
+    assert RW is not None
+    assert MW is not None
+
+    RW.setEnabled(False)
+    MW.setEnabled(False)
 
 def ui_set_arch(arch):
     assert RW is not None

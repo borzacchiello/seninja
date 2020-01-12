@@ -10,7 +10,7 @@ from binaryninjaui import (
     UIActionHandler
 )
 from PySide2 import QtCore
-from PySide2.QtCore import Qt
+from PySide2.QtCore import Qt, QMimeData
 from PySide2.QtGui import QBrush, QColor
 from PySide2.QtWidgets import (
     QApplication,
@@ -138,6 +138,7 @@ class RegisterView(QWidget, DockContextHandler):
         set_reg_value = menu.addAction("Set reg value")
         eval_with_sol = menu.addAction("Evaluate with solver") if not isinstance(expr, BVV) else None
         concretize    = menu.addAction("Concretize") if not isinstance(expr, BVV) else None
+        copy          = menu.addAction("Copy to clipboard") if not isinstance(expr, BVS) else None
 
         action = menu.exec_(self._table.viewport().mapToGlobal(pos))
         if action is None: return
@@ -180,6 +181,11 @@ class RegisterView(QWidget, DockContextHandler):
                     expr == new_expr
                 )
                 self.set_reg_value(self.index_to_reg[row_idx], new_expr, RegisterView.dirty_color)
+        
+        if action == copy:
+            mime = QMimeData()
+            mime.setText(hex(expr.value))
+            QApplication.clipboard().setMimeData(mime)
 
     # double click event
     def on_doubleClick(self, item):
