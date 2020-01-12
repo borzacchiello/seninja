@@ -57,8 +57,11 @@ def sync_ui(bv, delta=True):
     if not __check_executor():
         return
     executor.set_colors()
-    ui_sync_view(executor.state, delta)
-    bv.file.navigate(bv.file.view, executor.state.get_ip())
+    if executor.state is not None:
+        ui_sync_view(executor.state, delta)
+        bv.file.navigate(bv.file.view, executor.state.get_ip())
+    else:
+        disable_widgets()
 
 def reset_ui():
     if not __check_executor():

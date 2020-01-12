@@ -140,3 +140,12 @@ Settings().register_setting("seninja.models.max_size_symb_string", """
         "description" : "Maximum length of a string with symbolic characters."
     }
     """)
+
+Settings().register_setting("seninja.init_reg_mem_with_zero", """
+    {
+        "title" : "Set uninitialized registers and memory to zero",
+        "type" : "boolean",
+        "default" : false,
+        "description" : "If true, memory and registers are inizialized with zero. Otherwise, with symbols."
+    }
+""")

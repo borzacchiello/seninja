@@ -11,7 +11,7 @@ class State(object):
     def __init__(self, executor, os: Os, arch: Arch=x8664Arch(), page_size: int=0x1000):
         self.page_size      = page_size
         self.arch           = arch
-        self.mem            = Memory(self, page_size, arch.bits())
+        self.mem            = Memory(self, page_size, arch.bits(), not executor.init_with_zero)
         self.regs           = Regs(self)
         self.solver         = Solver(self)
         self.os             = os

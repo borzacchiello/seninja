@@ -45,6 +45,7 @@ class SymbolicExecutor(object):
             get_imported_functions_and_addresses(view)
         self._last_colored_ip = None
         self._last_error  = None
+        self.init_with_zero = self.bncache.get_setting("init_reg_mem_with_zero") == "true"
 
         self._wasjmp = False
         if self.view.arch.name == "x86":
@@ -110,9 +111,12 @@ class SymbolicExecutor(object):
             ):
                 setattr(self.state.regs, reg, BVV(val.value, reg_dict['size'] * 8))
             else:
-                symb = BVS(reg + "_init", reg_dict['size'] * 8)
-                self.vars.add(symb)
-                setattr(self.state.regs, reg, symb)
+                if not self.init_with_zero:
+                    symb = BVS(reg + "_init", reg_dict['size'] * 8)
+                    self.vars.add(symb)
+                    setattr(self.state.regs, reg, symb)
+                else:
+                    setattr(self.state.regs, reg, BVV(0, reg_dict['size'] * 8))
 
         # initialize known local variables
         stack_vars = current_function.stack_layout
@@ -144,7 +148,7 @@ class SymbolicExecutor(object):
                     BVV(stack_base + offset, self.arch.bits()),
                     BVV(val.value, width*8 ),
                     endness=self.arch.endness())
-            else:
+            elif not self.init_with_zero:
                 symb = BVS(name + "_init", self.arch.bits())
                 self.vars.add(symb)
                 self.state.mem.store(
@@ -313,9 +317,11 @@ class SymbolicExecutor(object):
 
         single_llil_step = self.bncache.get_setting("single_llil_step") == 'true'
         if single_llil_step:
-            self._execute_one()
+            res = self._execute_one()
         else:
             old_ip = self.ip
-            while self._execute_one() == old_ip:
-                pass
+            res = old_ip
+            while res == old_ip:
+                res = self._execute_one()
+        return res
     

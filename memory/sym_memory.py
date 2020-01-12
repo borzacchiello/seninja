@@ -49,13 +49,14 @@ class Page(object):
         return self
 
 class Memory(MemoryAbstract):
-    def __init__(self, state, page_size=0x1000, bits=64):
+    def __init__(self, state, page_size=0x1000, bits=64, symb_uninitialized=False):
         assert (page_size & (page_size - 1)) == 0  # page_size must be a power of 2
         self.bits        = bits
         self.state       = state
         self.pages       = dict()
         self.page_size   = page_size
         self.index_bits  = math.ceil(math.log(page_size, 2))
+        self.symb_init   = symb_uninitialized
         self.load_hooks  = []
         self.store_hooks = []
     
@@ -70,6 +71,19 @@ class Memory(MemoryAbstract):
             init_index = init.index
             data_index_i = 0
             data_index_f = self.page_size - init_index
+
+        if not self.symb_init:
+            # zero initialize
+            if init_val is None:
+                init_val   = b"\x00" * size
+                init_index = 0
+            init_val = b"\x00" * init_index + init_val                        # fill begin
+            init_val = init_val + b"\x00" * (self.page_size % len(init_val))  # fill end
+            init_index = 0
+            data_index_i = 0
+            data_index_f = self.page_size
+        
+        print(hex(address), hex(init_index), hex(len(init_val)))
 
         i = 0
         for a in range(
