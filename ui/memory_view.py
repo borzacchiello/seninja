@@ -10,7 +10,7 @@ from binaryninjaui import (
     UIActionHandler
 )
 from PySide2 import QtCore
-from PySide2.QtCore import Qt
+from PySide2.QtCore import Qt, QMimeData
 from PySide2.QtGui import QBrush, QColor, QStandardItemModel, QStandardItem
 from PySide2.QtWidgets import (
     QApplication,
@@ -26,7 +26,7 @@ from PySide2.QtWidgets import (
     QHeaderView
 )
 
-from ..utility.expr_wrap_util import symbolic
+from ..utility.expr_wrap_util import symbolic, split_bv_in_list
 from ..expr.bitvector import BVS, BVV
 from .hexview import HexViewWidget
 
@@ -55,9 +55,11 @@ class MemoryView(QWidget, DockContextHandler):
 
         self.hexWidget = HexViewWidget(menu_handler=self.on_customContextMenuRequested)
         self.hexWidget.data_edited.connect(self._handle_data_edited)
-        
+        self.hexWidget.setEnabled(False)
+
         self._layout.addWidget(self.button)
         self._layout.addWidget(self.hexWidget)
+        self._layout.setContentsMargins(0,0,0,0)
 
         self.setMaximumWidth(self.hexWidget.optimal_width + 25)
 
@@ -86,6 +88,8 @@ class MemoryView(QWidget, DockContextHandler):
 
         address = get_int_input("Memory address", "Set Memory Monitor")
         if address is None: return
+
+        self.hexWidget.setEnabled(True)
         self.address_start = address
         self.size = 512
         self.current_state.mem.register_store_hook(self._monitor_changes)
@@ -99,10 +103,13 @@ class MemoryView(QWidget, DockContextHandler):
         self.changes.clear()
         data = {}
         for i in range(self.size):
-            b = state.mem.load(self.address_start + i, 1)
-            val = ".."
-            if isinstance(b, BVV):
-                val = "{:02x}".format(b.value)
+            if not state.mem.is_mapped(self.address_start + i):
+                val = "__"
+            else:
+                b = state.mem.load(self.address_start + i, 1)
+                val = ".."
+                if isinstance(b, BVV):
+                    val = "{:02x}".format(b.value)
             data[i] = val
         
         self.hexWidget.full_data_changed.emit(
@@ -117,16 +124,19 @@ class MemoryView(QWidget, DockContextHandler):
         load_cache = {}
         for begin, end in self.changes:
             for i in range(begin, end):
-                if i in load_cache:
-                    b = load_cache[i]
+                if not state.mem.is_mapped(self.address_start + i):
+                    val = "__"
                 else:
-                    b = state.mem.load(self.address_start + i, 1)
-                    load_cache[i] = b
-                val = ".."
-                if isinstance(b, BVV):
-                    val = "{:02x}".format(b.value)
+                    if i in load_cache:
+                        b = load_cache[i]
+                    else:
+                        b = state.mem.load(self.address_start + i, 1)
+                        load_cache[i] = b
+                    val = ".."
+                    if isinstance(b, BVV):
+                        val = "{:02x}".format(b.value)
                 self.hexWidget.single_data_changed.emit(i, val)
-        self.hexWidget.view.viewport().update()
+        # self.hexWidget.view.viewport().update()
         self.changes.clear()
     
     def reset(self):
@@ -137,12 +147,12 @@ class MemoryView(QWidget, DockContextHandler):
             0, {}, 0
         )
     
-    def _handle_data_edited(self, address, value):
+    def _handle_data_edited(self, offset, value):
         if not self.current_state or not self.address_start:
             return
         
-        self.current_state.mem.store(address, BVV(value, 8))
-        self.hexWidget.single_data_changed.emit(address - self.address_start, hex(value)[2:])
+        self.current_state.mem.store(self.address_start + offset, BVV(value, 8))
+        # self.hexWidget.single_data_changed.emit(address - self.address_start, hex(value)[2:])
 
     def _show_reg_expression(self, address, expr):
         show_message_box("Expression at %s" % hex(address), str(expr.z3obj))
@@ -199,6 +209,22 @@ class MemoryView(QWidget, DockContextHandler):
         self.symb_idx += 1
         self.update_mem_delta(self.current_state)
     
+    def _copy_big_endian(self, expr):
+        mime = QMimeData()
+        mime.setText(hex(expr.value))
+        QApplication.clipboard().setMimeData(mime)
+    
+    def _copy_little_endian(self, expr):
+        mime = QMimeData()
+        expr_bytes = split_bv_in_list(expr, 8)
+        res = 0
+        i = 0
+        for el in reversed(expr_bytes):
+            res += el.value << i*8
+            i+=1
+        mime.setText(hex(res))
+        QApplication.clipboard().setMimeData(mime)
+    
     @staticmethod
     def _condom(f, *pars):
         def g():
@@ -231,6 +257,12 @@ class MemoryView(QWidget, DockContextHandler):
         else:
             a = menu.addAction("Make symbolic")
             a.triggered.connect(MemoryView._condom(self._make_symbolic, sel_start + self.address_start, sel_end - sel_start + 1))
+            copy_menu = menu.addMenu("Copy...")
+            a = copy_menu.addAction("Copy Little Endian")
+            a.triggered.connect(MemoryView._condom(self._copy_little_endian, expr))
+            a = copy_menu.addAction("Copy Big Endian")
+            a.triggered.connect(MemoryView._condom(self._copy_big_endian, expr))
+
         return menu
 
     def notifyOffsetChanged(self, offset):

@@ -91,6 +91,9 @@ class Memory(MemoryAbstract):
                 print("remapping the same page '%s'" % hex(a))
             i+=1
     
+    def is_mapped(self, address: int):
+        return address >> self.index_bits in self.pages
+    
     def _handle_symbolic_address(self, address: BV, size: int, op_type: str):
 
         if isinstance(address, BVV):

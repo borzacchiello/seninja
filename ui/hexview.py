@@ -24,7 +24,8 @@ from PySide2.QtWidgets import (
     QAbstractItemView,
     QMenu,
     QHeaderView,
-    QItemDelegate
+    QItemDelegate,
+    QSizePolicy
 )
 from PySide2.QtGui import (
     QMouseEvent,
@@ -128,8 +129,9 @@ class HexTableModel(QAbstractTableModel):
                 return ""
             c = self.buf[bindex]
             if col > 0x10:
-                val = int(c, 16) if c != ".." else c
+                val = int(c, 16) if c != ".." and c != "__" else c
                 return chr(val) if (
+                    val != "__" and
                     val != ".." and 
                     val >= 33 and 
                     val <= 126
@@ -390,6 +392,7 @@ class HexTableView(QTableView):
 
     def __init__(self, *args, **kwargs):
         super(HexTableView, self).__init__(*args, **kwargs)
+        self.parent = kwargs["parent"]
         self.leftMousePressed.connect(self._handle_mouse_press)
         self.leftMouseMoved.connect(self._handle_mouse_move)
         self.leftMouseReleased.connect(self._handle_mouse_release)
@@ -418,6 +421,11 @@ class HexTableView(QTableView):
         super(HexTableView, self).mousePressEvent(event)
         if event.buttons() & Qt.LeftButton:
             self.leftMouseReleased.emit(event)
+
+    def focusOutEvent(self, event):
+        super(HexTableView, self).focusOutEvent(event)
+        if not event.reason() & Qt.MenuBarFocusReason:
+            self.parent._hsm.clearSelection()
 
     def keyPressEvent(self, event):
         move_keys = (
@@ -461,10 +469,6 @@ class HexTableView(QTableView):
                 self.selectKeyPressed.emit(select_key)
                 return
 
-    # def closeEditor(self, a, b):
-    #     print(a, b)
-    #     super(HexTableView, self).closeEditor(a, b)
-
     def _handle_mouse_press(self, key_event):
         self._reset_press_state()
 
@@ -496,7 +500,7 @@ class HexViewWidget(QWidget):
         self.setupUi(self)
 
         self._model = HexTableModel(self)
-        self.view = HexTableView()
+        self.view = HexTableView(parent=self)
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -531,7 +535,7 @@ class HexViewWidget(QWidget):
         if menu_handler is not None:
             self.get_context_menu = menu_handler
 
-        self.optimal_width = 25*16+5+11*16+self.view.horizontalHeader().width()//3
+        self.optimal_width = 25*16+5+11*16+self.view.verticalHeader().width()+self.view.verticalScrollBar().width()
 
         f = QFontDatabase.systemFont(QFontDatabase.FixedFont)
         f.setPointSize(8)
