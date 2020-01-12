@@ -277,7 +277,7 @@ def calloc_handler(state: State, view):
 
     res = state.mem.allocate(
         size,
-        InitData(bytes="\x00"*size, index=0)
+        InitData(bytes=b"\x00"*size, index=0)
     )
     return BVV(res, state.arch.bits())
 
