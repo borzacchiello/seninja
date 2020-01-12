@@ -44,7 +44,7 @@ class MemoryView(QWidget, DockContextHandler):
         self.current_state = None
         self.arch = None
         self.address_start = None
-        self.size = None
+        self.size = 512
         self.changes = set()
 
         self.symb_idx = 0
@@ -100,6 +100,8 @@ class MemoryView(QWidget, DockContextHandler):
     
     def update_mem(self, state):
         self.current_state = state
+        if self.address_start is None:
+            return
         self.changes.clear()
         data = {}
         for i in range(self.size):

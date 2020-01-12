@@ -83,8 +83,6 @@ class Memory(MemoryAbstract):
             data_index_i = 0
             data_index_f = self.page_size
         
-        print(hex(address), hex(init_index), hex(len(init_val)))
-
         i = 0
         for a in range(
             address // self.page_size,
