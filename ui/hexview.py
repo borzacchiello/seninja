@@ -133,7 +133,7 @@ class HexTableModel(QAbstractTableModel):
                 return chr(val) if (
                     val != "__" and
                     val != ".." and 
-                    val >= 33 and 
+                    val >= 32 and 
                     val <= 126
                 ) else "."
             else:
@@ -535,7 +535,7 @@ class HexViewWidget(QWidget):
         if menu_handler is not None:
             self.get_context_menu = menu_handler
 
-        self.optimal_width = self.view.verticalScrollBar().width()+self.view.verticalHeader().width() - 40
+        self.optimal_width = self.view.verticalScrollBar().width()+self.view.verticalHeader().width() #- 40
         for i in range(0x22):
             self.optimal_width += self.view.columnWidth(i)
 

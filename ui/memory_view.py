@@ -227,6 +227,27 @@ class MemoryView(QWidget, DockContextHandler):
         mime.setText(hex(res))
         QApplication.clipboard().setMimeData(mime)
     
+    def _copy_string(self, expr):
+        mime = QMimeData()
+        expr_bytes = split_bv_in_list(expr, 8)
+        res = ""
+        for el in reversed(expr_bytes):
+            res += chr(el.value) if el.value >= 32 and el.value <= 126 else "."
+
+        mime.setText(res)
+        QApplication.clipboard().setMimeData(mime)
+
+    def _copy_binary(self, expr):
+        mime = QMimeData()
+        expr_bytes = split_bv_in_list(expr, 8)
+        res = "\""
+        for el in reversed(expr_bytes):
+            res += "\\x{:02x}".format(el.value)
+        res += "\""
+
+        mime.setText(res)
+        QApplication.clipboard().setMimeData(mime)
+    
     @staticmethod
     def _condom(f, *pars):
         def g():
@@ -264,6 +285,10 @@ class MemoryView(QWidget, DockContextHandler):
             a.triggered.connect(MemoryView._condom(self._copy_little_endian, expr))
             a = copy_menu.addAction("Copy Big Endian")
             a.triggered.connect(MemoryView._condom(self._copy_big_endian, expr))
+            a = copy_menu.addAction("Copy String")
+            a.triggered.connect(MemoryView._condom(self._copy_string, expr))
+            a = copy_menu.addAction("Copy Binary")
+            a.triggered.connect(MemoryView._condom(self._copy_binary, expr))
 
         return menu
 
