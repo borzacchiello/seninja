@@ -176,7 +176,7 @@ class SymbolicVisitor(BNILVisitor):
         if check_error(right): return right
 
         res = (BVV(0, 1).Concat(left) + BVV(0, 1).Concat(right))  # add with one more bit
-        res = res.Extract(left.size+7, left.size)                 # check if overflow
+        res = res.Extract(left.size, left.size)                   # check if overflow
         return res
 
     def visit_LLIL_SUB(self, expr):
