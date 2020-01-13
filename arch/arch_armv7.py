@@ -127,6 +127,12 @@ class ArmV7Arch(Arch):
     def get_stack_pointer_reg(self):
         return 'sp'
 
+    def save_return_address(self, state, return_address):
+        state.regs.lr = return_address
+
+    def get_return_address(self, state):
+        return state.regs.lr
+
     def get_argument_regs(self, calling_convention):
         assert calling_convention == 'cdecl'
         return ['r0', 'r1', 'r2', 'r3']

@@ -545,6 +545,12 @@ class x8664Arch(Arch):
     def get_stack_pointer_reg(self):
         return 'rsp'
 
+    def save_return_address(self, state, return_address):
+        state.stack_push(return_address)
+
+    def get_return_address(self, state):
+        return state.stack_pop()
+
     def get_argument_regs(self, calling_convention):
         if calling_convention == 'cdecl':
             return []

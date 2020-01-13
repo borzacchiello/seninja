@@ -11,6 +11,10 @@ class Arch(object):  # abstract class
         raise NotImplementedError
     def endness(self):
         raise NotImplementedError
+    def save_return_address(self, state, return_address):
+        raise NotImplementedError
+    def get_return_address(self, state):
+        raise NotImplementedError
     def getip_reg(self):
         raise NotImplementedError
     def get_base_pointer_reg(self):

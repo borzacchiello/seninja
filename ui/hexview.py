@@ -535,7 +535,9 @@ class HexViewWidget(QWidget):
         if menu_handler is not None:
             self.get_context_menu = menu_handler
 
-        self.optimal_width = 25*16+5+11*16+self.view.verticalHeader().width()+self.view.verticalScrollBar().width()
+        self.optimal_width = self.view.verticalScrollBar().width()+self.view.verticalHeader().width() - 40
+        for i in range(0x22):
+            self.optimal_width += self.view.columnWidth(i)
 
         f = QFontDatabase.systemFont(QFontDatabase.FixedFont)
         f.setPointSize(8)

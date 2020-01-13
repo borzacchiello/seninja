@@ -166,6 +166,19 @@ class SymbolicVisitor(BNILVisitor):
 
         return left + right + carry.ZeroExt(left.size - 1)
 
+    def visit_LLIL_ADD_OVERFLOW(self, expr):
+        left  = self.visit(expr.left)
+        right = self.visit(expr.right)
+
+        check_unsupported(left,  expr.left )
+        check_unsupported(right, expr.right)
+        if check_error(left):  return left
+        if check_error(right): return right
+
+        res = (BVV(0, 1).Concat(left) + BVV(0, 1).Concat(right))  # add with one more bit
+        res = res.Extract(left.size+7, left.size)                 # check if overflow
+        return res
+
     def visit_LLIL_SUB(self, expr):
         left  = self.visit(expr.left)
         right = self.visit(expr.right)
@@ -541,14 +554,16 @@ class SymbolicVisitor(BNILVisitor):
             dest_fun_name = self.executor.bncache.get_function_name(dest.value)
         ret_addr = self.executor.ip + self.executor.bncache.get_instruction_len(self.executor.ip)
 
-        # push ret address
-        self.executor.state.stack_push(BVV(ret_addr, self.executor.arch.bits()))
+        # save ret address
+        self.executor.arch.save_return_address(self.executor.state, BVV(ret_addr, self.executor.arch.bits()))
 
         # check if we have an handler
         if dest_fun_name in library_functions:
             res = library_functions[dest_fun_name](self.executor.state, self.executor.view)
             setattr(self.executor.state.regs, get_result_reg(self.executor.state, self.executor.view, res.size), res)
-            dest = self.executor.state.stack_pop()
+
+            # retrive return address
+            dest = self.executor.arch.get_return_address(self.executor.state)
             dest_fun_name = curr_fun_name
             assert not symbolic(dest)  # cannot happen (right?)
 
@@ -561,8 +576,9 @@ class SymbolicVisitor(BNILVisitor):
             res = library_functions[name](self.executor.state, self.executor.view)
             setattr(self.executor.state.regs, get_result_reg(self.executor.state, self.executor.view, res.size), res)
             
-            dest = self.executor.state.stack_pop()
-            dest_fun_name = curr_fun_name 
+            # retrive return address
+            dest = self.executor.arch.get_return_address(self.executor.state)
+            dest_fun_name = curr_fun_name
             assert not symbolic(dest)  # cannot happen (right?)
 
         # change ip
@@ -589,7 +605,8 @@ class SymbolicVisitor(BNILVisitor):
         if dest_fun_name in library_functions:
             res = library_functions[dest_fun_name](self.executor.state, self.executor.view)
             setattr(self.executor.state.regs, get_result_reg(self.executor.state, self.executor.view, res.size), res)
-            dest = self.executor.state.stack_pop()
+            # retrive return address
+            dest = self.executor.arch.get_return_address(self.executor.state)
             if symbolic(dest):
                 raise Exception("symbolic IP") 
 
@@ -603,8 +620,8 @@ class SymbolicVisitor(BNILVisitor):
             
             res = library_functions[name](self.executor.state, self.executor.view)
             setattr(self.executor.state.regs, get_result_reg(self.executor.state, self.executor.view, res.size), res)
-            
-            dest = self.executor.state.stack_pop()
+            # retrive return address
+            dest = self.executor.arch.get_return_address(self.executor.state)
             if symbolic(dest):
                 raise Exception("symbolic IP") 
 
@@ -622,11 +639,10 @@ class SymbolicVisitor(BNILVisitor):
         check_unsupported(destination, expr.dest)
         if check_error(destination): return destination
 
-        curr_fun_name = self.executor.bncache.get_function_name(self.executor.ip)
-
         if not symbolic(destination):
             # fast path. The destination is concrete
-            self.executor.update_ip(curr_fun_name, self.executor.bncache.get_llil_address(curr_fun_name, destination.value))
+            dest_fun_name = self.executor.bncache.get_function_name(destination.value)
+            self.executor.update_ip(dest_fun_name, self.executor.bncache.get_llil_address(dest_fun_name, destination.value))
             self.executor._wasjmp = True
             return True
         
