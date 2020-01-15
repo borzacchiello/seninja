@@ -16,6 +16,7 @@ class ArmV7SPH(SpecialInstructionHandler):
 
         parsed_mnemonic = parse_mnemonic(inst_name)
         handle_name = "{}_handler".format(parsed_mnemonic.mnemonic)
+
         if hasattr(self, handle_name):
             return getattr(self, handle_name)(sv, parsed_mnemonic, parameters)
         return False

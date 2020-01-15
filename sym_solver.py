@@ -9,7 +9,7 @@ class Solver(object):
     def __init__(self, state):
         self.state       = state
         self.assertions  = []
-        self._solver     = z3.Solver()
+        self._solver     = z3.Optimize()# z3.Solver()
         self._min_cache  = OrderedDict()
         self._max_cache  = OrderedDict()
         self._eval_cache = OrderedDict()
@@ -97,11 +97,7 @@ class Solver(object):
         self._symb_check_cache[val] = res
         return res
     
-    def max(self, val: BV):
-        if not symbolic(val):
-            return val.value
-        if val in self._max_cache:
-            return self._max_cache[val]
+    def _max_binary_search(self, val: BV):
         lb = 0
         ub = 2 ** val.size - 1
         while lb <= ub:
@@ -112,12 +108,30 @@ class Solver(object):
                 lb = m + 1
         self._max_cache[val] = ub
         return ub
-    
-    def min(self, val: BV):
+
+    def _max_z3_optimize(self, val: BV):
+        self._solver.push()
+        
+        h = self._solver.maximize(val.z3obj)
+        assert self._solver.check().r == 1
+        res = self._solver.upper(h).as_long()
+
+        self._solver.pop()
+        return res
+
+    def max(self, val: BV):
         if not symbolic(val):
             return val.value
-        if val in self._min_cache:
-            return self._min_cache[val]
+        if val in self._max_cache:
+            return self._max_cache[val]
+
+        # res = self._max_binary_search(val)
+        res = self._max_z3_optimize(val)
+
+        self._max_cache[val] = res
+        return res
+
+    def _min_binary_search(self, val: BV):
         lb = 0
         ub = 2 ** val.size - 1
         while lb <= ub:
@@ -126,8 +140,29 @@ class Solver(object):
                 lb = m + 1
             else:
                 ub = m - 1
-        self._min_cache[val] = lb
         return lb
+
+    def _min_z3_optimize(self, val: BV):
+        self._solver.push()
+        
+        h = self._solver.minimize(val.z3obj)
+        assert self._solver.check().r == 1
+        res = self._solver.lower(h).as_long()
+
+        self._solver.pop()
+        return res
+    
+    def min(self, val: BV):
+        if not symbolic(val):
+            return val.value
+        if val in self._min_cache:
+            return self._min_cache[val]
+
+        # res = self._min_binary_search(val)
+        res = self._min_z3_optimize(val)
+
+        self._min_cache[val] = res
+        return res
     
     def model(self, extra_constraints: list=None):
         assert self.satisfiable(extra_constraints)

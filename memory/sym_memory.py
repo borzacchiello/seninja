@@ -109,9 +109,9 @@ class Memory(MemoryAbstract):
     def _handle_symbolic_address(self, address: BV, size: int, op_type: str):
 
         if isinstance(address, BVV):
-            return address
+            return address, None, None
         if not self.state.solver.symbolic(address):  # check with solver
-            return self.state.solver.evaluate(address)
+            return self.state.solver.evaluate(address), None, None
         
         print("WARNING: memory %s, symbolic memory access" % op_type)
         symb_access_mode            = self.state.executor.bncache.get_setting("memory.symb_address_mode")
@@ -133,7 +133,7 @@ class Memory(MemoryAbstract):
                 self.mmap(address_conc, (size // self.page_size + 1) * self.page_size)
                 self.state.solver.add_constraints(address == address_conc)
                 address = BVV(address_conc, address.size)
-                return address
+                return address, min_addr, max_addr
 
         if symb_access_mode == "concretization":
             print("WARNING: memory %s, concretizing mem access (\"concretization\" policy)" % op_type)
@@ -144,10 +144,10 @@ class Memory(MemoryAbstract):
             else:
                 address_conc = self.state.solver.evaluate(address)
             self.state.solver.add_constraints(address == address_conc)
-            return address_conc
+            return address_conc, min_addr, max_addr
         
         if symb_access_mode == "fully_symbolic":
-            return address
+            return address, min_addr, max_addr
 
         assert symb_access_mode == "limit_pages"
         assert page_limit > 0
@@ -190,9 +190,9 @@ class Memory(MemoryAbstract):
             
             # I am not checking the satisfiability of every page, but at least the first one is satisfiable
             self.state.solver.add_constraints(condition)
-            return address
+            return address, min_addr, max_addr
         
-        return address
+        return address, min_addr, max_addr
     
     def _store(self, page_address: int, page_index: BV, value: BV, condition: Bool=None):
         assert page_address in self.pages
@@ -209,7 +209,7 @@ class Memory(MemoryAbstract):
         for f in self.store_hooks:
             f(address, value.size)
 
-        address = self._handle_symbolic_address(address, value.size, "store")
+        address, min_addr, max_addr = self._handle_symbolic_address(address, value.size, "store")
 
         conditions     = list()
         size           = value.size
@@ -231,11 +231,11 @@ class Memory(MemoryAbstract):
                     return ErrorInstruction.UNMAPPED_WRITE
                 self._store(page_address, page_index, value.Extract(8*(i+1)-1, 8*i))
             else: # symbolic access
-                page_address = page_address
-                page_index   = page_index
                 conditions   = list()
                 for p in self.pages:  # can be improved?
                     at_least_one_page = False
+                    if p < (min_addr >> self.index_bits) or p > (max_addr >> self.index_bits):
+                        continue
                     if self.state.solver.satisfiable(extra_constraints=[
                         page_address == p
                     ]):
@@ -249,7 +249,7 @@ class Memory(MemoryAbstract):
                     )
                     return ErrorInstruction.UNMAPPED_WRITE
             if conditions:
-                check_unmapped = self.state.executor.bncache.get_setting("memory.check_unmapped")
+                check_unmapped = self.state.executor.bncache.get_setting("memory.check_unmapped") == 'true'
                 if check_unmapped and self.state.solver.satisfiable(extra_constraints=[
                     Or(*conditions).Not()
                 ]):
@@ -272,7 +272,7 @@ class Memory(MemoryAbstract):
         for f in self.load_hooks:
             f(address, size)
 
-        address = self._handle_symbolic_address(address, size, "load")
+        address, min_addr, max_addr = self._handle_symbolic_address(address, size, "load")
 
         res = None
         conditions = list()
@@ -293,6 +293,8 @@ class Memory(MemoryAbstract):
                 conditions = list()
                 tmp = None
                 for p in self.pages:  # can be improved?
+                    if p < (min_addr >> self.index_bits) or p > (max_addr >> self.index_bits):
+                        continue
                     if self.state.solver.satisfiable(extra_constraints=[
                         page_address == p
                     ]):
@@ -311,7 +313,7 @@ class Memory(MemoryAbstract):
             res = tmp if res is None else res.Concat(tmp)
 
         if conditions:
-            check_unmapped = self.state.executor.bncache.get_setting("memory.check_unmapped")
+            check_unmapped = self.state.executor.bncache.get_setting("memory.check_unmapped") == 'true'
             if check_unmapped and self.state.solver.satisfiable(extra_constraints=[
                 Or(*conditions).Not()
             ]):

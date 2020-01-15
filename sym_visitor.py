@@ -76,6 +76,12 @@ class SymbolicVisitor(BNILVisitor):
                 dest = ("r" + dest[1:]) if dest[0] == 'e' else dest[:-1]
                 src  = src.ZeroExt(32)
 
+        if isinstance(src, Bool):
+            src = ITE(
+                src,
+                BVV(1, 1).ZeroExt(expr.dest.info.size*8-1),
+                BVV(0, 1).ZeroExt(expr.dest.info.size*8-1)
+            )
         setattr(self.executor.state.regs, dest, src)
         return True
 
