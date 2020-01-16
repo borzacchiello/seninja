@@ -120,20 +120,27 @@ class Memory(MemoryAbstract):
         use_heuristic_find_base     = self.state.executor.bncache.get_setting("memory.use_heuristic_find_base") == 'true'
         min_addr                    = None
         max_addr                    = None
+        min_addr_approx             = address.interval.low
+        max_addr_approx             = address.interval.high
         heuristic_base              = None
 
         if concretize_unconstrained:
-            min_addr = self.state.solver.min(address) if min_addr is None else min_addr
-            max_addr = self.state.solver.max(address) if max_addr is None else max_addr
+            min_addr_approx = address.interval.low
+            max_addr_approx = address.interval.high
 
-            if max_addr - min_addr == 2**self.state.arch.bits() - 1:
-                # unconstrained case
-                print("WARNING: memory %s, concretizing mem access to a newly allocated address (\"concretize_unconstrained\" policy)" % op_type)
-                address_conc = self.get_unmapped(size // self.page_size + 1, from_end=False) * self.page_size
-                self.mmap(address_conc, (size // self.page_size + 1) * self.page_size)
-                self.state.solver.add_constraints(address == address_conc)
-                address = BVV(address_conc, address.size)
-                return address, min_addr, max_addr
+            if max_addr_approx - min_addr_approx == 2**self.state.arch.bits() - 1:
+                # slow path. let's use the solver to validate
+                min_addr = self.state.solver.min(address)
+                max_addr = self.state.solver.max(address)
+
+                if max_addr - min_addr == 2**self.state.arch.bits() - 1:
+                    # unconstrained case
+                    print("WARNING: memory %s, concretizing mem access to a newly allocated address (\"concretize_unconstrained\" policy)" % op_type)
+                    address_conc = self.get_unmapped(size // self.page_size + 1, from_end=False) * self.page_size
+                    self.mmap(address_conc, (size // self.page_size + 1) * self.page_size)
+                    self.state.solver.add_constraints(address == address_conc)
+                    address = BVV(address_conc, address.size)
+                    return address, min_addr, max_addr
 
         if symb_access_mode == "concretization":
             print("WARNING: memory %s, concretizing mem access (\"concretization\" policy)" % op_type)
@@ -144,55 +151,65 @@ class Memory(MemoryAbstract):
             else:
                 address_conc = self.state.solver.evaluate(address)
             self.state.solver.add_constraints(address == address_conc)
-            return address_conc, min_addr, max_addr
-        
+            return address_conc, None, None
+      
         if symb_access_mode == "fully_symbolic":
-            return address, min_addr, max_addr
+            return (
+                address_conc, 
+                min_addr_approx if min_addr is None else min_addr,
+                max_addr_approx if max_addr is None else max_addr
+            )
 
         assert symb_access_mode == "limit_pages"
         assert page_limit > 0
 
-        min_addr = self.state.solver.min(address) if min_addr is None else min_addr
-        max_addr = self.state.solver.max(address) if max_addr is None else max_addr
-        if max_addr - min_addr > page_limit * self.page_size:
-            print("WARNING: memory %s, limiting memory access (\"limit_pages\" policy)" % op_type)
+        if max_addr_approx - min_addr_approx == 2**self.state.arch.bits() - 1:
+            # slow path. let's use the solver to validate
+            min_addr = self.state.solver.min(address) if min_addr is None else min_addr
+            max_addr = self.state.solver.max(address) if max_addr is None else max_addr
+            if max_addr - min_addr > page_limit * self.page_size:
+                print("WARNING: memory %s, limiting memory access (\"limit_pages\" policy)" % op_type)
 
-            min_addr_page = min_addr >> self.index_bits
-            max_addr_page = max_addr >> self.index_bits
-            page_address, _ = split_bv(address, self.index_bits)
-            
-            heuristic_base = heuristic_find_base(address) if heuristic_base is None else heuristic_base
-            heuristic_base_page = heuristic_base >> self.index_bits
+                min_addr_page = min_addr >> self.index_bits
+                max_addr_page = max_addr >> self.index_bits
+                page_address, _ = split_bv(address, self.index_bits)
+                
+                heuristic_base = heuristic_find_base(address) if heuristic_base is None else heuristic_base
+                heuristic_base_page = heuristic_base >> self.index_bits
 
-            if (
-                use_heuristic_find_base and 
-                heuristic_base != -1 and 
-                heuristic_base_page >= min_addr_page and
-                heuristic_base_page <= max_addr_page - page_limit and
-                self.state.solver.satisfiable([address == heuristic_base])
-            ):
-                print("WARNING: memory %s, heuristic address 0x%x" % (op_type, heuristic_base))
-                pivot = heuristic_base_page
-            else:
-                # make it more efficient! (interval tree?)
-                pages_in_range = [page for page in self.pages if (page >= min_addr_page and page <= max_addr_page)]
-
-                if pages_in_range:
-                    pivot = min(pages_in_range)
+                if (
+                    use_heuristic_find_base and 
+                    heuristic_base != -1 and 
+                    heuristic_base_page >= min_addr_page and
+                    heuristic_base_page <= max_addr_page - page_limit and
+                    self.state.solver.satisfiable([address == heuristic_base])
+                ):
+                    print("WARNING: memory %s, heuristic address 0x%x" % (op_type, heuristic_base))
+                    pivot = heuristic_base_page
                 else:
-                    print("WARNING: memory %s, allocating pages (\"limit_pages\" policy)" % op_type)
-                    pivot = self.get_unmapped(self.page_size * page_limit, from_end=False)
-                    self.mmap(pivot << self.index_bits, page_limit * self.page_size)
-            
-            condition = None
-            for i in range(page_limit):
-                condition = (page_address == pivot + i) if condition is None else (Or(condition, page_address == pivot + i))
-            
-            # I am not checking the satisfiability of every page, but at least the first one is satisfiable
-            self.state.solver.add_constraints(condition)
-            return address, min_addr, max_addr
+                    # make it more efficient! (interval tree?)
+                    pages_in_range = [page for page in self.pages if (page >= min_addr_page and page <= max_addr_page)]
+
+                    if pages_in_range:
+                        pivot = min(pages_in_range)
+                    else:
+                        print("WARNING: memory %s, allocating pages (\"limit_pages\" policy)" % op_type)
+                        pivot = self.get_unmapped(self.page_size * page_limit, from_end=False)
+                        self.mmap(pivot << self.index_bits, page_limit * self.page_size)
+                
+                condition = None
+                for i in range(page_limit):
+                    condition = (page_address == pivot + i) if condition is None else (Or(condition, page_address == pivot + i))
+                
+                # I am not checking the satisfiability of every page, but at least the first one is satisfiable
+                self.state.solver.add_constraints(condition)
+                return address, min_addr, max_addr
         
-        return address, min_addr, max_addr
+        return (
+            address,
+            min_addr_approx if min_addr is None else min_addr,
+            max_addr_approx if max_addr is None else max_addr
+        )
     
     def _store(self, page_address: int, page_index: BV, value: BV, condition: Bool=None):
         assert page_address in self.pages
@@ -292,6 +309,7 @@ class Memory(MemoryAbstract):
             else: # symbolic access
                 conditions = list()
                 tmp = None
+                print(hex(min_addr), hex(max_addr))
                 for p in self.pages:  # can be improved?
                     if p < (min_addr >> self.index_bits) or p > (max_addr >> self.index_bits):
                         continue

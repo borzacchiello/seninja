@@ -9,7 +9,7 @@ class Solver(object):
     def __init__(self, state):
         self.state       = state
         self.assertions  = []
-        self._solver     = z3.Optimize()# z3.Solver()
+        self._solver     = z3.Solver() #z3.Optimize()
         self._min_cache  = OrderedDict()
         self._max_cache  = OrderedDict()
         self._eval_cache = OrderedDict()
@@ -54,13 +54,13 @@ class Solver(object):
         return res
     
     def evaluate(self, var, extra_constraints: list=None) -> int:
-        assert self.satisfiable(extra_constraints)
         if extra_constraints:
             self._solver.push()
             self._add_tmp_constraints(*extra_constraints)
         elif var in self._eval_cache:
             return self._eval_cache[var]
-
+        
+        assert self.satisfiable()
         model = self._solver.model()
         res = model.evaluate(var.z3obj, model_completion=True)
         res = BVV(res.as_long(), var.size)
@@ -72,11 +72,11 @@ class Solver(object):
         return res
     
     def evaluate_upto(self, var, n, extra_constraints: list=None) -> list:
-        assert self.satisfiable(extra_constraints)
         self._solver.push()
         if extra_constraints:
             self._add_tmp_constraints(*extra_constraints)
         
+        assert self.satisfiable()
         res = list()
         while n > 0 and self.satisfiable():
             model = self._solver.model()
@@ -110,13 +110,14 @@ class Solver(object):
         return ub
 
     def _max_z3_optimize(self, val: BV):
-        self._solver.push()
+        opt = z3.Optimize()
+        for c in self.assertions:
+            opt.add(c.z3obj)
         
-        h = self._solver.maximize(val.z3obj)
-        assert self._solver.check().r == 1
-        res = self._solver.upper(h).as_long()
+        h = opt.maximize(val.z3obj)
+        assert opt.check().r == 1
+        res = opt.upper(h).as_long()
 
-        self._solver.pop()
         return res
 
     def max(self, val: BV):
@@ -143,13 +144,14 @@ class Solver(object):
         return lb
 
     def _min_z3_optimize(self, val: BV):
-        self._solver.push()
+        opt = z3.Optimize()
+        for c in self.assertions:
+            opt.add(c.z3obj)
         
-        h = self._solver.minimize(val.z3obj)
-        assert self._solver.check().r == 1
-        res = self._solver.lower(h).as_long()
+        h = opt.minimize(val.z3obj)
+        assert opt.check().r == 1
+        res = opt.lower(h).as_long()
 
-        self._solver.pop()
         return res
     
     def min(self, val: BV):
@@ -165,11 +167,11 @@ class Solver(object):
         return res
     
     def model(self, extra_constraints: list=None):
-        assert self.satisfiable(extra_constraints)
         if extra_constraints:
             self._solver.push()
             self._add_tmp_constraints(*extra_constraints)
         
+        assert self.satisfiable()
         res = self._solver.model()
         if extra_constraints:
             self._solver.pop()
