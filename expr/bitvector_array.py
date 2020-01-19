@@ -163,7 +163,11 @@ class BVArray(object):
                 index.z3obj
             )
         )
-        if isinstance(index, BVV):
+        if (
+            isinstance(index, BVV) and 
+            self._conc_store is not None
+        ):
+            # uninitialized read
             self._conc_store[index.value] = res
         return res
 
