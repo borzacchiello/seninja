@@ -51,7 +51,7 @@ def __check_executor():
 def initialize_ui():
     if not __check_executor():
         return
-    ui_set_arch(executor.arch)
+    ui_set_arch(executor.arch, executor.state)
 
 def sync_ui(bv, delta=True):
     if not __check_executor():

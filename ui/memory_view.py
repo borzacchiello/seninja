@@ -30,6 +30,9 @@ from ..utility.expr_wrap_util import symbolic, split_bv_in_list
 from ..expr.bitvector import BVS, BVV
 from .hexview import HexViewWidget
 
+def _normalize_tab_name(tab_name):
+    return tab_name[:tab_name.find("(")-1]
+
 class MemoryView(QWidget, DockContextHandler):
 
     def __init__(self, parent, name, data):
@@ -46,6 +49,7 @@ class MemoryView(QWidget, DockContextHandler):
         self.address_start = None
         self.size = 512
         self.changes = set()
+        self.tab_name = None
 
         self.symb_idx = 0
 
@@ -95,8 +99,10 @@ class MemoryView(QWidget, DockContextHandler):
         self.current_state.mem.register_store_hook(self._monitor_changes)
         self.update_mem(self.current_state)
 
-    def set_arch(self, arch):
+    def init(self, arch, state):
         self.arch = arch
+        self.tab_name = _normalize_tab_name(self.parent.getTabName())
+        self.update_mem(state)
     
     def update_mem(self, state):
         self.current_state = state
@@ -298,16 +304,17 @@ class MemoryView(QWidget, DockContextHandler):
     def shouldBeVisible(self, view_frame):
         if view_frame is None:
             return False
-        else:
-            return True
+        elif self.tab_name is None:
+            return False
+        elif _normalize_tab_name(view_frame.getTabName()) != self.tab_name:
+            return False
+        return True
 
     def notifyViewChanged(self, view_frame):
         if view_frame is None:
             pass
         else:
             pass  # implement this
-            # self.bv = view_frame.actionContext().binaryView
-            # self.filename = self.bv.file.original_filename
 
     def contextMenuEvent(self, event):
         self.m_contextMenuManager.show(self.m_menu, self.actionHandler)

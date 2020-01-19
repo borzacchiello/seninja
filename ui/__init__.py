@@ -55,11 +55,11 @@ def disable_widgets():
     RW.setEnabled(False)
     MW.setEnabled(False)
 
-def ui_set_arch(arch):
+def ui_set_arch(arch, state):
     assert RW is not None
     assert MW is not None
-    RW.set_arch(arch)
-    MW.set_arch(arch)
+    RW.init(arch, state)
+    MW.init(arch, state)
 
 def ui_sync_view(state, delta=True):
     assert RW is not None

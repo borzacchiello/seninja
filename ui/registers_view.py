@@ -25,6 +25,9 @@ from PySide2.QtWidgets import (
 from ..utility.expr_wrap_util import symbolic
 from ..expr.bitvector import BVS, BVV
 
+def _normalize_tab_name(tab_name):
+    return tab_name[:tab_name.find("(")-1]
+
 def _makewidget(parent, val, center=False):
     """ Small helper function that builds a TableWidgetItem and sets up the font the way we want"""
     out = QTableWidgetItem(str(val))
@@ -44,6 +47,7 @@ class RegisterView(QWidget, DockContextHandler):
         QWidget.__init__(self, parent)
         DockContextHandler.__init__(self, self, name)
 
+        self.parent = parent
         self.arch = None
         self.current_state = None
         self.symb_idx = 0
@@ -51,6 +55,7 @@ class RegisterView(QWidget, DockContextHandler):
         self.index_to_reg = dict()
         self.reg_cache = dict()
         self.data = data
+        self.tab_name = None
 
         self.actionHandler = UIActionHandler()
         self.actionHandler.setupActionHandler(self)
@@ -77,8 +82,9 @@ class RegisterView(QWidget, DockContextHandler):
         self.symb_idx = 0
         self._table.setRowCount(0)
 
-    def set_arch(self, arch):
+    def init(self, arch, state):
         self.arch = arch
+        self.tab_name = _normalize_tab_name(self.parent.getTabName())
 
         regs = self.arch.reg_names()
 
@@ -88,6 +94,8 @@ class RegisterView(QWidget, DockContextHandler):
             self.index_to_reg[i] = reg
             self._table.setItem(i, 0, _makewidget(self, reg))
             self._table.setItem(i, 1, _makewidget(self, ""))
+        
+        self.set_reg_values(state)
 
     def set_reg_value(self, reg, value, color=None):
         assert self.arch is not None
@@ -207,16 +215,17 @@ class RegisterView(QWidget, DockContextHandler):
     def shouldBeVisible(self, view_frame):
         if view_frame is None:
             return False
-        else:
-            return True
+        elif self.tab_name is None:
+            return False
+        elif _normalize_tab_name(view_frame.getTabName()) != self.tab_name:
+            return False
+        return True
 
     def notifyViewChanged(self, view_frame):
         if view_frame is None:
             pass
         else:
-            pass  # implement this
-            # self.bv = view_frame.actionContext().binaryView
-            # self.filename = self.bv.file.original_filename
+            pass
 
     def contextMenuEvent(self, event):
         self.m_contextMenuManager.show(self.m_menu, self.actionHandler)
