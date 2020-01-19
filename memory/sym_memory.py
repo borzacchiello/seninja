@@ -309,7 +309,6 @@ class Memory(MemoryAbstract):
             else: # symbolic access
                 conditions = list()
                 tmp = None
-                print(hex(min_addr), hex(max_addr))
                 for p in self.pages:  # can be improved?
                     if p < (min_addr >> self.index_bits) or p > (max_addr >> self.index_bits):
                         continue

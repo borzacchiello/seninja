@@ -226,7 +226,7 @@ class BVExpr(BV):
         else:
             assert isinstance(other, BV)
             assert self.size == other.size
-        return BVExpr(self.size, z3.SRem(self.z3obj, other.z3obj)), self.interval.SRem(other.interval)
+        return BVExpr(self.size, z3.SRem(self.z3obj, other.z3obj), self.interval.SRem(other.interval))
     
     def LShL(self, other):
         return self.__lshift__(other)
