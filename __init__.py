@@ -9,6 +9,7 @@ from binaryninja import (
 
 from .sym_executor import SymbolicExecutor
 from .utility.expr_wrap_util import split_bv_in_list
+from .utility.bninja_util import get_address_after_merge
 from .utility.string_util import (
     int_to_str,
     str_to_int,
@@ -18,7 +19,6 @@ from .utility.string_util import (
 from .sym_state import State
 from .models import function_models as seninja_models
 from .expr import *
-from . import settings
 from .ui import (
     ui_set_arch, 
     ui_sync_view, 
@@ -26,6 +26,7 @@ from .ui import (
     enable_widgets, 
     disable_widgets
 )
+from . import settings
 
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):
@@ -160,6 +161,8 @@ def _async_continue_until_address(bv, address):
     global _running
     if not __check_executor():
         return
+    
+    address = get_address_after_merge(bv, address)
 
     def f(tb):
         global _running, _stop

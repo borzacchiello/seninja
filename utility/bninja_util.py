@@ -48,6 +48,11 @@ def parse_disasm_str(disasm_str):
     parameters = ''.join(disasm_str.split(" ")[1:]).split(",")
     return inst_name, parameters
 
+def get_address_after_merge(view, address):
+    func = get_function(view, address)
+    llil = func.llil.get_instruction_start(address, func.arch)
+    return func.llil[llil].address
+
 def find_os(view):
     platform_name = view.platform.name
 
