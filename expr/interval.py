@@ -223,8 +223,12 @@ class Interval(object):
         )
 
     def Extract(self, high: int, low: int):
-        new_low = min(self.low >> low, (2 << (high - low)) - 1)
-        new_high = min(self.high >> low, (2 << (high - low)) - 1)
+        mask = (2 << (high - low)) - 1
+        new_low = (self.low >> low) & mask
+        new_high = (((self.high - self.low) >> low) & mask) + new_low
+
+        if new_high > mask:
+            new_high = mask
 
         return Interval(
             high - low + 1,

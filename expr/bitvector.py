@@ -311,7 +311,11 @@ class BVExpr(BV):
 
     def Extract(self, high: int, low: int):
         assert high >= low
-        return BVExpr(high-low+1, z3.Extract(high, low, self.z3obj), self.interval.Extract(high, low))
+        new_interval = self.interval.Extract(high, low)
+        if new_interval.high == new_interval.low:
+            # extract is concrete
+            return BVV(new_interval.high, high-low+1)
+        return BVExpr(high-low+1, z3.Extract(high, low, self.z3obj), new_interval)
 
     def SignExt(self, n: int):
         assert n >= 0

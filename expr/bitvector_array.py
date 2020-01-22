@@ -42,8 +42,8 @@ class BVArray(object):
         if self._z3objConcCache is not None:
             return self._z3objConcCache
         res = z3.Array (
-            self.name, 
-            z3.BitVecSort(self.index_width), 
+            self.name,
+            z3.BitVecSort(self.index_width),
             z3.BitVecSort(self.value_width)
         )
         for index in self._conc_store:
