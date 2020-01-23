@@ -4,12 +4,13 @@ This is a binary ninja plugin that implements a symbolic execution engine based 
 The plugin is implemented as an emulator of LLIL instructions that builds and manipulates z3 formulas. 
 
 SENinja simulates a debugger: the execution is _path driven_, only one state is _active_ and executes instructions. The other states, generated at branches, are saved in a _deferred queue_. At any time, the active state can be changed with a deferred one.
-Refer to (this survey)[https://arxiv.org/pdf/1610.00502.pdf] if you want to know more about symbolic execution.
+
+Refer to [this survey](https://arxiv.org/pdf/1610.00502.pdf) if you want to know more about symbolic execution.
 
 ### Commands
 ![](pictures/commands.png)
 
-The plugin adds the following command accessible through the GUI:
+The plugin adds the following commands, accessible through the GUI:
 - `Start symbolic execution`: can be executed by right-clicking on an instruction. The command creates a symbolic state at the current address. By default, the uninitialized registers and memory locations are considered symbolic (this can be changed in the settings). This new state becomes the active state, highlighted in green on the disassembly graph.
 - `Change current state`: can be executed by right-clicking on a deferred state (highlighted in red on the disassembly graph). The deferred state becomes the new active state. If more than one state is at that address, the last one that reached the address becomes the active state.
 - `Step`: when executed, the active state executes one instruction.
@@ -60,21 +61,23 @@ The right-click menu allows to:
 - Evaluate the value of the selection using the solver
 - Inject symbols
 
-#### Use case - flare-on 9, challenge 11 (AVX2 virtual machine)
+#### Use Case - FLARE-ON 6, Challenge 11 (AVX2 Virtual Machine)
 
-This section shows how _SENinja_ can be used to solve challenge 11 of  _flare-on 9_ challenge in an automatic way. 
+This section shows how _SENinja_ can be used to solve challenge 11 of  _flare-on 6_ challenge in an automatic way. 
 The challenge can be downloaded at [flare-on 2019](https://www.fireeye.com/blog/threat-research/2019/09/2019-flare-on-challenge-solutions.html).
 
 The challenge implements a `base64` decoder, obfuscated with a virtual machine based on `AVX2`. 
 
-The `main` function of the challenge can be found at the address `0x140001220`. 
+The `main` function of the binary can be found at the address `0x140001220`. 
 After checking whether the cpu supports `AVX2`, the binary reads two command line arguments:
 - the first one with a length between 5 and 32 bytes
 - the second one with a length of exactly 32 bytes.
+
 Looking at `0x1400016cd`, we can see that the first argument must be equal to `FLARE2019`. 
 We can use SENinja to compute the 32 bytes of the second argument.
 
 We can start by creating a new state in `main` function, just after the `cpuid` checks at address `0x140001293` (right click on the address, `SENinja/Start symbolic execution`).
+
 Then, we can setup argv from the python shell:
 ``` python
 import seninja
@@ -97,7 +100,6 @@ Now, we can limit `inp1` to have only alphanumeric characters:
 ``` python
 for i in range(1, 33):
     b = inp1.Extract((i+1)*8-1, i*8)
-    s.solver.add_constraints(b != 0)
     s.solver.add_constraints(seninja.Or(
         seninja.And(
             ord("a") <= b, b <= ord("z")
@@ -127,6 +129,7 @@ cHCyrAHSXmEKpyqoCByGGuhFyCmy86Ee
 ```
 
 Indeed, running the program with
+
 `$ wine vv_max.exe FLARE2019 cHCyrAHSXmEKpyqoCByGGuhFyCmy86Ee`
 
 we obtain the flag:
@@ -140,18 +143,18 @@ Flag: AVX2_VM_M4K3S_BASE64_C0MPL1C4T3D@flare-on.com
 #### Limitations
 One main limitation of the plugin is the fact that the _status register_ is not explicitly modeled for every instructions, but is computed only when the analyses of binary ninja discovers that its value is needed for the computation of a certain condition. 
 While this approach works for the vast majority of situations, the emulation becomes inaccurate if the stautus register is used in a way that binary ninja does not predict (e.g., if the value of the status register is used accross function boundaries).
-This is a limitation of LLIL. To fix this, SENinja should use the LiftedIL instead of LLIL, implementing architecture-dependent handlers for every instructions.
+This is a limitation of LLIL. To fix this, SENinja should use the LiftedIL instead of LLIL, implementing architecture-dependent status-flag handlers for every instructions.
 
 
 Another main limitation of the plugin is given by the fact that system calls and external functions must be handled with handly written models (similarly to angr). While I have implemented some models (you can find them in the `models` subfolder), they are far from being complete. When SENinja reaches an unmodeled syscall or external function, it raises an exception.
 
 
-Finally, even if most of the code is architecture-independent, to support a new architecture SENinja needs some information that needs to be manually specified (e.g., list of registers, calling conventions, etc.). You can find examples in the `arch` subfolder. Furthermore, some instructions are not modeled by LLIL (e.g. most AVX2 instructions), so that instructions must be handled in an architecture-dependent way. You can find the models for AVX2 instructions as a reference in `arch//arch_x86_64_sph.py`.
+Finally, even if most of the code is architecture-independent, to support a new architecture SENinja needs some information that must be manually specified (e.g., list of registers, calling conventions, etc.). You can find examples in the `arch` subfolder. Furthermore, some instructions are not modeled by LLIL (e.g. most AVX2 instructions), so that instructions must be handled in an architecture-dependent way. You can find the models for AVX2 instructions as a reference in `arch/arch_x86_64_sph.py`.
 Currently, SENinja (partially) supports `x86`, `x86_64` and `ARMv7`.
 
 #### Version and Dependencies
 Tested with 
-- binary ninja `1.2.2001-dev`
+- binary ninja `1.2.2001-dev` personal license
 - python `3.6.9` 
 - z3 `4.8.7`
 
