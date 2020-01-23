@@ -20,6 +20,15 @@ class State(object):
         self.executor       = executor
         self._ipreg         = self.arch.getip_reg()
         self._bits          = self.arch.bits()
+    
+    def __str__(self):
+        return "<State @ 0x{addr:0{width}X}>".format(
+            addr=self.get_ip(),
+            width=(self._bits+3) // 4
+        )
+    
+    def __repr__(self):
+        return self.__str__()
 
     def get_ip(self):
         ip = getattr(self.regs, self._ipreg)
