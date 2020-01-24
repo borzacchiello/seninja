@@ -141,7 +141,11 @@ class BVExpr(BV):
         else:
             assert isinstance(other, BV)
             assert self.size == other.size
-        return BVExpr(self.size, self.z3obj >> other.z3obj, self.interval >> other.interval)
+        new_interval = self.interval.LShR(other.interval)
+        if new_interval.low == new_interval.high:
+            # concrete path
+            return BVV(self.size, new_interval.low)
+        return BVExpr(self.size, self.z3obj >> other.z3obj, new_interval)
 
     def __eq__(self, other):
         if isinstance(other, int):
@@ -241,7 +245,11 @@ class BVExpr(BV):
         else:
             assert isinstance(other, BV)
             assert self.size == other.size
-        return BVExpr(self.size, z3.LShR(self.z3obj, other.z3obj), self.interval.LShR(other.interval))
+        new_interval = self.interval.LShR(other.interval)
+        if new_interval.low == new_interval.high:
+            # concrete path
+            return BVV(self.size, new_interval.low)
+        return BVExpr(self.size, z3.LShR(self.z3obj, other.z3obj), new_interval)
 
     def AShR(self, other):
         return self.__rshift__(other)

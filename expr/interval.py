@@ -41,8 +41,8 @@ class Interval(object):
     def __sub__(self, other):
         assert other.bits == self.bits
 
-        new_low = self.low - other.low
-        new_high = self.high - other.high
+        new_low = self.low - other.high
+        new_high = self.high - other.low
         if new_low < 0:
             new_high = self.max
             new_low = 0
@@ -140,12 +140,12 @@ class Interval(object):
         # arithmetic right shift
         assert other.bits == self.bits
 
-        new_low = self.low >> other.low
+        new_low = self.low >> other.high
         # check sign
         if self.high >> (self.bits-1) == 1:
             new_high = self.high
         else:
-            new_high = self.high >> other.high
+            new_high = self.high >> other.low
 
         return Interval(
             self.bits,
@@ -161,9 +161,11 @@ class Interval(object):
 
     def UDiv(self, other):
         assert other.bits == self.bits
+        if other.low == 0 or other.high == 0:
+            return Interval(self.bits)
 
-        new_low = self.low // other.low
-        new_high = self.high // other.high
+        new_low = self.low // other.high
+        new_high = self.high // other.low
 
         return Interval(
             self.bits,
@@ -192,8 +194,8 @@ class Interval(object):
     def LShR(self, other):
         assert other.bits == self.bits
 
-        new_low = self.low >> other.low
-        new_high = self.high >> other.high
+        new_low = self.low >> other.high
+        new_high = self.high >> other.low
 
         return Interval(
             self.bits,

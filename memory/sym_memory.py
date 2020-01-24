@@ -11,10 +11,11 @@ InitData = namedtuple('InitData', ['bytes', 'index'])  # bytes: byte array; inde
 
 class Page(object):
     def __init__(self, addr: int, size: int=0x1000, bits: int=12, init: InitData=None):
-        self.addr = addr
-        self.size = size
-        self.bits = bits
-        self.mo   = MemoryObj(str(addr), bits)
+        self.addr  = addr
+        self.size  = size
+        self.bits  = bits
+        self.dirty = False
+        self.mo    = MemoryObj(str(addr), bits)
         self._init     = init
         self._lazycopy = False
     
@@ -29,6 +30,8 @@ class Page(object):
             self._init = None
     
     def store(self, index: BV, value: BV, condition: Bool=None):
+        self.dirty = True
+        
         self.lazy_init()
         if self._lazycopy:
             self._lazycopy = False

@@ -9,17 +9,17 @@ from .expr import BV, BVV
 
 class State(object):
     def __init__(self, executor, os: Os, arch: Arch=x8664Arch(), page_size: int=0x1000):
-        self.page_size      = page_size
-        self.arch           = arch
-        self.mem            = Memory(self, page_size, arch.bits(), not executor.init_with_zero)
-        self.regs           = Regs(self)
-        self.solver         = Solver(self)
-        self.os             = os
-        self.events         = list()
-        self.llil_ip        = None
-        self.executor       = executor
-        self._ipreg         = self.arch.getip_reg()
-        self._bits          = self.arch.bits()
+        self.page_size = page_size
+        self.arch      = arch
+        self.mem       = Memory(self, page_size, arch.bits(), not executor.init_with_zero)
+        self.regs      = Regs(self)
+        self.solver    = Solver(self)
+        self.os        = os
+        self.events    = list()
+        self.llil_ip   = None
+        self.executor  = executor
+        self._ipreg    = self.arch.getip_reg()
+        self._bits     = self.arch.bits()
     
     def __str__(self):
         return "<State @ 0x{addr:0{width}X}>".format(

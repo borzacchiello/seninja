@@ -154,7 +154,7 @@ Currently, SENinja (partially) supports `x86`, `x86_64` and `ARMv7`.
 
 #### Version and Dependencies
 Tested with 
-- binary ninja `1.2.2001-dev` personal license
+- binary ninja `1.2.2001-dev` with personal license
 - python `3.6.9` 
 - z3 `4.8.7`
 
