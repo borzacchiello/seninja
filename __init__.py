@@ -254,6 +254,53 @@ def _async_change_current_state(bv, address):
         background_task = TaskInBackground(bv, "seninja: changing current state", f)
         background_task.start()
 
+def _async_save_active_state(bv):
+    global _running
+    if not __check_executor():
+        return
+        
+    def f(tb):
+        global _running
+        disable_widgets()
+
+        saved_state = executor.state.copy()
+        executor.put_in_deferred(saved_state)
+
+        enable_widgets()
+        _running = False
+
+    if not _running:
+        _running = True
+        background_task = TaskInBackground(bv, "seninja: saving current state", f)
+        background_task.start()
+
+def _async_change_active_state_ip(bv, address):
+    global _running
+    if not __check_executor():
+        return
+        
+    def f(tb):
+        global _running
+        disable_widgets()
+
+        state = executor.state
+        state.set_ip(address)
+        func_name = executor.bncache.get_function_name(address)
+        state.llil_ip = executor.bncache.get_llil_address(func_name, address)
+
+        executor.state = None
+        executor.set_current_state(state)
+
+        sync_ui(bv, delta=False)
+
+        enable_widgets()
+        _running = False
+
+    if not _running:
+        _running = True
+        background_task = TaskInBackground(bv, "seninja: changing current state", f)
+        background_task.start()
+
 def _async_reset_se(bv):
     global _running
     if not __check_executor():
@@ -393,7 +440,17 @@ PluginCommand.register_for_address(
     _async_merge_states
 )
 PluginCommand.register(
-    "SENinja\\6 - Reset symbolic execution",
+    "SENinja\\6 - Save active state",
+    "save active state in deferred state",
+    _async_save_active_state
+)
+PluginCommand.register_for_address(
+    "SENinja\\7 - Set IP to address",
+    "set ip of active state to current address",
+    _async_change_active_state_ip
+)
+PluginCommand.register(
+    "SENinja\\8 - Reset symbolic execution",
     "delete all states",
     _async_reset_se
 )
