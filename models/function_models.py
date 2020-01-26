@@ -12,6 +12,7 @@ library_functions = {
     'strcmp':           models_string.strcmp_handler,
     'strlen':           models_string.strlen_handler,
     'strcpy':           models_string.strcpy_handler,
+    'isxdigit':         models_libc.isxdigit_handler,
     'atoi':             models_libc.atoi_handler,
     'atol':             models_libc.atol_handler,
     'atoll':            models_libc.atol_handler,

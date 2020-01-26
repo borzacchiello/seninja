@@ -155,6 +155,18 @@ def scanf_handler(state: State, view):
 
     return BVV(1, 32)
 
+def isxdigit_handler(state: State, view):
+    c = get_arg_k(state, 1, 4, view)
+
+    res = ITE(
+        Or(
+            And(c >= 48, c <= 57),  # 0 -> 9
+            And(c >= 97, c <= 102), # a -> f
+            And(c >= 65, c <= 70)   # A -> F
+        ), BVV(1, 32), BVV(0, 32)
+    )
+    return res
+
 # ************** atoX models **************
 
 # SLOW... but cool :)

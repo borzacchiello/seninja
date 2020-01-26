@@ -90,7 +90,7 @@ def strlen_handler(state: State, view):
 
     assert not symbolic(str1) or not state.solver.symbolic(str1)
     if symbolic(str1):
-        str1 = state.solver.evaluate(str1) if symbolic(str1) else str1
+        str1 = state.solver.evaluate(str1)
     
     max_sym_string = int(state.executor.bncache.get_setting("models.max_size_symb_string"))
 
