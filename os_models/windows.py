@@ -1,13 +1,12 @@
 from copy import deepcopy
 from ..expr import Bool
-from .os_abstract import Os
+from .os_file import OsFileHandler
 
-class Windows(Os):
+class Windows(OsFileHandler):
     def __init__(self):
-        self.devices = {
-            0: [],  # stdin
-            1: []   # stdout
-        }
+        super().__init__()
+        self.stdin_fd = self.open("__stdin", "r--")
+        self.stdout_fd = self.open("__stdout", "-w-")
 
     def get_syscall_by_number(self, n):
         raise NotImplementedError
@@ -21,27 +20,27 @@ class Windows(Os):
     def get_out_syscall_reg(self):
         raise NotImplementedError
 
-    def open(self, fd: int):
-        self.devices[fd] = []
-    
-    def is_open(self, fd: int):
-        return fd in self.devices
+    def get_stdin_stream(self):
+        session = self.descriptors_map[self.stdin_fd]
+        session_idx = session.seek_idx
+        session.seek(0)
+        res = session.read(session.symfile.file_size)
+        session.seek(session_idx)
+        
+        return res
 
-    def close(self, fd: int):
-        del self.devices[fd]
-    
-    def get_device_by_fd(self, fd: int):
-        return self.devices[fd]
-
-    def get_stdin(self):
-        return self.devices[0]
-
-    def get_stdout(self):
-        return self.devices[1]
+    def get_stdout_stream(self):
+        session = self.descriptors_map[self.stdout_fd]
+        session_idx = session.seek_idx
+        session.seek(0)
+        res = session.read(session.symfile.file_size)
+        session.seek(session_idx)
+        
+        return res
 
     def copy(self):
         res = Windows()
-        res.devices = deepcopy(self.devices)
+        super().copy_to(res)
         return res
 
     def merge(self, other, merge_condition: Bool):

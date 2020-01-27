@@ -15,16 +15,15 @@ def read_handler(state):
     assert not symbolic(fd) or not state.solver.symbolic(fd)
     fd = fd.value
     assert state.os.is_open(fd)
+
     if symbolic(count):
         count = state.solver.max(count)
         count = MAX_READ if count > MAX_READ else count
     else:
         count = count.value
     
-    s = "read_fd%d" % fd
-    for i in range(count):
-        b = BVS(s + "_%d" % i, 8)
-        state.os.get_device_by_fd(fd).append(b)
+    res = state.os.read(fd, count)
+    for i, b in enumerate(res):
         state.mem.store(buf + i, b)
     
     state.events.append(
@@ -43,18 +42,22 @@ def write_handler(state):
 
     assert not symbolic(fd) or not state.solver.symbolic(fd)
     fd = fd.value
+    assert state.os.is_open(fd)
+
     if symbolic(count):
         count = state.solver.max(count)
         count = MAX_READ if count > MAX_READ else count
     else:
         count = count.value
-    
+
+    data = []
     for i in range(count):
         b = state.mem.load(buf + i, 1)
-        state.os.get_device_by_fd(fd).append(b)
-    
+        data.append(b)
+    state.os.write(fd, data)
+
     state.events.append(
-        "read from fd %d, count %d" % (fd, count)
+        "write to fd %d, count %d" % (fd, count)
     )
     return BVV(count, 32)
 

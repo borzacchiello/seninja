@@ -9,17 +9,19 @@ class Os(object):
     def get_out_syscall_reg(self):
         raise NotImplementedError
     # devices
-    def open(self, fd: int):
+    def open(self, filename, mode):
+        raise NotImplementedError
+    def read(self, fd, size):
+        raise NotImplementedError
+    def write(self, fd, data):
         raise NotImplementedError
     def is_open(self, fd: int):
         raise NotImplementedError
     def close(self, fd: int):
         raise NotImplementedError
-    def get_device_by_fd(self, fd: int):
+    def get_stdin_stream(self):
         raise NotImplementedError
-    def get_stdin(self):
-        raise NotImplementedError
-    def get_stdout(self):
+    def get_stdout_stream(self):
         raise NotImplementedError
     # other
     def copy(self):

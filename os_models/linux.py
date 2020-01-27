@@ -1,15 +1,16 @@
 from copy import deepcopy
 from ..models import linux_syscalls as models
 from ..expr import Bool
-from .os_abstract import Os
+from .os_file import OsFileHandler
 
-class Linux(Os):
+class Linux(OsFileHandler):
     SYSCALL_TABLE  = {}
     SYSCALL_PARAMS = {}
 
     def __init__(self):
-        self.devices = []
-        raise NotImplementedError  # do not instantiate this class
+        super().__init__()
+        self.stdin_fd  = self.open("__stdin",  "r--")
+        self.stdout_fd = self.open("__stdout", "-w-")
 
     def get_syscall_by_number(self, n: int):
         if n not in self.SYSCALL_TABLE:
@@ -20,23 +21,28 @@ class Linux(Os):
         assert 0 < k <= 6
         return self.SYSCALL_PARAMS[k-1]
 
-    def get_stdin(self):
-        return self.devices[0]
+    def get_stdin_stream(self):
+        session = self.descriptors_map[self.stdin_fd]
+        session_idx = session.seek_idx
+        session.seek(0)
+        res = session.read(session.symfile.file_size)
+        session.seek(session_idx)
+        
+        return res
 
-    def get_stdout(self):
-        return self.devices[1]
-    
-    def open(self, fd: int):
-        self.devices[fd] = []
-    
-    def is_open(self, fd: int):
-        return fd in self.devices
+    def get_stdout_stream(self):
+        session = self.descriptors_map[self.stdout_fd]
+        session_idx = session.seek_idx
+        session.seek(0)
+        res = session.read(session.symfile.file_size)
+        session.seek(session_idx)
+        
+        return res
 
-    def close(self, fd: int):
-        del self.devices[fd]
-    
-    def get_device_by_fd(self, fd: int):
-        return self.devices[fd]
+    def copy_to(self, other):
+        super().copy_to(other)
+        other.stdin_fd = self.stdin_fd
+        other.stdout_fd = other.stdout_fd
 
 class Linuxi386(Linux):
     SYSCALL_TABLE = {
@@ -48,12 +54,6 @@ class Linuxi386(Linux):
         "ebx",   "ecx",   "edx",   "esi",   "edi",   "ebp"
     ]
 
-    def __init__(self):
-        self.devices = {
-            0: [],
-            1: []
-        }  # todo something better
-
     def get_syscall_n_reg(self):
         return "eax"
 
@@ -62,7 +62,7 @@ class Linuxi386(Linux):
 
     def copy(self):
         res = Linuxi386()
-        res.devices = deepcopy(self.devices)
+        super().copy_to(res)
         return res
     
     def merge(self, other, merge_condition: Bool):
@@ -79,12 +79,6 @@ class Linuxia64(Linux):
         "rdi",	"rsi",	"rdx",	"r10",	"r8",	"r9"
     ]
 
-    def __init__(self):
-        self.devices = {
-            0: [],
-            1: []
-        }  # todo something better
-
     def get_syscall_n_reg(self):
         return "rax"
 
@@ -93,7 +87,7 @@ class Linuxia64(Linux):
 
     def copy(self):
         res = Linuxia64()
-        res.devices = deepcopy(self.devices)
+        super().copy_to(res)
         return res
 
     def merge(self, other, merge_condition: Bool):
@@ -110,12 +104,6 @@ class LinuxArmV7(Linux):
         "r0", "r1", "r2", "r3", "r4", "r5", "r6"
     ]
 
-    def __init__(self):
-        self.devices = {
-            0: [],
-            1: []
-        }  # todo something better
-
     def get_syscall_n_reg(self):
         return "r7"
 
@@ -124,7 +112,7 @@ class LinuxArmV7(Linux):
 
     def copy(self):
         res = LinuxArmV7()
-        res.devices = deepcopy(self.devices)
+        super().copy_to(res)
         return res
 
     def merge(self, other, merge_condition: Bool):

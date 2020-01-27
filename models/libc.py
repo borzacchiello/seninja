@@ -25,8 +25,8 @@ def _intbv_to_strbv16(intbv):
             BVV(ord("0"), 8) + hig,
             BVV(ord("A"), 8) - 10 + hig
         )
-        v = rb_hig.Concat(rb_low)
-        res.append(v)
+        v = [rb_hig, rb_low]
+        res.extend(v)
     
     return res
 
@@ -74,7 +74,6 @@ def printf_handler(state: State, view):  # only concrete
 
         elif match == "%d" or match == "%x":
             int_val = get_arg_k(state, param_idx, 4, view)
-
             val = _intbv_to_strbv16(int_val)
 
         elif match == "%c":
@@ -92,24 +91,21 @@ def printf_handler(state: State, view):  # only concrete
     format_substr = format_str[last_idx + len(match):]
     res.extend(str_to_bv_list(format_substr))
 
-    state.os.get_stdout().extend(res)
+    state.os.write(state.os.stdout_fd, res)
     return BVV(len(res), 32)
 
-getchar_count = 0
 def getchar_handler(state: State, view):
-    global getchar_count
-    new_symb = BVS("getchar_symb_%d" % getchar_count, 8)
-    getchar_count += 1
-
     state.events.append(
         "getchar called"
     )
-    state.os.get_stdin().append(new_symb)
 
-    return new_symb
+    v = state.os.read(state.os.stdin_fd, 1)
+    return v[0]
 
 scanf_count = 0
 def scanf_handler(state: State, view):
+    # scanf does not support reading data from stdin... Too difficult to model
+    # it will simply write on stdin the correct data
     global scanf_count
     format_str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
@@ -125,34 +121,48 @@ def scanf_handler(state: State, view):
     state.events.append(
         "scanf with format '%s'" % format_str
     )
-    params = re.findall("%([0-9]*s|d|x)", format_str)  # TODO generalize
 
-    i = 2
-    for p in params:
+    match = ""
+    bytes_read = list()
+    last_idx = 0
+    param_idx = 2
+    params = re.finditer("%([0-9]*s|d|x)", format_str)  # TODO generalize
+    for param in params:
+        index = param.start()
+        match = param.group()
 
-        par_p = get_arg_k(state, i, state.arch.bits() // 8, view)
+        tmp_bytes_red = list()
+        par_p = get_arg_k(state, param_idx, state.arch.bits() // 8, view)
         assert not symbolic(par_p) or not state.solver.symbolic(par_p)
         name = 'scanf_input_%d' % scanf_count
 
-        if p[-1] == "d" or p[-1] == "x":
+        if match[-1] == "d" or match[-1] == "x":
             data = BVS(name + "_INT", 32)
-            state.os.get_stdin().append(data)
             state.mem.store(par_p, data, endness=state.arch.endness())
-        elif p[-1] == "s":
-            n = 40
-            if p[0] != "s":
-                n = int(p[:-1])
+            tmp_bytes_red = _intbv_to_strbv16(data)
+        elif match[-1] == "s":
+            max_symb_str = int(state.executor.bncache.get_setting("models.max_size_symb_string"))
+            n = int(match[1:-1]) if len(match) > 2 else max_symb_str
 
             data = BVS(name + "_STR", 8*(n - 1))
-            state.os.get_stdin().append(data.Concat(BVV(ord("\n"), 8)))
             state.mem.store(par_p, data.Concat(BVV(0, 8)), 'big')
             for i in range(0, data.size, 8):
                 b = data.Extract(i+7, i)
                 state.solver.add_constraints(b != ord("\n"))
+                tmp_bytes_red.append(b)
+
+        param_idx += 1
+
+        format_substr = format_str[last_idx:index]
+        last_idx = index + len(match)
+        bytes_read.extend(str_to_bv_list(format_substr))
+        bytes_read.extend(tmp_bytes_red)
 
         scanf_count += 1
-        i += 1
 
+    format_substr = format_str[last_idx + len(match):]
+    bytes_read.extend(str_to_bv_list(format_substr))
+    state.os.write(state.os.stdin_fd, bytes_read)
     return BVV(1, 32)
 
 def isxdigit_handler(state: State, view):

@@ -95,6 +95,9 @@ class MemoryConcreteFlat(MemoryAbstract):
         
         return res.simplify()
 
+    def is_mapped(self, address: int):
+        return address >> self.index_bits in self.pages
+
     def get_unmapped(self, size, start_from, from_end):
         raise NotImplementedError
     

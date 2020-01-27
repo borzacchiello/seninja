@@ -441,7 +441,7 @@ PluginCommand.register_for_address(
 )
 PluginCommand.register(
     "SENinja\\6 - Save active state",
-    "save active state in deferred state",
+    "save active state in deferred queue",
     _async_save_active_state
 )
 PluginCommand.register_for_address(
