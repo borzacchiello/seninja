@@ -14,7 +14,8 @@ from .utility.string_util import (
     int_to_str,
     str_to_int,
     as_bytes,
-    get_byte
+    get_byte,
+    str_to_bv_list
 )
 from .sym_state import State
 from .models import function_models as seninja_models

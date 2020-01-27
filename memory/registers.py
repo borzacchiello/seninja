@@ -50,7 +50,9 @@ class Regs(object):
             return super().__setattr__(k, val)
         elif k in self._regs:
             reg_addr, reg_size = self._regs[k]
-            assert reg_size * 8 == val.size
+            if reg_size * 8 < val.size:
+                print("WARNING trimming value size in regs.setattr")
+                val = val.Extract(reg_size * 8 - 1, 0)
             self._mem.store(reg_addr, val, endness='big')
         elif "temp" in k:
             self._tmp_regs[k] = val
