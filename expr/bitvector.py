@@ -585,10 +585,10 @@ class BVV(BV):
         return BoolExpr(self.z3obj >= other.z3obj)
     
     def __invert__(self):
-        return BVV(-self.value, self.size)
+        return BVV(~self.value, self.size)
     
     def __neg__(self):
-        return BVV(~self.value, self.size)
+        return BVV(-self.value, self.size)
     
     def UDiv(self, other):
         if isinstance(other, int):

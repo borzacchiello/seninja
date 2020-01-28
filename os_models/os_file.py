@@ -23,7 +23,7 @@ class FileSession(object):
 
     def read(self, size: int) -> list:
         self.symfile.seek(self.seek_idx)
-        self.seek_idx += self.seek_idx + size
+        self.seek_idx += size
         return self.symfile.read(size)
 
     def write(self, data: list):

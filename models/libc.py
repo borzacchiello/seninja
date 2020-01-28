@@ -5,8 +5,48 @@ from ..utility.models_util import get_arg_k
 from ..utility.string_util import as_bytes, str_to_bv_list
 from ..memory.sym_memory import InitData
 import re
+import ctypes, ctypes.util
 
+libc_native_path = ctypes.util.find_library('c')
+libc_native = ctypes.cdll.LoadLibrary(libc_native_path)
 ascii_numbers = ["0","1","2","3","4","5","6","7","8","9"]
+
+# ---- NATIVE CONCRETE HANDLERS -----
+def strtoul_handler(state: State, view):
+    str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
+    endptr = get_arg_k(state, 2, state.arch.bits() // 8, view)
+    base = get_arg_k(state, 3, 4, view)
+
+    assert not symbolic(base)    # concrete model
+    assert not symbolic(endptr)  # concrete model
+    assert not symbolic(str_p)   # concrete model
+
+    i = 0
+    str_data = b""
+    b = state.mem.load(str_p, 1)
+    while not symbolic(b) and i < 64:
+        b = b.value
+        str_data += bytes([b])
+        if b == 0:
+            break
+        i += 1
+        b = state.mem.load(str_p + i, 1)
+    
+    _native_buff = ctypes.c_char_p(str_data)
+    _native_endptr = ctypes.c_ulong(0)
+    _native_base = base.value
+
+    _native_res = libc_native.strtoul(
+        _native_buff,
+        ctypes.byref(_native_endptr),
+        _native_base
+    )
+
+    offset = _native_endptr.value - ctypes.cast(_native_buff, ctypes.c_void_p).value
+    assert offset >= 0
+    state.mem.store(endptr, BVV((str_p.value + offset), state.arch.bits()), 'little')
+    return BVV(_native_res, state.arch.bits())
+# -----------------------------------
 
 def _intbv_to_strbv16(intbv):
     # int bv to string bv in hex
@@ -27,12 +67,10 @@ def _intbv_to_strbv16(intbv):
         )
         v = [rb_hig, rb_low]
         res.extend(v)
-    
+
     return res
 
-def printf_handler(state: State, view):  # only concrete
-    format_str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
-
+def _printf_common(state: State, format_str_p, param_idx_start, view):
     assert not symbolic(format_str_p) or not state.solver.symbolic(format_str_p)
 
     b = state.mem.load(format_str_p, 1)
@@ -49,8 +87,8 @@ def printf_handler(state: State, view):  # only concrete
     match = ""
     res = list()
     last_idx = 0
-    param_idx = 2
-    params = re.finditer("%([0-9]*s|d|x|c)", format_str)  # TODO generalize
+    param_idx = param_idx_start
+    params = re.finditer("%([0-9]*s|d|u|x|X|c)", format_str)  # TODO generalize
     for param in params:
         index = param.start()
         match = param.group()
@@ -72,9 +110,15 @@ def printf_handler(state: State, view):  # only concrete
                 c = state.mem.load(param_p, 1)
                 i += 1
 
-        elif match == "%d" or match == "%x":
+        elif match == "%d" or match == "%u" or match == "%x" or match == "%X":
             int_val = get_arg_k(state, param_idx, 4, view)
-            val = _intbv_to_strbv16(int_val)
+            if symbolic(int_val):
+                val = _intbv_to_strbv16(int_val)
+            else:
+                if match == "%d" or match == "%u":
+                    val = str_to_bv_list(str(int_val.value))
+                else:
+                    val = str_to_bv_list(hex(int_val.value)[2:])
 
         elif match == "%c":
             c = get_arg_k(state, param_idx, 1, view)
@@ -91,8 +135,22 @@ def printf_handler(state: State, view):  # only concrete
     format_substr = format_str[last_idx + len(match):]
     res.extend(str_to_bv_list(format_substr))
 
-    state.os.write(state.os.stdout_fd, res)
-    return BVV(len(res), 32)
+    return res, BVV(len(res), 32)
+
+def printf_handler(state: State, view):  # only concrete
+    format_str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
+    data_list, res_n = _printf_common(state, format_str_p, 2, view)
+
+    state.os.write(state.os.stdout_fd, data_list)
+    return res_n
+
+def printf_chk_handler(state: State, view):
+    flag = get_arg_k(state, 1, 4, view)  # TODO ignored
+    format_str_p = get_arg_k(state, 2, state.arch.bits() // 8, view)
+    data_list, res_n = _printf_common(state, format_str_p, 3, view)
+
+    state.os.write(state.os.stdout_fd, data_list)
+    return res_n
 
 def getchar_handler(state: State, view):
     state.events.append(

@@ -6,6 +6,7 @@ from . import teensy as models_teensy
 
 library_functions = {
     'printf':           models_libc.printf_handler,
+    '__printf_chk':     models_libc.printf_chk_handler,
     'scanf':            models_libc.scanf_handler,
     '__isoc99_scanf':   models_libc.scanf_handler,
     'getchar':          models_libc.getchar_handler,
@@ -25,6 +26,9 @@ library_functions = {
     'time':             models_other.time_handler,
     'stat':             models_unistd.stat_handler,
     '__xstat':          models_unistd.xstat_handler,
+
+    # concrete models
+    'strtoul':          models_libc.strtoul_handler,
 
     # models Teensy Board
     '_ZN5Print7printlnEi':   models_teensy.println_handler, # Print::println(int)
