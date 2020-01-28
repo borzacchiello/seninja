@@ -562,15 +562,15 @@ class x8664Arch(Arch):
             name = calling_convention
         ))
     
-    def get_result_reg(self, calling_convention, size):
-        if size == 8:
-            return 'al'
-        elif size == 16:
-            return 'ax'
-        elif size == 32:
-            return 'eax'
-        elif size == 64:
-            return 'rax'
+    def save_result_value(self, state, calling_convention, value):
+        if value.size == 8:
+            state.regs.al = value
+        elif value.size == 16:
+            state.regs.ax = value
+        elif value.size == 32:
+            state.regs.rax = value.ZeroExt(32)
+        elif value.size == 64:
+            state.regs.rax = value
         else:
             raise Exception("Wrong size in get_result_reg")
 

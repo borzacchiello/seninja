@@ -28,7 +28,12 @@ class ArmV7SPH(SpecialInstructionHandler):
         src = getattr(sv.state.regs, src_reg)
         if len(parameters) == 3:
             # there is a rotation/shift
-            assert False # TODO
+            op, v = parameters[2].split("#")
+            if op == "ror":
+                v = int(v)
+                src.RotateRight(v)
+            else:
+                assert False # TODO
 
         setattr(sv.state.regs, dst_reg, src.Extract(7, 0).ZeroExt(24))
 

@@ -23,7 +23,7 @@ class Arch(object):  # abstract class
         raise NotImplementedError
     def get_argument_regs(self, calling_convention):
         raise NotImplementedError
-    def get_result_reg(self, calling_convention):
+    def save_result_value(self, state, calling_convention, value):
         raise NotImplementedError
     def get_flag_cond_lambda(self, cond: str):
         raise NotImplementedError

@@ -17,7 +17,6 @@ from .utility.bninja_util import (
     parse_disasm_str
 )
 from .utility.binary_ninja_cache import BNCache
-from .utility.models_util import get_result_reg
 from .memory.sym_memory import InitData
 from .multipath.fringe import Fringe
 from .utility.error_codes import ErrorInstruction
@@ -567,7 +566,9 @@ class SymbolicVisitor(BNILVisitor):
         # check if we have an handler
         if dest_fun_name in library_functions:
             res = library_functions[dest_fun_name](self.executor.state, self.executor.view)
-            setattr(self.executor.state.regs, get_result_reg(self.executor.state, self.executor.view, res.size), res)
+
+            dest_fun = self.executor.bncache.get_function(dest.value)
+            self.executor.arch.save_result_value(self.executor.state, dest_fun.calling_convention, res)
 
             # retrive return address
             dest = self.executor.arch.get_return_address(self.executor.state)
@@ -581,7 +582,9 @@ class SymbolicVisitor(BNILVisitor):
                 raise Exception("unsupported external function '%s'" % name)
             
             res = library_functions[name](self.executor.state, self.executor.view)
-            setattr(self.executor.state.regs, get_result_reg(self.executor.state, self.executor.view, res.size), res)
+            
+            dest_fun = self.executor.bncache.get_function(dest.value)
+            self.executor.arch.save_result_value(self.executor.state, dest_fun.calling_convention, res)
             
             # retrive return address
             dest = self.executor.arch.get_return_address(self.executor.state)
@@ -611,7 +614,10 @@ class SymbolicVisitor(BNILVisitor):
         # check if we have an handler
         if dest_fun_name in library_functions:
             res = library_functions[dest_fun_name](self.executor.state, self.executor.view)
-            setattr(self.executor.state.regs, get_result_reg(self.executor.state, self.executor.view, res.size), res)
+
+            dest_fun = self.executor.bncache.get_function(dest.value)
+            self.executor.arch.save_result_value(self.executor.state, dest_fun.calling_convention, res)
+
             # retrive return address
             dest = self.executor.arch.get_return_address(self.executor.state)
             if symbolic(dest):
@@ -626,7 +632,10 @@ class SymbolicVisitor(BNILVisitor):
                 raise Exception("unsupported external function '%s'" % name)
             
             res = library_functions[name](self.executor.state, self.executor.view)
-            setattr(self.executor.state.regs, get_result_reg(self.executor.state, self.executor.view, res.size), res)
+            
+            dest_fun = self.executor.bncache.get_function(dest.value)
+            self.executor.arch.save_result_value(self.executor.state, dest_fun.calling_convention, res)
+
             # retrive return address
             dest = self.executor.arch.get_return_address(self.executor.state)
             if symbolic(dest):

@@ -137,8 +137,11 @@ class ArmV7Arch(Arch):
         assert calling_convention == 'cdecl'
         return ['r0', 'r1', 'r2', 'r3']
 
-    def get_result_reg(self, calling_convention, size):
-        return 'r0'
+    def save_result_value(self, state, calling_convention, value):
+        if value.size == 32:
+            state.regs.r0 = value
+        else:
+            state.regs.r0 = value.ZeroExt(32 - value.size)
 
     def get_flag_cond_lambda(self, cond: str, state):
         assert cond in ArmV7Arch.FLAGS_CONDS

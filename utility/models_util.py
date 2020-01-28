@@ -17,10 +17,3 @@ def get_arg_k(state, k, size, view):
         assert not symbolic(stack_pointer)
 
         return state.mem.load(stack_pointer + (state.arch.bits() // 8)*k, size, state.arch.endness())
-
-def get_result_reg(state, view, size):
-    ip = state.get_ip()
-    func = get_function(view, ip)
-    calling_convention = func.calling_convention.name
-
-    return state.arch.get_result_reg(calling_convention, size)

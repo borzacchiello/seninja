@@ -152,6 +152,13 @@ def printf_chk_handler(state: State, view):
     state.os.write(state.os.stdout_fd, data_list)
     return res_n
 
+def putchar_handler(state: State, view):
+    res = get_arg_k(state, 1, 4, view)
+    c   = res.Extract(7, 0)
+
+    state.os.write(state.os.stdout_fd, [c])
+    return res
+
 def getchar_handler(state: State, view):
     state.events.append(
         "getchar called"
