@@ -5,9 +5,14 @@ from ..utility.models_util import get_arg_k
 from ..utility.string_util import as_bytes, str_to_bv_list
 from ..memory.sym_memory import InitData
 import re
+import os
 import ctypes, ctypes.util
 
-libc_native_path = ctypes.util.find_library('c')
+if os.name == 'nt':
+    # windows
+    libc_native_path = ctypes.util.find_library('msvcrt')
+else:
+    libc_native_path = ctypes.util.find_library('c')
 libc_native = ctypes.cdll.LoadLibrary(libc_native_path)
 ascii_numbers = ["0","1","2","3","4","5","6","7","8","9"]
 
@@ -42,7 +47,8 @@ def strtoul_handler(state: State, view):
         _native_base
     )
 
-    offset = _native_endptr.value - ctypes.cast(_native_buff, ctypes.c_void_p).value
+    offset = (_native_endptr.value & 0xffffffff) - \
+        (ctypes.cast(_native_buff, ctypes.c_void_p).value & 0xffffffff)
     assert offset >= 0
     state.mem.store(endptr, BVV((str_p.value + offset), state.arch.bits()), 'little')
     return BVV(_native_res, state.arch.bits())
