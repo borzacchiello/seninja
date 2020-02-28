@@ -32,7 +32,7 @@ class BoolExpr(Bool):
         return BoolExpr(simplified)
 
     def eq(self, other: Bool):
-        return self.z3obj == other.z3obj
+        return self.z3obj.eq(other.z3obj)
 
     def __eq__(self, other: Bool):
         return BoolExpr(self.z3obj == other.z3obj)

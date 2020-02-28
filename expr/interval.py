@@ -111,8 +111,8 @@ class Interval(object):
     def __or__(self, other):
         assert other.bits == self.bits
 
-        new_low = 0
-        new_high = max(self.high, other.high)
+        new_low = min(self.low, other.low)
+        new_high = max(self.high, other.high, self.high | other.high)
 
         return Interval(
             self.bits,

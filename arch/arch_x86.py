@@ -126,6 +126,16 @@ class x86Arch(Arch):
             'addr': 96,
             'size': 8,
             'sub': {}
+        },
+        'gs': {
+            'addr': 104,
+            'size': 4,
+            'sub': {}
+        },
+        'fs': {
+            'addr': 108,
+            'size': 4,
+            'sub': {}
         }
     }
 
@@ -205,13 +215,13 @@ class x86Arch(Arch):
         assert calling_convention == 'cdecl'
         return []
 
-    def get_result_reg(self, calling_convention, size):
-        if size == 8:
-            return 'al'
-        elif size == 16:
-            return 'ax'
-        elif size == 32:
-            return 'eax'
+    def save_result_value(self, state, calling_convention, value):
+        if value.size == 8:
+            state.regs.al = value
+        elif value.size == 16:
+            state.regs.ax = value
+        elif value.size == 32:
+            state.regs.eax = value
         else:
             raise Exception("Wrong size in get_result_reg")
 

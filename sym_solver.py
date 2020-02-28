@@ -60,7 +60,10 @@ class Solver(object):
         elif var in self._eval_cache:
             return self._eval_cache[var]
         
-        assert self.satisfiable()
+        if not self.satisfiable():
+            if extra_constraints:
+                self._solver.pop()
+            assert False  # not satisfiable!
         model = self._solver.model()
         res = model.evaluate(var.z3obj, model_completion=True)
         res = BVV(res.as_long(), var.size)
@@ -76,7 +79,10 @@ class Solver(object):
         if extra_constraints:
             self._add_tmp_constraints(*extra_constraints)
         
-        assert self.satisfiable()
+        if not self.satisfiable():
+            if extra_constraints:
+                self._solver.pop()
+            assert False  # not satisfiable!
         res = list()
         while n > 0 and self.satisfiable():
             model = self._solver.model()

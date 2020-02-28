@@ -52,7 +52,7 @@ class SymbolicVisitor(BNILVisitor):
     # --- HANDLERS ---
 
     def visit_LLIL_CONST(self, expr):
-        return BVV(expr.constant, expr.size * 8)
+        return BVV(expr.constant, max(expr.size, 1) * 8)
 
     def visit_LLIL_CONST_PTR(self, expr):
         return BVV(expr.constant, self.executor.arch.bits())
