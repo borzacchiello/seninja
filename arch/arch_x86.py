@@ -211,10 +211,6 @@ class x86Arch(Arch):
     def get_return_address(self, state):
         return state.stack_pop()
 
-    def get_argument_regs(self, calling_convention):
-        assert calling_convention == 'cdecl'
-        return []
-
     def save_result_value(self, state, calling_convention, value):
         if value.size == 8:
             state.regs.al = value
@@ -223,7 +219,11 @@ class x86Arch(Arch):
         elif value.size == 32:
             state.regs.eax = value
         else:
-            raise Exception("Wrong size in get_result_reg")
+            raise Exception("Wrong size in save_result_value")
+
+    def get_argument_regs(self, calling_convention):
+        assert calling_convention == 'cdecl'
+        return []
 
     def get_flag_cond_lambda(self, cond: str):
         assert cond in x86Arch.FLAGS_CONDS

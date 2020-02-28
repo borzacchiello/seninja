@@ -67,11 +67,14 @@ class SymbolicExecutor(object):
             size  = segment.data_length
             print(segment, hex(start), "->", hex(size))
 
-            if size == 0:
+            if size == 0 and end - start != 0:
+                size = end - start
+                data = b"\x00" * size
+            elif size == 0:
                 continue
-
-            self.br.seek(start)
-            data = self.br.read(end-start)
+            else:
+                self.br.seek(start)
+                data = self.br.read(end-start)
 
             self.state.mem.mmap(
                 self.state.address_page_aligned(start),

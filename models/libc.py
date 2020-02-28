@@ -165,6 +165,19 @@ def putchar_handler(state: State, view):
     state.os.write(state.os.stdout_fd, [c])
     return res
 
+def puts_handler(state: State, view):
+    string_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
+
+    max_symb_str = int(state.executor.bncache.get_setting("models.max_size_symb_string"))
+    i = 0
+    c = state.mem.load(string_p, 1)
+    while (not symbolic(c) and c.value != 0) or (symbolic(c) and i < max_symb_str):
+        state.os.write(state.os.stdout_fd, [c])
+        i += 1
+        c = state.mem.load(string_p + i, 1)
+    
+    return BVV(0, 32)
+
 def getchar_handler(state: State, view):
     state.events.append(
         "getchar called"

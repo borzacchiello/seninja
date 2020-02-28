@@ -572,7 +572,7 @@ class x8664Arch(Arch):
         elif value.size == 64:
             state.regs.rax = value
         else:
-            raise Exception("Wrong size in get_result_reg")
+            raise Exception("Wrong size in save_result_value")
 
     def get_flag_cond_lambda(self, cond: str, state):
         assert cond in x8664Arch.FLAGS_CONDS
