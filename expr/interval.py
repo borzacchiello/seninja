@@ -10,12 +10,12 @@ class Interval(object):
         self.high = self.high & self.max
 
         assert self.high >= self.low
-    
+
     def __str__(self):
         return "<Interval%d [%s -> %s]>" % (
             self.bits, hex(self.low), hex(self.high)
         )
-    
+
     def __repr__(self):
         return self.__str__()
 
@@ -178,7 +178,11 @@ class Interval(object):
 
     def URem(self, other):
         assert other.bits == self.bits
-        return Interval(self.bits)
+        return Interval(
+            self.bits,
+            0,
+            min(self.high, other.high - 1)
+        )
 
     def SRem(self, other):
         assert other.bits == self.bits
