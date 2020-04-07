@@ -352,6 +352,32 @@ def continue_until_branch():
     _stop = False
     return executor.state, executor.fringe.last_added
 
+def continue_until_address(bv, address):
+    ip = executor.state.get_ip()
+
+    while ip != address:
+        try:
+            executor.execute_one()
+        except Exception as e:
+            print("!ERROR!:")
+            print(traceback.format_exc())
+            break
+        if not executor.state:
+            break
+        ip = executor.state.get_ip()
+
+    return executor.state
+
+def execute_one_instruction(bv):
+    try:
+        executor.execute_one()
+    except Exception as e:
+        print("!ERROR!:")
+        print(traceback.format_exc())
+        return
+
+    return executor.state
+
 def change_current_state(address_or_state):
     # take only the first one at the given address. TODO
     if not __check_executor():
