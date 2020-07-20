@@ -1,0 +1,29 @@
+{
+   "pluginmetadataversion": 2,
+   "name": "SENinja",
+   "author": "Luca Borzacchiello",
+   "type": [
+      "helper"
+   ],
+   "api": [
+      "python3"
+   ],
+   "description": "Symbolic execution plugin for BinaryNinja",
+   "longdescription": "It is a plugin for BinaryNinja that implements a symbolic execution engine based only on z3, highly inspired by the _angr framework_ (https://angr.io/). \nThe plugin is implemented as an emulator of LLIL instructions that builds and manipulates z3 formulas. \n\nSENinja simulates a debugger: the execution is _path driven_, only one state is _active_ and executes instructions. The other states, generated at branches, are saved in a _deferred queue_. At any time, the active state can be changed with a deferred one. ![](pictures/screenshot.png)",
+   "license": {
+      "name": "2-Clause BSD",
+      "text": "Copyright 2019 Luca Borzacchiello\n\nRedistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:\n\n1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.\n\n2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
+   },
+   "platforms": [
+      "Darwin",
+      "Windows",
+      "Linux"
+   ],
+   "installinstructions": {
+      "Darwin": "Install `z3-solver` using pip: `pip install z3-solver`",
+      "Windows": "Install `z3-solver` using pip: `pip install z3-solver`",
+      "Linux": "Install `z3-solver` using pip: `pip install z3-solver`"
+   },
+   "version": "0.1",
+   "minimumbinaryninjaversion": 2001
+}
