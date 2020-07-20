@@ -44,7 +44,7 @@ class ArchX86SPH(SpecialInstructionHandler):
 
         executor._wasjmp = True
         executor.update_ip(
-            func,
+            func.name,
             func.llil.get_instruction_start(
                 executor.ip + executor.bncache.get_instruction_len(executor.ip)
             )

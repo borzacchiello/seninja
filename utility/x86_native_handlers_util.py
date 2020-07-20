@@ -29,8 +29,14 @@ def __find_address_mem(state, parameter):  # hackish way of parsing a mem addres
     parameter = parameter[:parameter.find("]")]
 
     res = None
-    parameter = parameter.split("+")
-    for sub in parameter:
+    was_add = False
+    if "+" in parameter:
+        parameter = parameter.split("+")
+        was_add = True
+    else:
+        parameter = parameter.split("-")
+        was_add = False
+    for sub in parameter[::-1]:
 
         m_res  = None
         m_subs = sub.split("*")
@@ -44,7 +50,10 @@ def __find_address_mem(state, parameter):  # hackish way of parsing a mem addres
             else:
                 raise Exception("Unknown subexpression")
         
-        res = m_res if res is None else (res + m_res)
+        if was_add:
+            res = m_res if res is None else (res + m_res)
+        else:
+            res = m_res if res is None else (res - m_res)
     
     return res, size
 

@@ -567,8 +567,15 @@ class SymbolicVisitor(BNILVisitor):
         if dest_fun_name in library_functions:
             res = library_functions[dest_fun_name](self.executor.state, self.executor.view)
 
-            dest_fun = self.executor.bncache.get_function(dest.value)
-            self.executor.arch.save_result_value(self.executor.state, dest_fun.calling_convention, res)
+            try:
+                dest_fun = self.executor.bncache.get_function(dest.value)
+                calling_convention = dest_fun.calling_convention
+            except IndexError:
+                # dest_fun is not a function (imported). We do not have the info about the calling convention.. 
+                # Let's use the caller conventio
+                curr_fun = self.executor.bncache.get_function(self.executor.ip)
+                calling_convention = curr_fun.calling_convention
+            self.executor.arch.save_result_value(self.executor.state, calling_convention, res)
 
             # retrive return address
             dest = self.executor.arch.get_return_address(self.executor.state)

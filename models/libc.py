@@ -249,6 +249,27 @@ def scanf_handler(state: State, view):
     state.os.write(state.os.stdin_fd, bytes_read)
     return BVV(1, 32)
 
+def fgets_handler(state: State, view):
+    s_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
+    size = get_arg_k(state, 2, 4, view)
+    if symbolic(size):
+        actual_size = state.solver.max(size)
+        max_size = state.executor.bncache.get_setting("models.max_size_symb_string")
+
+        if actual_size > max_size:
+            actual_size = max_size
+            state.solver.add_constraints(size == actual_size)
+    else:
+        actual_size = size.value
+
+    for i in range(actual_size):
+        # TODO get correct FD
+        v = state.os.read(state.os.stdin_fd, 1)[0]
+        state.mem.store(s_p + i, v)
+    state.mem.store(s_p + actual_size, BVV(0, 8))
+
+    return s_p
+
 def isxdigit_handler(state: State, view):
     c = get_arg_k(state, 1, 4, view)
 

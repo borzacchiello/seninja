@@ -12,6 +12,7 @@ library_functions = {
     'getchar':          models_libc.getchar_handler,
     'putchar':          models_libc.putchar_handler,
     'puts':             models_libc.puts_handler,
+    'fgets':            models_libc.fgets_handler,
     'strcmp':           models_string.strcmp_handler,
     'strlen':           models_string.strlen_handler,
     'strcpy':           models_string.strcpy_handler,
