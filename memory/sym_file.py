@@ -28,6 +28,7 @@ class SymFile(object):
             res.append(self.data.load(BVV(i, self.data.bits), 1))
 
         self.seek_idx += size
+        self.file_size = max(self.file_size, self.seek_idx)
         return res
 
     def write(self, data: list):

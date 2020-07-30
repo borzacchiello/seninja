@@ -5,17 +5,15 @@ from .arch_x86_sph import ArchX86SPH
 
 class x86Arch(Arch):
     REGS = {
-        'eax': { 
-            'addr': 0,  
-            'size': 4, 
+        'eax': {
+            'size': 4,
             'sub': {
                 'ax':  { 'offset': 2,  'size': 2  },
                 'al':  { 'offset': 3,  'size': 1  },
                 'ah':  { 'offset': 2,  'size': 1  }
             }
-        },  
-        'ebx': { 
-            'addr': 4,  
+        },
+        'ebx': {
             'size': 4,
             'sub': {
                 'bx':  { 'offset': 2, 'size': 2  },
@@ -23,8 +21,7 @@ class x86Arch(Arch):
                 'bh':  { 'offset': 2, 'size': 1  }
             }
         },
-        'ecx': { 
-            'addr': 8, 
+        'ecx': {
             'size': 4,
             'sub': {
                 'cx':  { 'offset': 2, 'size': 2  },
@@ -32,8 +29,7 @@ class x86Arch(Arch):
                 'ch':  { 'offset': 2, 'size': 1  }
             }
         },
-        'edx': { 
-            'addr': 12, 
+        'edx': {
             'size': 4,
             'sub': {
                 'dx':  { 'offset': 2, 'size': 2  },
@@ -41,109 +37,61 @@ class x86Arch(Arch):
                 'dh':  { 'offset': 2, 'size': 1  }
             }
         },
-        'esi': { 
-            'addr': 16, 
+        'esi': {
             'size': 4,
             'sub': {
                 'si':  { 'offset': 2, 'size': 2  },
                 'sil': { 'offset': 3, 'size': 1  },
             }
         },
-        'edi': { 
-            'addr': 20, 
+        'edi': {
             'size': 4,
             'sub': {
                 'di':  { 'offset': 2, 'size': 2  },
                 'dil': { 'offset': 3, 'size': 1  }
             }
         },
-        'ebp': { 
-            'addr': 24, 
+        'ebp': {
             'size': 4,
             'sub': {
                 'bp':  { 'offset': 2, 'size': 2  },
                 'bpl': { 'offset': 3, 'size': 1  }
             }
         },
-        'esp': { 
-            'addr': 28, 
+        'esp': {
             'size': 4,
             'sub': {
                 'sp':  { 'offset': 2, 'size': 2  },
                 'spl': { 'offset': 3, 'size': 1  }
             }
         },
-        'eip': { 
-            'addr': 32, 
+        'eip': {
             'size': 4,
             'sub': {
                 'ip':  { 'offset': 2, 'size': 2  }
             }
         },
         'eflags': {
-            'addr': 36,
             'size': 4,
             'sub': {
                 'flags':  { 'offset': 2, 'size': 2 }
             }
         },
-        'mmx0': {
-            'addr': 40,
-            'size': 8,
-            'sub': {}
-        },
-        'mmx1': {
-            'addr': 48,
-            'size': 8,
-            'sub': {}
-        },
-        'mmx2': {
-            'addr': 56,
-            'size': 8,
-            'sub': {}
-        },
-        'mmx3': {
-            'addr': 64,
-            'size': 8,
-            'sub': {}
-        },
-        'mmx4': {
-            'addr': 72,
-            'size': 8,
-            'sub': {}
-        },
-        'mmx5': {
-            'addr': 80,
-            'size': 8,
-            'sub': {}
-        },
-        'mmx6': {
-            'addr': 88,
-            'size': 8,
-            'sub': {}
-        },
-        'mmx7': {
-            'addr': 96,
-            'size': 8,
-            'sub': {}
-        },
-        'gs': {
-            'addr': 104,
+        'gsbase': {
             'size': 4,
             'sub': {}
         },
-        'fs': {
-            'addr': 108,
+        'fsbase': {
             'size': 4,
             'sub': {}
         }
     }
 
-    FLAGS = { 'c': 0, 'p': 2, 'a': 4, 'z': 6, 's': 7, 'd': 10, 'o': 11, 'c0': 32, 'c1': 33, 'c2': 34, 'c3': 35 }
+    FLAGS = { 'c': 0, 'p': 2, 'a': 4, 'z': 6, 's': 7, 'd': 10, 'o': 11, 'c0': 32,
+        'c1': 33, 'c2': 34, 'c3': 35 }
 
     REG_NAMES = [
         "eip", "esp", "ebp", "eax", "ebx", "ecx", "edx", "esi", "edi",
-        "mmx0", "mmx1", "mmx2", "mmx3", "mmx4", "mmx5", "mmx6", "mmx7"
     ]
     
     FLAGS_CONDS = {
@@ -155,18 +103,18 @@ class x86Arch(Arch):
         'NO':  lambda s: s.regs.flags['o'] == 0,
         'SGE': lambda s: s.regs.flags['s'] == s.regs.flags['o'],
         'SGT': lambda s: z3.And(
-            s.regs.flags['z'] == 0, 
+            s.regs.flags['z'] == 0,
             s.regs.flags['s'] == s.regs.flags['o']),
         'SLE': lambda s: z3.And(
-            s.regs.flags['z'] == 1, 
+            s.regs.flags['z'] == 1,
             s.regs.flags['s'] != s.regs.flags['o']),
         'SLT': lambda s: s.regs.flags['s'] != s.regs.flags['o'],
         'UGE': lambda s: s.regs.flags['c'] == 0,
         'UGT': lambda s: z3.And(
-            s.regs.flags['c'] == 0, 
+            s.regs.flags['c'] == 0,
             s.regs.flags['z'] == 0),
         'ULE': lambda s: z3.Or(
-            s.regs.flags['z'] == 1, 
+            s.regs.flags['z'] == 1,
             s.regs.flags['c'] == 1),
         'ULT': lambda s: s.regs.flags['c'] == 1
     }
@@ -187,7 +135,7 @@ class x86Arch(Arch):
 
     def flags_data(self):
         return x86Arch.FLAGS
-    
+
     def flags_default(self, flag):
         if flag == 'd':
             return 0
@@ -232,3 +180,5 @@ class x86Arch(Arch):
     def execute_special_handler(self, disasm_str, sv):
         res = x86Arch.sph.handle_instruction(disasm_str, sv)
         return res
+
+Arch.fix_reg_addressess(x86Arch)

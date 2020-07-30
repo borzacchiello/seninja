@@ -1,4 +1,8 @@
 class Arch(object):  # abstract class
+    REGS = None
+
+    def __init__(self):
+        raise NotImplementedError
     def bits(self):
         raise NotImplementedError
     def regs_data(self):
@@ -29,6 +33,18 @@ class Arch(object):  # abstract class
         raise NotImplementedError
     def execute_special_handler(self, disasm_str, sv):
         raise NotImplementedError
+
+    @staticmethod
+    def fix_reg_addressess(obj):
+        assert obj.REGS is not None
+
+        curr_addr = 0
+        for reg in obj.REGS:
+            if 'addr' in obj.REGS[reg]:
+                # already done
+                break
+            obj.REGS[reg]['addr'] = curr_addr
+            curr_addr += obj.REGS[reg]['size']
 
 class SpecialInstructionHandler(object):
     def __init__(self):
