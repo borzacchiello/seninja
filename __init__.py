@@ -43,6 +43,7 @@ class TaskInBackground(BackgroundTaskThread):
 
 executor = None
 dfs_searcher = None
+searcher_tags = {}
 _stop = False
 _running = False
 
@@ -119,12 +120,17 @@ def _async_start_se(bv, address):
 def _set_run_target(bv, address):
     if not __check_executor():
         return
+
+    address = get_address_after_merge(bv, address)
+    func = executor.bncache.get_function(address)
+    if address in searcher_tags:
+        bv.remove_auto_data_tag(address, searcher_tags[address])
+        del searcher_tags[address]
+
     tt = get_target_tt(bv)
-    tags = bv.get_data_tags_at(address)
-    for tag in tags:
-        if "SENINJA" in tag.data:
-            bv.remove_auto_data_tag(address, tag)
-    bv.create_auto_data_tag(address, tt, "SENINJA: target address", unique=True)
+    tag = func.create_auto_tag(tt, "SENINJA: target address")
+    func.add_auto_address_tag(address, tag)
+    searcher_tags[address] = tag
     if address == dfs_searcher.avoid:
         dfs_searcher.avoid.remove(address)
 
@@ -134,15 +140,19 @@ def _set_run_avoid(bv, address):
     if not __check_executor():
         return
 
-    tt = get_avoid_tt(bv)
-    tags = bv.get_data_tags_at(address)
-    for tag in tags:
-        if "SENINJA" in tag.data:
-            bv.remove_auto_data_tag(address, tag)
-    bv.create_auto_data_tag(address, tt, "SENINJA: avoid address", unique=True)
+    address = get_address_after_merge(bv, address)
+    func = executor.bncache.get_function(address)
+    if address in searcher_tags:
+        bv.remove_auto_data_tag(address, searcher_tags[address])
+        del searcher_tags[address]
 
+    tt = get_avoid_tt(bv)
+    tag = func.create_auto_tag(tt, "SENINJA: avoid address")
+    func.add_auto_address_tag(address, tag)
+    searcher_tags[address] = tag
     if address == dfs_searcher.target:
         dfs_searcher.target = None
+
     dfs_searcher.add_avoid(address)
 
 def _async_run_dfs_searcher(bv):
@@ -393,9 +403,10 @@ def _async_reset_se(bv):
     def f(tb):
         global _running, executor
 
-        for addr, tag in bv.data_tags:
-            if "SENINJA" in tag.data:
-                bv.remove_auto_data_tag(addr, tag)
+        for addr in searcher_tags:
+            tag = searcher_tags[addr]
+            func = executor.bncache.get_function(addr)
+            func.remove_auto_address_tag(addr, tag)
 
         disable_widgets()
         executor.reset()
