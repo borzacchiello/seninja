@@ -1,5 +1,6 @@
 import z3
 
+
 class Bool(object):
     def __init__(self):
         # do not instantiate this class
@@ -7,6 +8,7 @@ class Bool(object):
 
     def __repr__(self):
         return self.__str__()
+
 
 class BoolExpr(Bool):
     def __init__(self, z3obj):
@@ -16,10 +18,10 @@ class BoolExpr(Bool):
         return "<BoolExpr {obj}>".format(
             obj=str(self.z3obj)
         )
-    
+
     def __hash__(self):
         return self.z3obj.__hash__()
-    
+
     def simplify(self):
         simplified = z3.simplify(self.z3obj)
         if simplified.decl().kind() == z3.Z3_OP_TRUE:
@@ -39,7 +41,7 @@ class BoolExpr(Bool):
 
     def __neq__(self, other: Bool):
         return BoolExpr(self.z3obj != other.z3obj)
-    
+
     def Not(self):
         return BoolExpr(z3.Not(self.z3obj))
 
@@ -55,9 +57,9 @@ class BoolExpr(Bool):
 
 class BoolS(BoolExpr):
     def __init__(self, name):
-        self.name  = name
+        self.name = name
         self.z3obj = z3.Bool(name)
-    
+
     def simplify(self):
         return self
 
@@ -66,6 +68,7 @@ class BoolS(BoolExpr):
             name=str(self.name)
         )
 
+
 class BoolV(Bool):
     def __init__(self, value: bool):
         self.value = value
@@ -73,7 +76,7 @@ class BoolV(Bool):
     @property
     def z3obj(self):
         return z3.BoolVal(self.value)
-    
+
     def simplify(self):
         return self
 
@@ -81,10 +84,10 @@ class BoolV(Bool):
         return "<BoolV {val}>".format(
             val=str(self.value)
         )
-    
+
     def __hash__(self):
         return hash(self.value)
-    
+
     def eq(self, other: Bool):
         return isinstance(other, BoolV) and other.value == self.value
 
@@ -97,10 +100,10 @@ class BoolV(Bool):
         if isinstance(other, BoolV):
             return BoolV(self.value != other.value)
         return BoolExpr(self.z3obj != other.z3obj)
-    
+
     def Not(self):
         return BoolV(not self.value)
-    
+
     def Or(self, other: Bool):
         if isinstance(other, BoolV):
             return BoolV(self.value or other.value)
@@ -114,6 +117,7 @@ class BoolV(Bool):
     def Xor(self, other: Bool):
         if isinstance(other, BoolV):
             return BoolV(
-                (self.value or other.value) and not (self.value and other.value)
+                (self.value or other.value) and not (
+                    self.value and other.value)
             )
         return BoolExpr(z3.Xor(self.z3obj, other.z3obj))

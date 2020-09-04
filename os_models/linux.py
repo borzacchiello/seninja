@@ -3,13 +3,14 @@ from ..models import linux_syscalls as models
 from ..expr import Bool
 from .os_file import OsFileHandler
 
+
 class Linux(OsFileHandler):
-    SYSCALL_TABLE  = {}
+    SYSCALL_TABLE = {}
     SYSCALL_PARAMS = {}
 
     def __init__(self):
         super().__init__()
-        self.stdin_fd  = self.open("__stdin",  "r--")
+        self.stdin_fd = self.open("__stdin",  "r--")
         self.stdout_fd = self.open("__stdout", "-w-")
 
     def get_syscall_by_number(self, n: int):
@@ -27,7 +28,7 @@ class Linux(OsFileHandler):
         session.seek(0)
         res = session.read(session.symfile.file_size)
         session.seek(session_idx)
-        
+
         return res
 
     def get_stdout_stream(self):
@@ -36,13 +37,14 @@ class Linux(OsFileHandler):
         session.seek(0)
         res = session.read(session.symfile.file_size)
         session.seek(session_idx)
-        
+
         return res
 
     def copy_to(self, other):
         super().copy_to(other)
         other.stdin_fd = self.stdin_fd
         other.stdout_fd = other.stdout_fd
+
 
 class Linuxi386(Linux):
     SYSCALL_TABLE = {
@@ -64,10 +66,11 @@ class Linuxi386(Linux):
         res = Linuxi386()
         super().copy_to(res)
         return res
-    
+
     def merge(self, other, merge_condition: Bool):
         assert isinstance(other, Linuxi386)
         pass  # TODO implement this
+
 
 class Linuxia64(Linux):
     SYSCALL_TABLE = {
@@ -93,6 +96,7 @@ class Linuxia64(Linux):
     def merge(self, other, merge_condition: Bool):
         assert isinstance(other, Linuxia64)
         pass  # TODO implement this
+
 
 class LinuxArmV7(Linux):
 

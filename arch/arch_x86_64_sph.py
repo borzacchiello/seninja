@@ -5,9 +5,10 @@ from ..utility.x86_native_handlers_util import (
 from ..utility.expr_wrap_util import split_bv_in_list
 from ..expr import BVArray, ITE, BVV
 
+
 class ArchX8664SPH(ArchX86SPH):
     def __init__(self):
-        self._vpermd_idx  = 0
+        self._vpermd_idx = 0
         self._vpshufb_idx = 0
 
     # --- AVX2 ---
@@ -21,7 +22,7 @@ class ArchX8664SPH(ArchX86SPH):
         return True
 
     def vpmaddubsw_handler(self, sv, parameters):
-        dst_p  = parameters[0]
+        dst_p = parameters[0]
         src1_p = parameters[1]
         src2_p = parameters[2]
 
@@ -47,12 +48,12 @@ class ArchX8664SPH(ArchX86SPH):
                     res
                 )
             )
-        
+
         store_to_dst(sv.state, dst_p, res)
         return True
 
     def vpmaddwd_handler(self, sv, parameters):
-        dst_p  = parameters[0]
+        dst_p = parameters[0]
         src1_p = parameters[1]
         src2_p = parameters[2]
 
@@ -78,15 +79,14 @@ class ArchX8664SPH(ArchX86SPH):
                     res
                 )
             )
-        
+
         store_to_dst(sv.state, dst_p, res)
         return True
-    
+
     def vpaddd_handler(self, sv, parameters):
-        dst_p  = parameters[0]
+        dst_p = parameters[0]
         src1_p = parameters[1]
         src2_p = parameters[2]
-
 
         src1 = get_src(sv.state, src1_p)
         src1_dwords = split_bv_in_list(src1, 32)
@@ -102,15 +102,14 @@ class ArchX8664SPH(ArchX86SPH):
                     res
                 )
             )
-        
+
         store_to_dst(sv.state, dst_p, res)
         return True
 
     def vpaddb_handler(self, sv, parameters):
-        dst_p  = parameters[0]
+        dst_p = parameters[0]
         src1_p = parameters[1]
         src2_p = parameters[2]
-
 
         src1 = get_src(sv.state, src1_p)
         src1_bytes = split_bv_in_list(src1, 8)
@@ -126,12 +125,12 @@ class ArchX8664SPH(ArchX86SPH):
                     res
                 )
             )
-        
+
         store_to_dst(sv.state, dst_p, res)
         return True
 
     def vpxor_handler(self, sv, parameters):
-        dst_p  = parameters[0]
+        dst_p = parameters[0]
         src1_p = parameters[1]
         src2_p = parameters[2]
 
@@ -144,7 +143,7 @@ class ArchX8664SPH(ArchX86SPH):
         return True
 
     def vpor_handler(self, sv, parameters):
-        dst_p  = parameters[0]
+        dst_p = parameters[0]
         src1_p = parameters[1]
         src2_p = parameters[2]
 
@@ -157,7 +156,7 @@ class ArchX8664SPH(ArchX86SPH):
         return True
 
     def vpand_handler(self, sv, parameters):
-        dst_p  = parameters[0]
+        dst_p = parameters[0]
         src1_p = parameters[1]
         src2_p = parameters[2]
 
@@ -178,7 +177,7 @@ class ArchX8664SPH(ArchX86SPH):
         src = get_src(sv.state, src_p)
         src_dwords = split_bv_in_list(src, 32)
         assert len(src_dwords) == 8
-        array_src = BVArray (
+        array_src = BVArray(
             "vpermd_array_{}".format(self._vpermd_idx),
             3,
             32
@@ -204,7 +203,7 @@ class ArchX8664SPH(ArchX86SPH):
 
         # save result
         store_to_dst(sv.state, dst_p, res)
-        
+
         self._vpermd_idx += 1
         return True
 
@@ -218,7 +217,7 @@ class ArchX8664SPH(ArchX86SPH):
         idx = get_src(sv.state, idx_p)
         idx_bytes = split_bv_in_list(idx, 8)
 
-        array_src_low = BVArray (
+        array_src_low = BVArray(
             "vpshufb_array_low_{}".format(self._vpshufb_idx),
             4,
             8
@@ -226,14 +225,14 @@ class ArchX8664SPH(ArchX86SPH):
         for i in range(16):
             array_src_low.Store(i, src_bytes[i])
 
-        array_src_hig = BVArray (
+        array_src_hig = BVArray(
             "vpshufb_array_hig_{}".format(self._vpshufb_idx),
             4,
             8
         )
         for i in range(16, 32):
             array_src_hig.Store(i, src_bytes[i])
-        
+
         idx_bytes_low = idx_bytes[:16]
         idx_bytes_hig = idx_bytes[16:]
 
@@ -260,7 +259,7 @@ class ArchX8664SPH(ArchX86SPH):
                 BVV(0, 8)
             )
             res = val.Concat(res)
-        
+
         # save result
         store_to_dst(sv.state, dst_p, res)
 
@@ -268,8 +267,8 @@ class ArchX8664SPH(ArchX86SPH):
         return True
 
     def vpsrld_handler(self, sv, parameters):
-        dst_p   = parameters[0]
-        src_p   = parameters[1]
+        dst_p = parameters[0]
+        src_p = parameters[1]
         count_p = parameters[2]
 
         src = get_src(sv.state, src_p)
@@ -287,13 +286,13 @@ class ArchX8664SPH(ArchX86SPH):
                     res
                 )
             )
-        
+
         store_to_dst(sv.state, dst_p, res)
         return True
 
     def vpslld_handler(self, sv, parameters):
-        dst_p   = parameters[0]
-        src_p   = parameters[1]
+        dst_p = parameters[0]
+        src_p = parameters[1]
         count_p = parameters[2]
 
         src = get_src(sv.state, src_p)
@@ -311,15 +310,14 @@ class ArchX8664SPH(ArchX86SPH):
                     res
                 )
             )
-        
+
         store_to_dst(sv.state, dst_p, res)
         return True
-    
 
     def vpcmpeqb_handler(self, sv, parameters):
-        dst_p   = parameters[0]
-        src1_p  = parameters[1]
-        src2_p  = parameters[2]
+        dst_p = parameters[0]
+        src1_p = parameters[1]
+        src2_p = parameters[2]
 
         src1 = get_src(sv.state, src1_p)
         src1_bytes = split_bv_in_list(src1, 8)
@@ -340,13 +338,13 @@ class ArchX8664SPH(ArchX86SPH):
                     res
                 )
             )
-        
+
         store_to_dst(sv.state, dst_p, res)
         return True
 
     def vpmovmskb_handler(self, sv, parameters):
-        dst_p  = parameters[0]
-        src_p  = parameters[1]
+        dst_p = parameters[0]
+        src_p = parameters[1]
 
         src = get_src(sv.state, src_p)
         src_bytes = split_bv_in_list(src, 8)
@@ -359,7 +357,7 @@ class ArchX8664SPH(ArchX86SPH):
             ) if res is None else (
                 val.Concat(res)
             )
-        
+
         store_to_dst(sv.state, dst_p, res)
         return True
 

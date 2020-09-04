@@ -12,10 +12,10 @@ from PySide2.QtCore import (
     QItemSelection
 )
 from PySide2.QtWidgets import (
-    QApplication, 
-    QTableView, 
-    QWidget, 
-    QTableWidgetItem, 
+    QApplication,
+    QTableView,
+    QWidget,
+    QTableWidgetItem,
     QMainWindow,
     QFormLayout,
     QVBoxLayout,
@@ -32,6 +32,7 @@ from PySide2.QtGui import (
     QKeySequence,
     QFontDatabase
 )
+
 
 def row_start_index(index):
     """ get index of the start of the 0x10 byte row containing the given index """
@@ -51,6 +52,7 @@ def row_number(index):
 def column_number(index):
     return index % 0x10
 
+
 def is_int(val):
     try:
         int(val, 16)
@@ -58,6 +60,7 @@ def is_int(val):
     except:
         pass
     return False
+
 
 class HexItemDelegate(QItemDelegate):
     def __init__(self, model, parent, *args):
@@ -67,12 +70,14 @@ class HexItemDelegate(QItemDelegate):
     # def editorEvent(self, event, model, option, index):
     #     print(event, model, option, index)
     #     return True
-    
+
     # def setEditorData(self, editor, index):
     #     pass
 
+
 class HexTableModel(QAbstractTableModel):
-    FILTER = ''.join([(len(repr(chr(x)))==3 or chr(x) == "\\") and chr(x) or '.' for x in range(256)])
+    FILTER = ''.join([(len(repr(chr(x))) == 3 or chr(x) == "\\")
+                      and chr(x) or '.' for x in range(256)])
 
     def __init__(self, parent=None, *args):
         super(HexTableModel, self).__init__(parent, *args)
@@ -115,7 +120,8 @@ class HexTableModel(QAbstractTableModel):
         return 0x21
 
     def data(self, index, role):
-        if self.buf_size == 0: return
+        if self.buf_size == 0:
+            return
         if not index.isValid():
             return None
 
@@ -132,8 +138,8 @@ class HexTableModel(QAbstractTableModel):
                 val = int(c, 16) if c != ".." and c != "__" else c
                 return chr(val) if (
                     val != "__" and
-                    val != ".." and 
-                    val >= 32 and 
+                    val != ".." and
+                    val >= 32 and
                     val <= 126
                 ) else "."
             else:
@@ -142,8 +148,8 @@ class HexTableModel(QAbstractTableModel):
             return None
         else:
             return None
-    
-    def setData(self, index, value, role = Qt.EditRole):
+
+    def setData(self, index, value, role=Qt.EditRole):
         if role == Qt.EditRole:
             if index.column() == 0x10:
                 return False
@@ -168,7 +174,7 @@ class HexTableModel(QAbstractTableModel):
 
     def flags(self, index):
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
-    
+
     def headerData(self, section, orientation, role):
         if role != Qt.DisplayRole:
             return None
@@ -193,6 +199,7 @@ class HexTableModel(QAbstractTableModel):
     def _handle_range_changed(self, range_min, range_max):
         self._emit_data_changed(range_min, range_max)
 
+
 class HexItemSelectionModel(QItemSelectionModel):
     selectionRangeChanged = Signal([int])
 
@@ -214,8 +221,10 @@ class HexItemSelectionModel(QItemSelectionModel):
 
     def _bselect(self, selection, start_bindex, end_bindex):
         """ add the given buffer indices to the given QItemSelection, both byte and char panes """
-        selection.select(self._model.index2qindexb(start_bindex), self._model.index2qindexb(end_bindex))
-        selection.select(self._model.index2qindexc(start_bindex), self._model.index2qindexc(end_bindex))
+        selection.select(self._model.index2qindexb(
+            start_bindex), self._model.index2qindexb(end_bindex))
+        selection.select(self._model.index2qindexc(
+            start_bindex), self._model.index2qindexc(end_bindex))
 
     def _do_select(self, start_bindex, end_bindex):
         """
@@ -254,7 +263,8 @@ class HexItemSelectionModel(QItemSelectionModel):
         else:
             # many lines
             self._bselect(selection, start_bindex, row_end_index(start_bindex))
-            self._bselect(selection, row_start_index(start_bindex) + 0x10, row_end_index(end_bindex) - 0x10)
+            self._bselect(selection, row_start_index(
+                start_bindex) + 0x10, row_end_index(end_bindex) - 0x10)
             self._bselect(selection, row_start_index(end_bindex), end_bindex)
 
         self.select(selection, QItemSelectionModel.SelectCurrent)
@@ -268,7 +278,7 @@ class HexItemSelectionModel(QItemSelectionModel):
 
     def handle_move_key(self, key):
         if self._start_qindex == self._model.index2qindexc(self.start) or \
-            self._start_qindex == self._model.index2qindexb(self.start):
+                self._start_qindex == self._model.index2qindexb(self.start):
             i = self.end
         else:
             i = self.start
@@ -313,7 +323,7 @@ class HexItemSelectionModel(QItemSelectionModel):
         i = None
         j = None
         if self._start_qindex == self._model.index2qindexc(self.start) or \
-            self._start_qindex == self._model.index2qindexb(self.start):
+                self._start_qindex == self._model.index2qindexb(self.start):
             i = self.end
             j = self.start
         else:
@@ -378,6 +388,7 @@ class HexItemSelectionModel(QItemSelectionModel):
     def _handle_mouse_released(self, qindex):
         self._update_selection(self._start_qindex, qindex)
         self._start_qindex = None
+
 
 class HexTableView(QTableView):
     """ table view that handles click events for better selection handling """
@@ -490,6 +501,7 @@ class HexTableView(QTableView):
 
         self.leftMouseReleasedIndex.emit(self._press_end_index)
 
+
 class HexViewWidget(QWidget):
     full_data_changed = Signal(list, list, int)
     single_data_changed = Signal(object, list)
@@ -501,10 +513,12 @@ class HexViewWidget(QWidget):
 
         self._model = HexTableModel(self)
         self.view = HexTableView(parent=self)
-        sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Expanding)
+        sizePolicy = QSizePolicy(
+            QSizePolicy.MinimumExpanding, QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.view.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.view.sizePolicy().hasHeightForWidth())
         self.view.setSizePolicy(sizePolicy)
         # self.view.setMinimumSize(QSize(660, 0))
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -512,7 +526,8 @@ class HexViewWidget(QWidget):
         self.view.setSelectionMode(QAbstractItemView.NoSelection)
         self.view.setShowGrid(False)
         self.view.setWordWrap(False)
-        self.view.setStyleSheet("QHeaderView { } QTableView::item { } ")  # bypass stylesheet
+        self.view.setStyleSheet(
+            "QHeaderView { } QTableView::item { } ")  # bypass stylesheet
         # self.view.setObjectName("view")
         # self.view.horizontalHeader().setDefaultSectionSize(10)
         self.view.horizontalHeader().setMinimumSectionSize(5)
@@ -531,11 +546,13 @@ class HexViewWidget(QWidget):
         self.view.setSelectionModel(self._hsm)
 
         self.view.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.view.customContextMenuRequested.connect(self._handle_context_menu_requested)
+        self.view.customContextMenuRequested.connect(
+            self._handle_context_menu_requested)
         if menu_handler is not None:
             self.get_context_menu = menu_handler
 
-        self.optimal_width = self.view.verticalScrollBar().width()+self.view.verticalHeader().width() #- 40
+        self.optimal_width = self.view.verticalScrollBar(
+        ).width()+self.view.verticalHeader().width()  # - 40
         for i in range(0x22):
             self.optimal_width += self.view.columnWidth(i)
 
@@ -549,7 +566,8 @@ class HexViewWidget(QWidget):
         self.view.setMinimumWidth(self.optimal_width)
         self.view.setMaximumWidth(self.optimal_width)
 
-        self._hsm.selectionRangeChanged.connect(self._handle_selection_range_changed)
+        self._hsm.selectionRangeChanged.connect(
+            self._handle_selection_range_changed)
         self.view.moveKeyPressed.connect(self._hsm.handle_move_key)
         self.view.selectKeyPressed.connect(self._hsm.handle_select_key)
 
@@ -560,7 +578,7 @@ class HexViewWidget(QWidget):
         # self.data_edited.connect(self._handle_data_edited)
 
         self.statusLabel.setText("")
-    
+
     def _handle_data_edited(self, address, data):
         pass
         # print("edited address data", address, data)
@@ -577,12 +595,13 @@ class HexViewWidget(QWidget):
 
     def _handle_context_menu_requested(self, qpoint):
         menu = self.get_context_menu(qpoint)
-        if menu is None: return
+        if menu is None:
+            return
         menu.exec_(self.view.mapToGlobal(qpoint))
 
     def _print_selection(self):
         start = self._hsm.start
-        end   = self._hsm.end
+        end = self._hsm.end
 
         print(start, end)
 

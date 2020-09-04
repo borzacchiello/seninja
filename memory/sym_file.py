@@ -1,6 +1,7 @@
 from ..expr import BV, BVV, BVS
 from .sym_flat_memory_not_paged import MemoryConcreteFlatNotPaged
 
+
 class SymFile(object):
     def __init__(self, filename, symfile=None):
         self.filename = filename
@@ -12,16 +13,16 @@ class SymFile(object):
             self.data = symfile.data.copy()
             self.seek_idx = symfile.seek_idx
             self.file_size = symfile.file_size
-    
+
     def __str__(self):
         return "<SymFile %s>" % self.filename
-    
+
     def __repr__(self):
         return self.__str__()
-    
+
     def seek(self, idx: int):
         self.seek_idx = idx
-    
+
     def read(self, size: int) -> list:
         res = []
         for i in range(self.seek_idx, self.seek_idx + size):
@@ -41,9 +42,9 @@ class SymFile(object):
 
         self.seek_idx += len(data)
         self.file_size = max(self.file_size, self.seek_idx)
-    
+
     def merge(self, other, merge_condition):
         pass  # not implemented
-    
+
     def copy(self, state=None):
         return SymFile(self.filename, self)

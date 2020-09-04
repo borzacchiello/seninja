@@ -5,9 +5,10 @@ from ..sym_state import State
 
 MAX_READ = 100
 
+
 def read_handler(state: State, view):
-    fd    = get_arg_k(state, 1, 4, view)
-    buf   = get_arg_k(state, 2, state.arch.bits() // 8, view)
+    fd = get_arg_k(state, 1, 4, view)
+    buf = get_arg_k(state, 2, state.arch.bits() // 8, view)
     count = get_arg_k(state, 3, 4, view)
 
     assert not symbolic(fd) or not state.solver.symbolic(fd)
@@ -19,19 +20,20 @@ def read_handler(state: State, view):
         count = MAX_READ if count > MAX_READ else count
     else:
         count = count.value
-    
+
     res = state.os.read(fd, count)
     for i, b in enumerate(res):
         state.mem.store(buf + i, b)
-    
+
     state.events.append(
         "read from fd %d, count %d" % (fd, count)
     )
     return BVV(count, 32)
 
+
 def write_handler(state: State, view):
-    fd    = get_arg_k(state, 1, 4, view)
-    buf   = get_arg_k(state, 2, state.arch.bits() // 8, view)
+    fd = get_arg_k(state, 1, 4, view)
+    buf = get_arg_k(state, 2, state.arch.bits() // 8, view)
     count = get_arg_k(state, 3, 4, view)
 
     assert not symbolic(fd) or not state.solver.symbolic(fd)
@@ -41,70 +43,74 @@ def write_handler(state: State, view):
         count = MAX_READ if count > MAX_READ else count
     else:
         count = count.value
-    
+
     data = []
     for i in range(count):
         b = state.mem.load(buf + i, 1)
         data.append(b)
     state.os.write(fd, data)
-    
+
     state.events.append(
         "write to fd %d, count %d" % (fd, count)
     )
     return BVV(count, 32)
 
+
 stat_idx = 0
+
+
 def _stat(state: State, statbuf):
     global stat_idx
 
-    long_t  = state.arch.bits()
-    int_t   = 32
+    long_t = state.arch.bits()
+    int_t = 32
 
-    st_dev          = BVS('stat_st_dev_%d' % stat_idx,     long_t)
-    st_ino          = BVS('stat_st_ino_%d' % stat_idx,     long_t)
-    st_mode         = BVS('stat_st_mode_%d' % stat_idx,    long_t)
-    st_nlink        = BVS('stat_st_nlink_%d' % stat_idx,   long_t)
-    st_uid          = BVS('stat_st_uid_%d' % stat_idx,     int_t )
-    st_gid          = BVS('stat_st_gid_%d' % stat_idx,     int_t )
-    st_rdev         = BVS('stat_st_rdev_%d' % stat_idx,    long_t)
-    st_size         = BVS('stat_st_size_%d' % stat_idx,    long_t)
-    st_blksize      = BVS('stat_st_blksize_%d' % stat_idx, long_t)
-    st_blocks       = BVS('stat_st_blocks_%d' % stat_idx,  long_t)
-    st_atim_tv_sec  = BVS('stat_atim.sec_%d' % stat_idx,   long_t)
+    st_dev = BVS('stat_st_dev_%d' % stat_idx,     long_t)
+    st_ino = BVS('stat_st_ino_%d' % stat_idx,     long_t)
+    st_mode = BVS('stat_st_mode_%d' % stat_idx,    long_t)
+    st_nlink = BVS('stat_st_nlink_%d' % stat_idx,   long_t)
+    st_uid = BVS('stat_st_uid_%d' % stat_idx,     int_t)
+    st_gid = BVS('stat_st_gid_%d' % stat_idx,     int_t)
+    st_rdev = BVS('stat_st_rdev_%d' % stat_idx,    long_t)
+    st_size = BVS('stat_st_size_%d' % stat_idx,    long_t)
+    st_blksize = BVS('stat_st_blksize_%d' % stat_idx, long_t)
+    st_blocks = BVS('stat_st_blocks_%d' % stat_idx,  long_t)
+    st_atim_tv_sec = BVS('stat_atim.sec_%d' % stat_idx,   long_t)
     st_atim_tv_nsec = BVS('stat_atim.nsec_%d' % stat_idx,  long_t)
-    st_mtim_tv_sec  = BVS('stat_mtim.sec_%d' % stat_idx,   long_t)
+    st_mtim_tv_sec = BVS('stat_mtim.sec_%d' % stat_idx,   long_t)
     st_mtim_tv_nsec = BVS('stat_mtim.nsec_%d' % stat_idx,  long_t)
-    st_ctim_tv_sec  = BVS('stat_ctim.sec_%d' % stat_idx,   long_t)
+    st_ctim_tv_sec = BVS('stat_ctim.sec_%d' % stat_idx,   long_t)
     st_ctim_tv_nsec = BVS('stat_ctim.nsec_%d' % stat_idx,  long_t)
 
     stat_idx += 1
 
-    state.mem.store(statbuf +   0, st_dev,          state.arch.endness())
-    state.mem.store(statbuf +   8, st_ino,          state.arch.endness())
-    state.mem.store(statbuf +  16, st_nlink,        state.arch.endness())
-    state.mem.store(statbuf +  24, st_mode,         state.arch.endness())
-    state.mem.store(statbuf +  32, st_uid,          state.arch.endness())
-    state.mem.store(statbuf +  36, st_gid,          state.arch.endness())
-    state.mem.store(statbuf +  40, BVV(0, 8*8))  # padding
-    state.mem.store(statbuf +  48, st_rdev,         state.arch.endness())
-    state.mem.store(statbuf +  56, st_size,         state.arch.endness())
-    state.mem.store(statbuf +  64, st_blksize,      state.arch.endness())
-    state.mem.store(statbuf +  72, st_blocks,       state.arch.endness())
-    state.mem.store(statbuf +  80, st_atim_tv_sec,  state.arch.endness())
-    state.mem.store(statbuf +  88, st_atim_tv_nsec, state.arch.endness())
-    state.mem.store(statbuf +  96, st_mtim_tv_sec,  state.arch.endness())
+    state.mem.store(statbuf + 0, st_dev,          state.arch.endness())
+    state.mem.store(statbuf + 8, st_ino,          state.arch.endness())
+    state.mem.store(statbuf + 16, st_nlink,        state.arch.endness())
+    state.mem.store(statbuf + 24, st_mode,         state.arch.endness())
+    state.mem.store(statbuf + 32, st_uid,          state.arch.endness())
+    state.mem.store(statbuf + 36, st_gid,          state.arch.endness())
+    state.mem.store(statbuf + 40, BVV(0, 8*8))  # padding
+    state.mem.store(statbuf + 48, st_rdev,         state.arch.endness())
+    state.mem.store(statbuf + 56, st_size,         state.arch.endness())
+    state.mem.store(statbuf + 64, st_blksize,      state.arch.endness())
+    state.mem.store(statbuf + 72, st_blocks,       state.arch.endness())
+    state.mem.store(statbuf + 80, st_atim_tv_sec,  state.arch.endness())
+    state.mem.store(statbuf + 88, st_atim_tv_nsec, state.arch.endness())
+    state.mem.store(statbuf + 96, st_mtim_tv_sec,  state.arch.endness())
     state.mem.store(statbuf + 104, st_mtim_tv_nsec, state.arch.endness())
     state.mem.store(statbuf + 112, st_ctim_tv_sec,  state.arch.endness())
     state.mem.store(statbuf + 120, st_ctim_tv_nsec, state.arch.endness())
-    state.mem.store(statbuf + 128, BVV(0, 8*16)) # reserved (zero (?))
+    state.mem.store(statbuf + 128, BVV(0, 8*16))  # reserved (zero (?))
 
     return BVV(0, 32)
+
 
 def stat_handler(state: State, view):
     global stat_idx
 
     pathname = get_arg_k(state, 1, state.arch.bits() // 8, view)
-    statbuf  = get_arg_k(state, 2, state.arch.bits() // 8, view)
+    statbuf = get_arg_k(state, 2, state.arch.bits() // 8, view)
 
     path = ""
     if not symbolic(pathname):
@@ -123,10 +129,11 @@ def stat_handler(state: State, view):
 
     return _stat(state, statbuf)
 
+
 def xstat_handler(state: State, view):
-    version  = get_arg_k(state, 1, 4, view)
+    version = get_arg_k(state, 1, 4, view)
     pathname = get_arg_k(state, 2, state.arch.bits() // 8, view)
-    statbuf  = get_arg_k(state, 3, state.arch.bits() // 8, view)
+    statbuf = get_arg_k(state, 3, state.arch.bits() // 8, view)
 
     path = ""
     if not symbolic(pathname):
@@ -138,7 +145,7 @@ def xstat_handler(state: State, view):
             c = state.mem.load(pathname+i, 1)
     else:
         path = "<symbolic>"
-    
+
     if not symbolic(version):
         version = str(version.value)
     else:

@@ -1,6 +1,7 @@
 from .arch_abstract import Arch
 from .arch_armv7_sph import ArmV7SPH
 
+
 class ArmV7Arch(Arch):
     REGS = {
         'r0': {
@@ -91,7 +92,7 @@ class ArmV7Arch(Arch):
 
     def reg_names(self):
         return ArmV7Arch.REG_NAMES
-    
+
     def flags_data(self):
         return ArmV7Arch.FLAGS
 
@@ -134,5 +135,6 @@ class ArmV7Arch(Arch):
     def execute_special_handler(self, disasm_str, sv):
         res = ArmV7Arch.sph.handle_instruction(disasm_str, sv)
         return res
+
 
 Arch.fix_reg_addressess(ArmV7Arch)

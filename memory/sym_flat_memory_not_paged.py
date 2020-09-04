@@ -2,13 +2,14 @@ from ..utility.expr_wrap_util import symbolic
 from ..expr import BV, BVS
 from .memory_abstract import MemoryAbstract
 
+
 class MemoryConcreteFlatNotPaged(MemoryAbstract):
     def __init__(self, name, bits=64):
-        self.name   = name
-        self.bits   = bits
+        self.name = name
+        self.bits = bits
         self.values = {}
         self._lazycopy = False
-    
+
     def _handle_lazycopy(self):
         if self._lazycopy:
             self._lazycopy = False
@@ -25,7 +26,7 @@ class MemoryConcreteFlatNotPaged(MemoryAbstract):
         self._handle_lazycopy()
 
         address = address.value
-        size    = value.size
+        size = value.size
 
         for i in range(size // 8 - 1, -1, -1):
             if endness == 'little':
@@ -44,8 +45,8 @@ class MemoryConcreteFlatNotPaged(MemoryAbstract):
         for i in ran:
             if (address+i) not in self.values:
                 self.values[address+i] = BVS('unconstrained_{name}_{address}'.format(
-                    name = self.name,
-                    address = address + i,
+                    name=self.name,
+                    address=address + i,
                 ), 8)
 
             tmp = self.values[address+i]

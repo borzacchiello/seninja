@@ -6,7 +6,8 @@ from ..utility.string_util import as_bytes, str_to_bv_list
 from ..memory.sym_memory import InitData
 import re
 import os
-import ctypes, ctypes.util
+import ctypes
+import ctypes.util
 
 if os.name == 'nt':
     # windows
@@ -14,9 +15,11 @@ if os.name == 'nt':
 else:
     libc_native_path = ctypes.util.find_library('c')
 libc_native = ctypes.cdll.LoadLibrary(libc_native_path)
-ascii_numbers = ["0","1","2","3","4","5","6","7","8","9"]
+ascii_numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
 # ---- NATIVE CONCRETE HANDLERS -----
+
+
 def strtoul_handler(state: State, view):
     str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
     endptr = get_arg_k(state, 2, state.arch.bits() // 8, view)
@@ -36,7 +39,7 @@ def strtoul_handler(state: State, view):
             break
         i += 1
         b = state.mem.load(str_p + i, 1)
-    
+
     _native_buff = ctypes.c_char_p(str_data)
     _native_endptr = ctypes.c_ulong(0)
     _native_base = base.value
@@ -50,9 +53,11 @@ def strtoul_handler(state: State, view):
     offset = (_native_endptr.value & 0xffffffff) - \
         (ctypes.cast(_native_buff, ctypes.c_void_p).value & 0xffffffff)
     assert offset >= 0
-    state.mem.store(endptr, BVV((str_p.value + offset), state.arch.bits()), 'little')
+    state.mem.store(endptr, BVV((str_p.value + offset),
+                                state.arch.bits()), 'little')
     return BVV(_native_res, state.arch.bits())
 # -----------------------------------
+
 
 def _intbv_to_strbv16(intbv):
     # int bv to string bv in hex
@@ -76,13 +81,15 @@ def _intbv_to_strbv16(intbv):
 
     return res
 
+
 def _printf_common(state: State, format_str_p, param_idx_start, view):
-    assert not symbolic(format_str_p) or not state.solver.symbolic(format_str_p)
+    assert not symbolic(
+        format_str_p) or not state.solver.symbolic(format_str_p)
 
     b = state.mem.load(format_str_p, 1)
     format_str = ""
     while not symbolic(b) and b.value != 0:
-        format_str   += chr(b.value)
+        format_str += chr(b.value)
         format_str_p += 1
         b = state.mem.load(format_str_p, 1)
 
@@ -103,7 +110,8 @@ def _printf_common(state: State, format_str_p, param_idx_start, view):
         if match[-1] == "s":
             # string
             param_p = get_arg_k(state, param_idx, state.arch.bits() // 8, view)
-            max_symb_str = int(state.executor.bncache.get_setting("models.max_size_symb_string"))
+            max_symb_str = int(state.executor.bncache.get_setting(
+                "models.max_size_symb_string"))
             l = int(match[1:-1]) if len(match) > 2 else max_symb_str
 
             i = 0
@@ -137,11 +145,12 @@ def _printf_common(state: State, format_str_p, param_idx_start, view):
         last_idx = index + len(match)
         res.extend(str_to_bv_list(format_substr))
         res.extend(val)
-    
+
     format_substr = format_str[last_idx + len(match):]
     res.extend(str_to_bv_list(format_substr))
 
     return res, BVV(len(res), 32)
+
 
 def printf_handler(state: State, view):  # only concrete
     format_str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
@@ -149,6 +158,7 @@ def printf_handler(state: State, view):  # only concrete
 
     state.os.write(state.os.stdout_fd, data_list)
     return res_n
+
 
 def printf_chk_handler(state: State, view):
     flag = get_arg_k(state, 1, 4, view)  # TODO ignored
@@ -158,25 +168,29 @@ def printf_chk_handler(state: State, view):
     state.os.write(state.os.stdout_fd, data_list)
     return res_n
 
+
 def putchar_handler(state: State, view):
     res = get_arg_k(state, 1, 4, view)
-    c   = res.Extract(7, 0)
+    c = res.Extract(7, 0)
 
     state.os.write(state.os.stdout_fd, [c])
     return res
 
+
 def puts_handler(state: State, view):
     string_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
-    max_symb_str = int(state.executor.bncache.get_setting("models.max_size_symb_string"))
+    max_symb_str = int(state.executor.bncache.get_setting(
+        "models.max_size_symb_string"))
     i = 0
     c = state.mem.load(string_p, 1)
     while (not symbolic(c) and c.value != 0) or (symbolic(c) and i < max_symb_str):
         state.os.write(state.os.stdout_fd, [c])
         i += 1
         c = state.mem.load(string_p + i, 1)
-    
+
     return BVV(0, 32)
+
 
 def getchar_handler(state: State, view):
     state.events.append(
@@ -186,22 +200,26 @@ def getchar_handler(state: State, view):
     v = state.os.read(state.os.stdin_fd, 1)
     return v[0]
 
+
 scanf_count = 0
+
+
 def scanf_handler(state: State, view):
     # scanf does not support reading data from stdin... Too difficult to model
     # it will simply write on stdin the correct data
     global scanf_count
     format_str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
-    assert not symbolic(format_str_p) or not state.solver.symbolic(format_str_p)
+    assert not symbolic(
+        format_str_p) or not state.solver.symbolic(format_str_p)
 
     b = state.mem.load(format_str_p, 1)
     format_str = ""
     while not symbolic(b) and b.value != 0:
-        format_str   += chr(b.value)
+        format_str += chr(b.value)
         format_str_p += 1
         b = state.mem.load(format_str_p, 1)
-    
+
     state.events.append(
         "scanf with format '%s'" % format_str
     )
@@ -225,7 +243,8 @@ def scanf_handler(state: State, view):
             state.mem.store(par_p, data, endness=state.arch.endness())
             tmp_bytes_red = _intbv_to_strbv16(data)
         elif match[-1] == "s":
-            max_symb_str = int(state.executor.bncache.get_setting("models.max_size_symb_string"))
+            max_symb_str = int(state.executor.bncache.get_setting(
+                "models.max_size_symb_string"))
             n = int(match[1:-1]) if len(match) > 2 else max_symb_str
 
             data = BVS(name + "_STR", 8*(n - 1))
@@ -249,12 +268,14 @@ def scanf_handler(state: State, view):
     state.os.write(state.os.stdin_fd, bytes_read)
     return BVV(1, 32)
 
+
 def fgets_handler(state: State, view):
     s_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
     size = get_arg_k(state, 2, 4, view)
     if symbolic(size):
         actual_size = state.solver.max(size)
-        max_size = state.executor.bncache.get_setting("models.max_size_symb_string")
+        max_size = state.executor.bncache.get_setting(
+            "models.max_size_symb_string")
 
         if actual_size > max_size:
             actual_size = max_size
@@ -270,13 +291,14 @@ def fgets_handler(state: State, view):
 
     return s_p
 
+
 def isxdigit_handler(state: State, view):
     c = get_arg_k(state, 1, 4, view)
 
     res = ITE(
         Or(
             And(c >= 48, c <= 57),  # 0 -> 9
-            And(c >= 97, c <= 102), # a -> f
+            And(c >= 97, c <= 102),  # a -> f
             And(c >= 65, c <= 70)   # A -> F
         ), BVV(1, 32), BVV(0, 32)
     )
@@ -284,10 +306,14 @@ def isxdigit_handler(state: State, view):
 
 # ************** atoX models **************
 
+
 # SLOW... but cool :)
 atox_idx = 0
+
+
 def _atox(state: State, view, size: int):
-    atox_slow_model = state.executor.bncache.get_setting("models.use_atox_slow_model") == 'true'
+    atox_slow_model = state.executor.bncache.get_setting(
+        "models.use_atox_slow_model") == 'true'
     if not atox_slow_model:
         global atox_idx
         atox_idx += 1
@@ -312,8 +338,8 @@ def _atox(state: State, view, size: int):
         build_or_expression(first_char)
     )  # first char must be ascii
 
-    i     = 1
-    char  = state.mem.load(input_p + i, 1)
+    i = 1
+    char = state.mem.load(input_p + i, 1)
     chars = []
     while i <= max_len:
 
@@ -337,11 +363,11 @@ def _atox(state: State, view, size: int):
         )
 
         chars.append(char)
-        i+=1
+        i += 1
         char = state.mem.load(input_p + i, 1)
-        
+
     chars = [first_char] + chars
-    
+
     # one bit more, to prevent overflow
     res = first_char.ZeroExt(size*8+1-8) - ord('0')
     for i in range(len(chars)-1, 0, -1):
@@ -354,13 +380,13 @@ def _atox(state: State, view, size: int):
             if expr is not None:
                 expr += (10**j)*(old_char - ord('0'))
             else:
-                expr  = (10**j)*(old_char - ord('0'))
+                expr = (10**j)*(old_char - ord('0'))
 
         res = ITE(
             char == 0,
-                expr,
-                res
-            )
+            expr,
+            res
+        )
 
     # prevent overflow
     overflow_bit = res.Extract(size*8, size*8)
@@ -371,30 +397,36 @@ def _atox(state: State, view, size: int):
     assert state.solver.satisfiable()
     return res.Extract(size*8-1, 0)
 
-def atoi_handler(state: State, view): 
+
+def atoi_handler(state: State, view):
     return _atox(state, view, 4)
+
 
 def atol_handler(state: State, view):
     return _atox(state, view, 8)
 
 # ********* MALLOC MODELS *********
 
+
 def malloc_handler(state: State, view):
     size = get_arg_k(state, 1, 4, view)
-    max_malloc = int(state.executor.bncache.get_setting("models.max_malloc_size"))
+    max_malloc = int(state.executor.bncache.get_setting(
+        "models.max_malloc_size"))
     if symbolic(size):
         size = state.solver.max(size)
         if size > max_malloc:
             size = max_malloc
     else:
         size = size.value
-    
+
     res = state.mem.allocate(size)
     return BVV(res, state.arch.bits())
 
+
 def calloc_handler(state: State, view):
     size = get_arg_k(state, 1, 4, view)
-    max_malloc = int(state.executor.bncache.get_setting("models.max_malloc_size"))
+    max_malloc = int(state.executor.bncache.get_setting(
+        "models.max_malloc_size"))
     if symbolic(size):
         size = state.solver.max(size)
         if size > max_malloc:

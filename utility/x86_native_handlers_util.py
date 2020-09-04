@@ -10,6 +10,7 @@ _size_dict = {
     "zmmword": 64
 }
 
+
 def __is_hex(v):
     try:
         int(v, 16)
@@ -17,7 +18,9 @@ def __is_hex(v):
     except:
         return False
 
-def __find_address_mem(state, parameter):  # hackish way of parsing a mem address. bad, bad, bad code    
+
+# hackish way of parsing a mem address. bad, bad, bad code
+def __find_address_mem(state, parameter):
     assert "[" in parameter and "]" in parameter
 
     size = parameter[:parameter.find("[")]
@@ -38,7 +41,7 @@ def __find_address_mem(state, parameter):  # hackish way of parsing a mem addres
         was_add = False
     for sub in parameter[::-1]:
 
-        m_res  = None
+        m_res = None
         m_subs = sub.split("*")
         for m_sub in m_subs:
             if state.regs.has_reg(m_sub):
@@ -49,27 +52,29 @@ def __find_address_mem(state, parameter):  # hackish way of parsing a mem addres
                 m_res = v if m_res is None else (m_res * v)
             else:
                 raise Exception("Unknown subexpression")
-        
+
         if was_add:
             res = m_res if res is None else (res + m_res)
         else:
             res = m_res if res is None else (res - m_res)
-    
+
     return res, size
+
 
 def get_src(state, parameter: str):
     if state.regs.has_reg(parameter):
         res = getattr(state.regs, parameter)
         return res
-    
+
     addr, size = __find_address_mem(state, parameter)
     return state.mem.load(addr, size, state.arch.endness())
+
 
 def store_to_dst(state, parameter: str, value):
     if state.regs.has_reg(parameter):
         setattr(state.regs, parameter, value)
         return
-    
+
     assert "[" in parameter and "]" in parameter
 
     addr, _ = __find_address_mem(state, parameter)

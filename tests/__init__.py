@@ -3,6 +3,7 @@ from . import os_linux_tests
 from . import os_windows_tests
 from . import memory_tests
 
+
 def handle_test(module, test):
     print(test + "\t", end="")
     try:
@@ -12,11 +13,13 @@ def handle_test(module, test):
         print("ERROR")
         # raise e
 
+
 def handle_module(module_name, module):
     print(module_name)
     for test in dir(module):
         if "test" in test:
             handle_test(module, test)
+
 
 def run():
     handle_module("memory tests", memory_tests)

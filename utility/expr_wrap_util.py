@@ -3,6 +3,7 @@ import z3
 
 MIN_BASE = 0x10000
 
+
 def split_bv_in_list(bv: BV, size: int) -> list:
     assert size % 8 == 0
     res = []
@@ -11,12 +12,14 @@ def split_bv_in_list(bv: BV, size: int) -> list:
         res.append(b)
     return res
 
+
 def bvv_from_bytes(val: bytes):  # DONT USE IT TO CREATE LONG BV!!
-    res = None 
-    for c in val: 
-        v = BVV(c, 8) 
-        res = res.Concat(v) if res is not None else v 
+    res = None
+    for c in val:
+        v = BVV(c, 8)
+        res = res.Concat(v) if res is not None else v
     return res
+
 
 def split_bv(bv: BV, split_index: int):
     return (
@@ -24,8 +27,10 @@ def split_bv(bv: BV, split_index: int):
         bv.Extract(split_index - 1, 0)           # least significant
     )
 
+
 def symbolic(val: BV) -> bool:
     return not isinstance(val, BVV)
+
 
 def heuristic_find_base(val: BV):  # this can be brough inside BVExpr
     z3val = val.z3obj
@@ -33,7 +38,7 @@ def heuristic_find_base(val: BV):  # this can be brough inside BVExpr
     while fringe:
         el = fringe.pop()
         if (
-            not (z3.simplify(z3val).decl().kind() != z3.Z3_OP_BNUM) and 
+            not (z3.simplify(z3val).decl().kind() != z3.Z3_OP_BNUM) and
             el.value > MIN_BASE
         ):
             return el.value

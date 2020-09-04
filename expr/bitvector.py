@@ -3,6 +3,7 @@ import z3
 from .bool_expr import BoolExpr, BoolV
 from .interval import Interval
 
+
 class BV(object):
     def __init__(self):
         # do not instantiate this class
@@ -10,33 +11,35 @@ class BV(object):
 
     def __repr__(self):
         return self.__str__()
-    
+
     def __neg__(self):
         raise NotImplementedError
-    
+
     def __add__(self, other):
         raise NotImplementedError
-    
+
     def __sub__(self, other):
         raise NotImplementedError
 
     def __mul__(self, other):
         raise NotImplementedError
-    
+
     def __radd__(self, other):
         return self.__add__(other)
-    
+
     def __rsub__(self, other):
         return self.__neg__().__add__(other)
-    
+
     def __rmul__(self, other):
         return self.__mul__(other)
+
 
 class BVExpr(BV):
     def __init__(self, size: int, z3obj, interval=None):
         self.z3obj = z3obj
-        self.size  = size
-        self.interval = interval if interval is not None else Interval(self.size)
+        self.size = size
+        self.interval = interval if interval is not None else Interval(
+            self.size)
 
     def __str__(self):
         return "<BVExpr{size} {obj}>".format(
@@ -60,7 +63,7 @@ class BVExpr(BV):
 
     def __hash__(self):
         return self.z3obj.__hash__()
-    
+
     def __add__(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
@@ -84,7 +87,7 @@ class BVExpr(BV):
             assert isinstance(other, BV)
             assert self.size == other.size
         return BVExpr(self.size, self.z3obj * other.z3obj, self.interval * other.interval)
-    
+
     def __truediv__(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
@@ -108,7 +111,7 @@ class BVExpr(BV):
             assert isinstance(other, BV)
             assert self.size == other.size
         return BVExpr(self.size, self.z3obj ^ other.z3obj, self.interval ^ other.interval)
-    
+
     def __and__(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
@@ -124,7 +127,7 @@ class BVExpr(BV):
             assert isinstance(other, BV)
             assert self.size == other.size
         return BVExpr(self.size, self.z3obj | other.z3obj, self.interval | other.interval)
-    
+
     def __lshift__(self, other):
         # arithmetic/logical left shift
         if isinstance(other, int):
@@ -201,7 +204,7 @@ class BVExpr(BV):
 
     def __invert__(self):
         return BVExpr(self.size, self.z3obj.__invert__(), self.interval.__invert__())
-    
+
     def __neg__(self):
         return BVExpr(self.size, self.z3obj.__neg__(), self.interval.__neg__())
 
@@ -212,7 +215,7 @@ class BVExpr(BV):
             assert isinstance(other, BV)
             assert self.size == other.size
         return BVExpr(self.size, z3.UDiv(self.z3obj, other.z3obj), self.interval.UDiv(other.interval))
-    
+
     def SDiv(self, other):
         return self.__truediv__(other)
 
@@ -231,7 +234,7 @@ class BVExpr(BV):
             assert isinstance(other, BV)
             assert self.size == other.size
         return BVExpr(self.size, z3.SRem(self.z3obj, other.z3obj), self.interval.SRem(other.interval))
-    
+
     def LShL(self, other):
         return self.__lshift__(other)
 
@@ -285,16 +288,16 @@ class BVExpr(BV):
             assert isinstance(other, BV)
             assert self.size == other.size
         return BoolExpr(z3.UGE(self.z3obj, other.z3obj))
-    
+
     def SLT(self, other):
         return self.__lt__(other)
-    
+
     def SLE(self, other):
         return self.__le__(other)
-    
+
     def SGT(self, other):
         return self.__gt__(other)
-    
+
     def SGE(self, other):
         return self.__ge__(other)
 
@@ -328,43 +331,45 @@ class BVExpr(BV):
     def SignExt(self, n: int):
         assert n >= 0
         return BVExpr(self.size + n, z3.SignExt(n, self.z3obj), self.interval.SignExt(n))
-    
+
     def ZeroExt(self, n: int):
         assert n >= 0
         return BVExpr(self.size + n, z3.ZeroExt(n, self.z3obj), self.interval.ZeroExt(n))
 
+
 class BVS(BVExpr):
     def __init__(self, name: str, size: int):
-        self.name  = name
-        self.size  = size
+        self.name = name
+        self.size = size
         self.z3obj = z3.BitVec(name, size)
 
     def __str__(self):
         return "<BVS{size} {obj}>".format(
             size=self.size, obj=str(self.z3obj)
         )
-    
+
     def simplify(self):
         return self
-    
+
     @property
     def interval(self):
         return Interval(self.size)
 
+
 class BVV(BV):
     def __init__(self, value: int, size: int):
-        self.size  = size
-        self._mask = (2<<(size-1)) - 1
+        self.size = size
+        self._mask = (2 << (size-1)) - 1
         self.value = value & self._mask
-        self._signMask = 2<<(size-1-1) if size > 1 else 0
+        self._signMask = 2 << (size-1-1) if size > 1 else 0
 
     def simplify(self):
         return self
-    
+
     @property
     def z3obj(self):
         return z3.BitVecVal(self.value, self.size)
-    
+
     @property
     def interval(self):
         return Interval(self.size, self.value, self.value)
@@ -374,7 +379,7 @@ class BVV(BV):
             size=self.size, obj=self.value,
             width=(self.size+3) // 4
         )
-    
+
     def eq(self, other):
         if not isinstance(other, BV):
             return False
@@ -382,11 +387,11 @@ class BVV(BV):
             return self.value == other.value and \
                 self.size == other.size
         return self.z3obj.eq(other.z3obj)
-    
+
     def __hash__(self):
         return hash((self.value, self.size))
 
-    def __add__ (self, other):
+    def __add__(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
         else:
@@ -396,7 +401,7 @@ class BVV(BV):
             return BVV((self.value + other.value) & self._mask, self.size)
         return BVExpr(self.size, self.value + other.z3obj, self.interval + other.interval)
 
-    def __sub__ (self, other):
+    def __sub__(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
         else:
@@ -583,13 +588,13 @@ class BVV(BV):
                 if other.value & other._signMask else other.value
             return BoolV(signed_left >= signed_right)
         return BoolExpr(self.z3obj >= other.z3obj)
-    
+
     def __invert__(self):
         return BVV(~self.value, self.size)
-    
+
     def __neg__(self):
         return BVV(-self.value, self.size)
-    
+
     def UDiv(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
@@ -599,10 +604,10 @@ class BVV(BV):
         if isinstance(other, BVV):
             return BVV((self.value // other.value) & self._mask, self.size)
         return BVExpr(self.size, z3.UDiv(self.z3obj, other.z3obj), self.interval.UDiv(other.interval))
-    
+
     def SDiv(self, other):
         return self.__truediv__(other)
-    
+
     def URem(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
@@ -635,11 +640,11 @@ class BVV(BV):
 
     def LShL(self, other):
         return self.__lshift__(other)
-    
+
     def AShL(self, other):
         # arithmetic and logical left shift are identical
         return self.__lshift__(other)
-    
+
     def LShR(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
@@ -652,7 +657,7 @@ class BVV(BV):
 
     def AShR(self, other):
         return self.__rshift__(other)
-    
+
     def ULT(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
@@ -692,19 +697,19 @@ class BVV(BV):
         if isinstance(other, BVV):
             return BoolV(self.value >= other.value)
         return BoolExpr(z3.UGE(self.z3obj, other.z3obj))
-    
+
     def SLT(self, other):
         return self.__lt__(other)
-    
+
     def SLE(self, other):
         return self.__le__(other)
-    
+
     def SGT(self, other):
         return self.__gt__(other)
-    
+
     def SGE(self, other):
         return self.__ge__(other)
-    
+
     def RotateLeft(self, other):
         if isinstance(other, int):
             other = BVV(other, self.size)
@@ -714,7 +719,7 @@ class BVV(BV):
         if isinstance(other, BVV):
             other_norm = other.value % self.size
             new = (((self.value << other_norm) & self._mask) |
-                ((self.value >> ((self.size - other_norm) & self._mask)) & self._mask))
+                   ((self.value >> ((self.size - other_norm) & self._mask)) & self._mask))
             return BVV(new & self._mask, self.size)
         return BVExpr(self.size, z3.RotateLeft(self.z3obj, other.z3obj), self.interval.RotateLeft(other.interval))
 
@@ -727,33 +732,33 @@ class BVV(BV):
         if isinstance(other, BVV):
             other_norm = other.value % self.size
             new = (((self.value >> other_norm) & self._mask) |
-                ((self.value << ((self.size - other_norm) & self._mask)) & self._mask))
+                   ((self.value << ((self.size - other_norm) & self._mask)) & self._mask))
             return BVV(new & self._mask, self.size)
         return BVExpr(self.size, z3.RotateRight(self.z3obj, other.z3obj), self.interval.RotateRight(other.interval))
 
     def Concat(self, other: BV):
         if isinstance(other, BVV):
             new_value = (self.value << other.size) + other.value
-            new_size  = self.size + other.size
-            new_mask  = 2**new_size-1
+            new_size = self.size + other.size
+            new_mask = 2**new_size-1
             return BVV(new_value & new_mask, new_size)
         return BVExpr(self.size + other.size, z3.Concat(self.z3obj, other.z3obj), self.interval.Concat(other.interval))
-    
+
     def Extract(self, high: int, low: int):
         assert high >= low
         new_size = high-low+1
-        new_value = (self.value >> low) & ((2<<(new_size-1))-1)
+        new_value = (self.value >> low) & ((2 << (new_size-1))-1)
         return BVV(new_value, new_size)
 
     def SignExt(self, n: int):
         assert n >= 0
         if self._signMask & self.value:
-            new = (((2<<(n-1))-1) << self.size) + self.value
+            new = (((2 << (n-1))-1) << self.size) + self.value
         else:
             new = self.value
-        mask = (2<<(self.size+n-1))-1
+        mask = (2 << (self.size+n-1))-1
         return BVV(new & mask, self.size + n)
-    
+
     def ZeroExt(self, n: int):
         assert n >= 0
         return BVV(self.value, self.size + n)

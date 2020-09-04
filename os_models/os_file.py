@@ -1,13 +1,14 @@
 from ..memory.sym_file import SymFile
 from .os_abstract import Os
 
+
 class FileSession(object):
     def __init__(self, fd, symfile, mode):
         self.fd = fd
         self.symfile = symfile
         self.mode = mode  # for now, ignored
         self.seek_idx = 0
-    
+
     def __str__(self):
         return "<FileSession {filename} @ {seek} - {fd}>".format(
             filename=self.symfile.filename,
@@ -17,7 +18,7 @@ class FileSession(object):
 
     def __repr__(self):
         return self.__str__()
-    
+
     def seek(self, idx):
         self.seek_idx = idx
 
@@ -36,6 +37,7 @@ class FileSession(object):
         res.seek(self.seek_idx)
         return res
 
+
 class OsFileHandler(Os):
     # os that handles files
     def __init__(self):
@@ -49,7 +51,7 @@ class OsFileHandler(Os):
         else:
             symfile = SymFile(filename)
             self.filesystem[filename] = symfile
-        
+
         fd = self.next_descriptor
         file_session = FileSession(fd, symfile, mode)
         self.descriptors_map[fd] = file_session
@@ -59,13 +61,13 @@ class OsFileHandler(Os):
 
     def is_open(self, fd):
         return fd in self.descriptors_map
-    
+
     def seek(self, fd: int, idx: int):
         assert fd in self.descriptors_map
 
         session = self.descriptors_map[fd]
         session.seek(idx)
-    
+
     def read(self, fd: int, size: int):
         assert fd in self.descriptors_map
 

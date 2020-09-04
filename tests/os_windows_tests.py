@@ -1,6 +1,7 @@
 from ..expr import BVS, BVV
 from ..os_models.windows import Windows
 
+
 def test_1():
     l = Windows()
     l.write(0, [BVV(0xaa, 8), BVV(0xbb, 8), BVV(0xcc, 8)])
@@ -17,6 +18,7 @@ def test_1():
         res[1].value == 0xbb and
         res[2].value == 0xcc
     )
+
 
 def test_2():
     l = Windows()
@@ -35,10 +37,12 @@ def test_2():
         res[2].value == 0xcc
     )
 
+
 def test_3():
     l = Windows()
     assert l.stdin_fd == 0
     assert l.stdout_fd == 1
+
 
 def test_4():
     l1 = Windows()

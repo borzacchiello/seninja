@@ -22,13 +22,14 @@ from .models import function_models as seninja_models
 from .expr import *
 from .multipath import searcher
 from .ui import (
-    ui_set_arch, 
-    ui_sync_view, 
-    ui_reset_view, 
-    enable_widgets, 
+    ui_set_arch,
+    ui_sync_view,
+    ui_reset_view,
+    enable_widgets,
     disable_widgets
 )
 from . import settings
+
 
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):
@@ -41,6 +42,7 @@ class TaskInBackground(BackgroundTaskThread):
         self.bv.update_analysis_and_wait()
         self.callback(self)
 
+
 executor = None
 dfs_searcher = None
 searcher_tags = {}
@@ -48,6 +50,8 @@ _stop = False
 _running = False
 
 TARGET_TAG_TYPE = None
+
+
 def get_target_tt(bv):
     global TARGET_TAG_TYPE
     if TARGET_TAG_TYPE is not None:
@@ -55,7 +59,10 @@ def get_target_tt(bv):
     TARGET_TAG_TYPE = bv.create_tag_type("searcher_target", "O")
     return TARGET_TAG_TYPE
 
+
 AVOID_TAG_TYPE = None
+
+
 def get_avoid_tt(bv):
     global AVOID_TAG_TYPE
     if AVOID_TAG_TYPE is not None:
@@ -63,16 +70,19 @@ def get_avoid_tt(bv):
     AVOID_TAG_TYPE = bv.create_tag_type("searcher_avoid", "X")
     return AVOID_TAG_TYPE
 
+
 def __check_executor():
     if executor is None:
         log_alert("seninja not running")
         return False
     return True
 
+
 def initialize_ui():
     if not __check_executor():
         return
     ui_set_arch(executor.arch, executor.state)
+
 
 def sync_ui(bv, delta=True):
     if not __check_executor():
@@ -84,18 +94,21 @@ def sync_ui(bv, delta=True):
     else:
         disable_widgets()
 
+
 def reset_ui():
     if not __check_executor():
         return
     ui_reset_view()
 
 # --- async functions ---
+
+
 def _async_start_se(bv, address):
     global _running
     if executor is not None:
         log_alert("seninja is already running")
         return False
-    
+
     def f(tb):
         global executor, dfs_searcher, _running
         try:
@@ -111,11 +124,13 @@ def _async_start_se(bv, address):
         sync_ui(bv)
         enable_widgets()
         _running = False
-    
+
     if not _running:
         _running = True
-        background_task = TaskInBackground(bv, "seninja: starting symbolic execution", f)
+        background_task = TaskInBackground(
+            bv, "seninja: starting symbolic execution", f)
         background_task.start()
+
 
 def _set_run_target(bv, address):
     if not __check_executor():
@@ -136,6 +151,7 @@ def _set_run_target(bv, address):
 
     dfs_searcher.set_target(address)
 
+
 def _set_run_avoid(bv, address):
     if not __check_executor():
         return
@@ -155,6 +171,7 @@ def _set_run_avoid(bv, address):
 
     dfs_searcher.add_avoid(address)
 
+
 def _async_run_dfs_searcher(bv):
     global _running
     if not __check_executor():
@@ -162,7 +179,7 @@ def _async_run_dfs_searcher(bv):
     if not dfs_searcher.ready_to_run():
         log_alert("no target set for searcher")
         return
-    
+
     def f(tb):
         global _running
         disable_widgets()
@@ -184,11 +201,12 @@ def _async_run_dfs_searcher(bv):
         sync_ui(bv, executor._last_error == None)
         enable_widgets()
         _running = False
-    
+
     if not _running:
         _running = True
         background_task = TaskInBackground(bv, "seninja: running DFS", f)
         background_task.start()
+
 
 def _async_step(bv):
     global _running
@@ -212,6 +230,7 @@ def _async_step(bv):
         _running = True
         background_task = TaskInBackground(bv, "seninja: stepping", f)
         background_task.start()
+
 
 def _async_continue_until_branch(bv):
     global _running
@@ -248,14 +267,16 @@ def _async_continue_until_branch(bv):
 
     if not _running:
         _running = True
-        background_task = TaskInBackground(bv, "seninja: continue until branch", f)
+        background_task = TaskInBackground(
+            bv, "seninja: continue until branch", f)
         background_task.start()
+
 
 def _async_continue_until_address(bv, address):
     global _running
     if not __check_executor():
         return
-    
+
     address = get_address_after_merge(bv, address)
 
     def f(tb):
@@ -286,8 +307,10 @@ def _async_continue_until_address(bv, address):
 
     if not _running:
         _running = True
-        background_task = TaskInBackground(bv, "seninja: continue until address", f)
+        background_task = TaskInBackground(
+            bv, "seninja: continue until address", f)
         background_task.start()
+
 
 def _async_merge_states(bv, address):
     # merge all states at address and put them in current state. Current state must be at address
@@ -313,7 +336,7 @@ def _async_merge_states(bv, address):
             executor.state.merge(s)
             i += 1
             tb.progress = "seninja: merging states %d/%d" % (i, tot)
-        
+
         sync_ui(bv)
         enable_widgets()
         _running = False
@@ -323,16 +346,17 @@ def _async_merge_states(bv, address):
         background_task = TaskInBackground(bv, "seninja: merging states", f)
         background_task.start()
 
+
 def _async_change_current_state(bv, address):
     global _running
     if not __check_executor():
         return
-    
+
     state = executor.fringe.get_deferred_by_address(address)
     if state is None:
         log_alert("no such deferred state")
         return
-    
+
     def f(tb):
         global _running
         disable_widgets()
@@ -345,14 +369,16 @@ def _async_change_current_state(bv, address):
 
     if not _running:
         _running = True
-        background_task = TaskInBackground(bv, "seninja: changing current state", f)
+        background_task = TaskInBackground(
+            bv, "seninja: changing current state", f)
         background_task.start()
+
 
 def _async_save_active_state(bv):
     global _running
     if not __check_executor():
         return
-        
+
     def f(tb):
         global _running
         disable_widgets()
@@ -365,14 +391,16 @@ def _async_save_active_state(bv):
 
     if not _running:
         _running = True
-        background_task = TaskInBackground(bv, "seninja: saving current state", f)
+        background_task = TaskInBackground(
+            bv, "seninja: saving current state", f)
         background_task.start()
+
 
 def _async_change_active_state_ip(bv, address):
     global _running
     if not __check_executor():
         return
-        
+
     def f(tb):
         global _running
         disable_widgets()
@@ -392,14 +420,16 @@ def _async_change_active_state_ip(bv, address):
 
     if not _running:
         _running = True
-        background_task = TaskInBackground(bv, "seninja: changing current state", f)
+        background_task = TaskInBackground(
+            bv, "seninja: changing current state", f)
         background_task.start()
+
 
 def _async_reset_se(bv):
     global _running
     if not __check_executor():
         return
-    
+
     def f(tb):
         global _running, executor
 
@@ -413,14 +443,16 @@ def _async_reset_se(bv):
         reset_ui()
         executor = None
         _running = False
-    
+
     if not _running:
         _running = True
-        background_task = TaskInBackground(bv, "seninja: resetting symbolic execution", f)
+        background_task = TaskInBackground(
+            bv, "seninja: resetting symbolic execution", f)
         background_task.start()
 # --- end async functions ---
 
 # APIs (other file?)
+
 
 def start_se(bv, address, sync=False):
     global executor
@@ -430,6 +462,7 @@ def start_se(bv, address, sync=False):
     executor = SymbolicExecutor(bv, address)
     if sync:
         sync_ui(bv)
+
 
 def continue_until_branch(sync=False):
     global _stop
@@ -454,6 +487,7 @@ def continue_until_branch(sync=False):
         sync_ui(executor.state.bv)
     return executor.state, executor.fringe.last_added
 
+
 def continue_until_address(address, sync=False):
     ip = executor.state.get_ip()
 
@@ -472,7 +506,8 @@ def continue_until_address(address, sync=False):
         sync_ui(executor.state.bv)
     return executor.state
 
-def run_dfs(target: int, avoid:list=None, sync=False):
+
+def run_dfs(target: int, avoid: list = None, sync=False):
     global _stop
     if not __check_executor():
         return
@@ -494,6 +529,7 @@ def run_dfs(target: int, avoid:list=None, sync=False):
         sync_ui(executor.state.bv)
     return res
 
+
 def execute_one_instruction(bv, sync=None):
     if not __check_executor():
         return
@@ -508,6 +544,7 @@ def execute_one_instruction(bv, sync=None):
     if sync:
         sync_ui(bv)
     return executor.state
+
 
 def change_current_state(address_or_state, sync=False):
     # take only the first one at the given address. TODO
@@ -526,10 +563,12 @@ def change_current_state(address_or_state, sync=False):
         sync_ui(state.bv)
     executor.set_current_state(state)
 
+
 def focus_current_state(bv):
     if not __check_executor():
         return
     bv.file.navigate(bv.file.view, executor.state.get_ip())
+
 
 def reset_se(bv=None):
     global executor
@@ -540,10 +579,12 @@ def reset_se(bv=None):
     reset_ui()
     executor = None
 
+
 def stop():
     global _stop
     if _running:  # race conditions?
         _stop = True
+
 
 def get_current_state():
     if not __check_executor():
@@ -551,11 +592,13 @@ def get_current_state():
 
     return executor.state
 
+
 def register_hook(address, func):
     if not __check_executor():
         return
 
     executor.user_hooks[address] = func
+
 
 def register_logger(address, func):
     if not __check_executor():
@@ -563,11 +606,13 @@ def register_logger(address, func):
 
     executor.user_loggers[address] = func
 
+
 def reload_settings():
     if not __check_executor():
         return
 
     executor.bncache.settings = {}
+
 
 PluginCommand.register_for_address(
     "SENinja\\0 - Start symbolic execution",

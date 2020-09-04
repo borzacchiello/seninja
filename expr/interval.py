@@ -67,7 +67,7 @@ class Interval(object):
             new_low,
             new_high
         )
-    
+
     def __truediv__(self, other):
         assert other.bits == self.bits
         return Interval(self.bits)
@@ -119,7 +119,7 @@ class Interval(object):
             new_low,
             new_high
         )
-    
+
     def __lshift__(self, other):
         # arithmetic/logical left shift
         assert other.bits == self.bits
@@ -155,7 +155,7 @@ class Interval(object):
 
     def __invert__(self):
         return Interval(self.bits)
-    
+
     def __neg__(self):
         return Interval(self.bits)
 
@@ -187,7 +187,7 @@ class Interval(object):
     def SRem(self, other):
         assert other.bits == self.bits
         return Interval(self.bits)
-    
+
     def LShL(self, other):
         return self.__lshift__(other)
 

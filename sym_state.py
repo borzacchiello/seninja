@@ -7,26 +7,28 @@ from .sym_solver import Solver
 from .utility.expr_wrap_util import symbolic
 from .expr import BV, BVV
 
+
 class State(object):
-    def __init__(self, executor, os: Os, arch: Arch=x8664Arch(), page_size: int=0x1000):
+    def __init__(self, executor, os: Os, arch: Arch = x8664Arch(), page_size: int = 0x1000):
         self.page_size = page_size
-        self.arch      = arch
-        self.mem       = Memory(self, page_size, arch.bits(), not executor.init_with_zero)
-        self.regs      = Regs(self)
-        self.solver    = Solver(self)
-        self.os        = os
-        self.events    = list()
-        self.llil_ip   = None
-        self.executor  = executor
-        self._ipreg    = self.arch.getip_reg()
-        self._bits     = self.arch.bits()
-    
+        self.arch = arch
+        self.mem = Memory(self, page_size, arch.bits(),
+                          not executor.init_with_zero)
+        self.regs = Regs(self)
+        self.solver = Solver(self)
+        self.os = os
+        self.events = list()
+        self.llil_ip = None
+        self.executor = executor
+        self._ipreg = self.arch.getip_reg()
+        self._bits = self.arch.bits()
+
     def __str__(self):
         return "<State @ 0x{addr:0{width}X}>".format(
             addr=self.get_ip(),
             width=(self._bits+3) // 4
         )
-    
+
     def __repr__(self):
         return self.__str__()
 
@@ -39,18 +41,21 @@ class State(object):
         return addr >> self.mem.index_bits << self.mem.index_bits
 
     def initialize_stack(self, stack_base):
-        setattr(self.regs, self.arch.get_stack_pointer_reg(), BVV(stack_base, self._bits))
-        setattr(self.regs, self.arch.get_base_pointer_reg(),  BVV(stack_base, self._bits))
+        setattr(self.regs, self.arch.get_stack_pointer_reg(),
+                BVV(stack_base, self._bits))
+        setattr(self.regs, self.arch.get_base_pointer_reg(),
+                BVV(stack_base, self._bits))
 
     def stack_push(self, val: BV):
-        stack_pointer     = getattr(self.regs, self.arch.get_stack_pointer_reg())
+        stack_pointer = getattr(self.regs, self.arch.get_stack_pointer_reg())
         new_stack_pointer = stack_pointer - self._bits // 8
         self.mem.store(new_stack_pointer, val, endness=self.arch.endness())
         setattr(self.regs, self.arch.get_stack_pointer_reg(), new_stack_pointer)
 
     def stack_pop(self):
         stack_pointer = getattr(self.regs, self.arch.get_stack_pointer_reg())
-        res = self.mem.load(stack_pointer, self._bits // 8, endness=self.arch.endness())
+        res = self.mem.load(stack_pointer, self._bits //
+                            8, endness=self.arch.endness())
         new_stack_pointer = stack_pointer + self._bits // 8
         setattr(self.regs, self.arch.get_stack_pointer_reg(), new_stack_pointer)
         return res
@@ -59,7 +64,8 @@ class State(object):
         setattr(self.regs, self._ipreg, BVV(new_ip, self._bits))
 
     def copy(self, solver_copy_fast=False):
-        new_state = State(self.executor, self.os.copy(), self.arch, self.page_size)
+        new_state = State(self.executor, self.os.copy(),
+                          self.arch, self.page_size)
         new_state.mem = self.mem.copy(new_state)
         new_state.regs = self.regs.copy(new_state)
         new_state.solver = self.solver.copy(new_state, solver_copy_fast)
@@ -75,7 +81,8 @@ class State(object):
         assert self.get_ip() == other.get_ip()
         assert self.llil_ip == other.llil_ip
 
-        _, _, merge_condition = self.solver.compute_solvers_difference(other.solver)
+        _, _, merge_condition = self.solver.compute_solvers_difference(
+            other.solver)
         self.solver.merge(other.solver)
         self.mem.merge(other.mem, merge_condition)
         self.regs.merge(other.regs, merge_condition)

@@ -1,8 +1,8 @@
 class Fringe(object):
     def __init__(self):
-        self.unsat     = list()
-        self.errored   = list()
-        self.avoided   = list()
+        self.unsat = list()
+        self.errored = list()
+        self.avoided = list()
         self._deferred = dict()
         self.last_added = None
 
@@ -15,7 +15,7 @@ class Fringe(object):
 
     def is_empty(self):
         return len(self._deferred) == 0
-    
+
     def get_deferred_by_address(self, address):
         if address in self._deferred:
             res = self._deferred[address].pop()
@@ -23,7 +23,7 @@ class Fringe(object):
                 del self._deferred[address]
             return res
         return None
-    
+
     def get_all_deferred_by_address(self, address):
         if address in self._deferred:
             res = self._deferred[address]
@@ -45,10 +45,10 @@ class Fringe(object):
             self._deferred[state.get_ip()] = [state]
         else:
             self._deferred[state.get_ip()].append(state)
-    
+
     def add_errored(self, state):
         self.errored.append(state)
-    
+
     def add_unsat(self, state):
         self.unsat.append(state)
 

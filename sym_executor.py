@@ -1,5 +1,5 @@
 from binaryninja import (
-    BinaryReader, BinaryWriter, 
+    BinaryReader, BinaryWriter,
     RegisterValueType, enums
 )
 from .sym_visitor import SymbolicVisitor
@@ -21,31 +21,33 @@ from .utility.executor_utility import (
     check_error
 )
 
-NO_COLOR             = enums.HighlightStandardColor(0)
-CURR_STATE_COLOR     = enums.HighlightStandardColor.GreenHighlightColor
+NO_COLOR = enums.HighlightStandardColor(0)
+CURR_STATE_COLOR = enums.HighlightStandardColor.GreenHighlightColor
 DEFERRED_STATE_COLOR = enums.HighlightStandardColor.RedHighlightColor
-ERRORED_STATE_COLOR  = enums.HighlightStandardColor.BlackHighlightColor
+ERRORED_STATE_COLOR = enums.HighlightStandardColor.BlackHighlightColor
+
 
 class SymbolicExecutor(object):
     def __init__(self, view, addr):
 
-        self.view         = view
-        self.bw           = BinaryWriter(view)
-        self.br           = BinaryReader(view)
-        self.visitor      = SymbolicVisitor(self)
-        self.bncache      = BNCache(view)
-        self.vars         = set()
-        self.fringe       = Fringe()
-        self.ip           = addr
-        self.llil_ip      = None
-        self.arch         = None
-        self.user_hooks   = dict()
+        self.view = view
+        self.bw = BinaryWriter(view)
+        self.br = BinaryReader(view)
+        self.visitor = SymbolicVisitor(self)
+        self.bncache = BNCache(view)
+        self.vars = set()
+        self.fringe = Fringe()
+        self.ip = addr
+        self.llil_ip = None
+        self.arch = None
+        self.user_hooks = dict()
         self.user_loggers = dict()
         self.imported_functions, self.imported_addresses = \
             get_imported_functions_and_addresses(view)
         self._last_colored_ip = None
-        self._last_error  = None
-        self.init_with_zero = self.bncache.get_setting("init_reg_mem_with_zero") == "true"
+        self._last_error = None
+        self.init_with_zero = self.bncache.get_setting(
+            "init_reg_mem_with_zero") == "true"
 
         self._wasjmp = False
         if self.view.arch.name == "x86":
@@ -57,14 +59,15 @@ class SymbolicExecutor(object):
 
         assert self.arch is not None
         page_size = int(self.bncache.get_setting("memory.page_size"))
-        self.state = State(self, arch=self.arch, os=find_os(view), page_size=page_size)
+        self.state = State(self, arch=self.arch,
+                           os=find_os(view), page_size=page_size)
 
         # load memory
         print("loading segments...")
         for segment in self.view.segments:
             start = segment.start
-            end   = segment.end
-            size  = segment.data_length
+            end = segment.end
+            size = segment.data_length
             print(segment, hex(start), "->", hex(size))
 
             if size == 0 and end - start != 0:
@@ -78,8 +81,8 @@ class SymbolicExecutor(object):
 
             self.state.mem.mmap(
                 self.state.address_page_aligned(start),
-                self.state.address_page_aligned(end + self.state.mem.page_size - 1) - \
-                    self.state.address_page_aligned(start),
+                self.state.address_page_aligned(end + self.state.mem.page_size - 1) -
+                self.state.address_page_aligned(start),
                 InitData(data, start - self.state.address_page_aligned(start))
             )
         print("loading finished!")
@@ -91,12 +94,13 @@ class SymbolicExecutor(object):
         stack_page_size = int(self.bncache.get_setting("stack_size"))
 
         unmapped_page_init = self.state.mem.get_unmapped(
-            stack_page_size, 
+            stack_page_size,
             start_from=(0x80 << (self.arch.bits() - 8)))
         self.state.mem.mmap(
-            unmapped_page_init*self.state.page_size, 
+            unmapped_page_init*self.state.page_size,
             self.state.page_size * stack_page_size)
-        p = unmapped_page_init + stack_page_size - 1 # leave one page for upper stack portion
+        # leave one page for upper stack portion
+        p = unmapped_page_init + stack_page_size - 1
         stack_base = p * self.state.page_size - self.arch.bits() // 8
 
         self.state.initialize_stack(stack_base)
@@ -107,12 +111,14 @@ class SymbolicExecutor(object):
             val = current_function.get_reg_value_after(addr, reg)
 
             if val.type.value == RegisterValueType.StackFrameOffset:
-                setattr(self.state.regs, reg, BVV(stack_base + val.offset, reg_dict['size'] * 8))
+                setattr(self.state.regs, reg, BVV(
+                    stack_base + val.offset, reg_dict['size'] * 8))
             elif (
                 val.type.value == RegisterValueType.ConstantPointerValue or
                 val.type.value == RegisterValueType.ConstantValue
             ):
-                setattr(self.state.regs, reg, BVV(val.value, reg_dict['size'] * 8))
+                setattr(self.state.regs, reg, BVV(
+                    val.value, reg_dict['size'] * 8))
             else:
                 if not self.init_with_zero:
                     symb = BVS(reg + "_init", reg_dict['size'] * 8)
@@ -129,19 +135,20 @@ class SymbolicExecutor(object):
 
             if abs(offset) > self.state.page_size * (stack_page_size - 1):
                 print("ERROR: not enough space in stack. Increase stack size")
-                raise Exception("Not enough space in stack. Increase stack size")
+                raise Exception(
+                    "Not enough space in stack. Increase stack size")
 
             if s_type.confidence != 255:
                 continue
 
             width = s_type.width
             name = var.name
-            val  = current_function.get_stack_contents_at(addr, offset, width)
+            val = current_function.get_stack_contents_at(addr, offset, width)
             if val.type.value == RegisterValueType.StackFrameOffset:
                 assert width*8 == self.arch.bits()  # has to happen... right?
                 self.state.mem.store(
                     BVV(stack_base + offset, self.arch.bits()),
-                    BVV(stack_base + val.offset, width*8 ),
+                    BVV(stack_base + val.offset, width*8),
                     endness=self.arch.endness())
             elif (
                 val.type.value == RegisterValueType.ConstantPointerValue or
@@ -149,7 +156,7 @@ class SymbolicExecutor(object):
             ):
                 self.state.mem.store(
                     BVV(stack_base + offset, self.arch.bits()),
-                    BVV(val.value, width*8 ),
+                    BVV(val.value, width*8),
                     endness=self.arch.endness())
             elif not self.init_with_zero:
                 symb = BVS(name + "_init", self.arch.bits())
@@ -200,7 +207,8 @@ class SymbolicExecutor(object):
 
         for ip in self.fringe._deferred:
             func = self.bncache.get_function(ip)
-            func.set_auto_instr_highlight(ip, DEFERRED_STATE_COLOR if not reset else NO_COLOR)
+            func.set_auto_instr_highlight(
+                ip, DEFERRED_STATE_COLOR if not reset else NO_COLOR)
             # func.set_comment_at(ip, str(len(self.fringe._deferred[ip]) if not reset else ""))
 
         for _, state in self.fringe.errored:
@@ -210,7 +218,8 @@ class SymbolicExecutor(object):
 
         if self.state:
             func = self.bncache.get_function(self.ip)
-            func.set_auto_instr_highlight(self.ip, CURR_STATE_COLOR if not reset else NO_COLOR)
+            func.set_auto_instr_highlight(
+                self.ip, CURR_STATE_COLOR if not reset else NO_COLOR)
         if not reset:
             self._last_colored_ip = self.ip
 
@@ -229,7 +238,8 @@ class SymbolicExecutor(object):
         self.state = state
         new_func = self.bncache.get_function(ip)
         self.ip = ip
-        self.llil_ip = new_func.llil.get_instruction_start(ip) if llil_ip is None else llil_ip
+        self.llil_ip = new_func.llil.get_instruction_start(
+            ip) if llil_ip is None else llil_ip
 
     def select_from_deferred(self):
         if self.fringe.is_empty():
@@ -254,7 +264,8 @@ class SymbolicExecutor(object):
             self.user_loggers[self.ip](self.state)
         if self.ip in self.user_hooks:
             old_ip = self.ip
-            new_state, new_deferred, new_errored = self.user_hooks[self.ip](self.state)
+            new_state, new_deferred, new_errored = self.user_hooks[self.ip](
+                self.state)
 
             for s in new_deferred:
                 self.put_in_deferred(s)
@@ -265,7 +276,8 @@ class SymbolicExecutor(object):
                 self.state = new_state
 
                 if old_ip == self.state.get_ip():
-                    new_ip = self.ip + self.bncache.get_instruction_len(self.ip)
+                    new_ip = self.ip + \
+                        self.bncache.get_instruction_len(self.ip)
                 else:
                     new_ip = self.state.get_ip()
 
@@ -289,7 +301,7 @@ class SymbolicExecutor(object):
                 not self.arch.execute_special_handler(disasm_str, self)
             ):
                 expr = self.bncache.get_llil(func_name, self.llil_ip)
-                res  = self.visitor.visit(expr)
+                res = self.visitor.visit(expr)
 
                 if res is None:
                     raise Exception("")
@@ -318,7 +330,8 @@ class SymbolicExecutor(object):
         if not self.state:
             return
 
-        single_llil_step = self.bncache.get_setting("single_llil_step") == 'true'
+        single_llil_step = self.bncache.get_setting(
+            "single_llil_step") == 'true'
         if single_llil_step:
             res = self._execute_one()
         else:
@@ -327,4 +340,3 @@ class SymbolicExecutor(object):
             while res == old_ip:
                 res = self._execute_one()
         return res
-    

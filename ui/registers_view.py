@@ -25,8 +25,10 @@ from PySide2.QtWidgets import (
 from ..utility.expr_wrap_util import symbolic
 from ..expr.bitvector import BVS, BVV
 
+
 def _normalize_tab_name(tab_name):
     return tab_name[:tab_name.find("(")-1]
+
 
 def _makewidget(parent, val, center=False):
     """ Small helper function that builds a TableWidgetItem and sets up the font the way we want"""
@@ -36,6 +38,7 @@ def _makewidget(parent, val, center=False):
     if center:
         out.setTextAlignment(Qt.AlignCenter)
     return out
+
 
 class RegisterView(QWidget, DockContextHandler):
 
@@ -70,7 +73,8 @@ class RegisterView(QWidget, DockContextHandler):
         self._table.verticalHeader().setVisible(False)
 
         self._table.setContextMenuPolicy(Qt.CustomContextMenu)
-        self._table.customContextMenuRequested.connect(self.on_customContextMenuRequested)
+        self._table.customContextMenuRequested.connect(
+            self.on_customContextMenuRequested)
         self._table.doubleClicked.connect(self.on_doubleClick)
 
         self._layout.addWidget(self._table)
@@ -94,7 +98,7 @@ class RegisterView(QWidget, DockContextHandler):
             self.index_to_reg[i] = reg
             self._table.setItem(i, 0, _makewidget(self, reg))
             self._table.setItem(i, 1, _makewidget(self, ""))
-        
+
         self.set_reg_values(state)
 
     def set_reg_value(self, reg, value, color=None):
@@ -132,7 +136,8 @@ class RegisterView(QWidget, DockContextHandler):
     # right click menu
     def on_customContextMenuRequested(self, pos):
         item = self._table.itemAt(pos)
-        if item is None: return
+        if item is None:
+            return
         row_idx = item.row()
 
         if self.index_to_reg[row_idx] == self.arch.getip_reg():
@@ -141,22 +146,31 @@ class RegisterView(QWidget, DockContextHandler):
         expr = getattr(self.current_state.regs, self.index_to_reg[row_idx])
 
         menu = QMenu()
-        show_reg_expr = menu.addAction("Show reg expression") if not isinstance(expr, BVV) else None
-        make_reg_symb = menu.addAction("Make reg symbolic") if not isinstance(expr, BVS) else None
+        show_reg_expr = menu.addAction(
+            "Show reg expression") if not isinstance(expr, BVV) else None
+        make_reg_symb = menu.addAction(
+            "Make reg symbolic") if not isinstance(expr, BVS) else None
         set_reg_value = menu.addAction("Set reg value")
-        eval_with_sol = menu.addAction("Evaluate with solver") if not isinstance(expr, BVV) else None
-        concretize    = menu.addAction("Concretize") if not isinstance(expr, BVV) else None
-        copy          = menu.addAction("Copy to clipboard") if not isinstance(expr, BVS) else None
+        eval_with_sol = menu.addAction(
+            "Evaluate with solver") if not isinstance(expr, BVV) else None
+        concretize = menu.addAction(
+            "Concretize") if not isinstance(expr, BVV) else None
+        copy = menu.addAction("Copy to clipboard") if not isinstance(
+            expr, BVS) else None
 
         action = menu.exec_(self._table.viewport().mapToGlobal(pos))
-        if action is None: return
+        if action is None:
+            return
 
         if action == show_reg_expr:
             show_message_box("Reg Expression", str(expr.z3obj.sexpr()))
         if action == make_reg_symb:
-            new_expr = BVS('symb_injected_through_ui_%d' % self.symb_idx, expr.size)
-            setattr(self.current_state.regs, self.index_to_reg[row_idx], new_expr)
-            self.set_reg_value(self.index_to_reg[row_idx], new_expr, RegisterView.dirty_color)
+            new_expr = BVS('symb_injected_through_ui_%d' %
+                           self.symb_idx, expr.size)
+            setattr(self.current_state.regs,
+                    self.index_to_reg[row_idx], new_expr)
+            self.set_reg_value(
+                self.index_to_reg[row_idx], new_expr, RegisterView.dirty_color)
             self.symb_idx += 1
         if action == set_reg_value:
             self.on_doubleClick(item)
@@ -164,8 +178,10 @@ class RegisterView(QWidget, DockContextHandler):
             expr = getattr(self.current_state.regs, self.index_to_reg[row_idx])
             if not self.current_state.solver.symbolic(expr):
                 new_expr = self.current_state.solver.evaluate(expr)
-                setattr(self.current_state.regs, self.index_to_reg[row_idx], new_expr)
-                self.set_reg_value(self.index_to_reg[row_idx], new_expr, RegisterView.dirty_color)
+                setattr(self.current_state.regs,
+                        self.index_to_reg[row_idx], new_expr)
+                self.set_reg_value(
+                    self.index_to_reg[row_idx], new_expr, RegisterView.dirty_color)
                 show_message_box(
                     "Reg Value (with solver)",
                     "The value was indeed concrete! State modified"
@@ -179,16 +195,19 @@ class RegisterView(QWidget, DockContextHandler):
             expr = getattr(self.current_state.regs, self.index_to_reg[row_idx])
             new_expr = self.current_state.solver.evaluate(expr)
             res = get_choice_input(
-                "Concretize %s to %s?" % (self.index_to_reg[row_idx], hex(new_expr.value)),
+                "Concretize %s to %s?" % (
+                    self.index_to_reg[row_idx], hex(new_expr.value)),
                 "Concretize",
                 ["Yes", "No"]
             )
             if res == 0:
-                setattr(self.current_state.regs, self.index_to_reg[row_idx], new_expr)
+                setattr(self.current_state.regs,
+                        self.index_to_reg[row_idx], new_expr)
                 self.current_state.solver.add_constraints(
                     expr == new_expr
                 )
-                self.set_reg_value(self.index_to_reg[row_idx], new_expr, RegisterView.dirty_color)
+                self.set_reg_value(
+                    self.index_to_reg[row_idx], new_expr, RegisterView.dirty_color)
 
         if action == copy:
             mime = QMimeData()
@@ -205,12 +224,14 @@ class RegisterView(QWidget, DockContextHandler):
             return
 
         old_expr = getattr(self.current_state.regs, self.index_to_reg[row_idx])
-        new_val = get_int_input("value for %s" % self.index_to_reg[row_idx], "Set Reg")
+        new_val = get_int_input("value for %s" %
+                                self.index_to_reg[row_idx], "Set Reg")
         if new_val is None:
             return
         new_expr = BVV(new_val, old_expr.size)
         setattr(self.current_state.regs, self.index_to_reg[row_idx], new_expr)
-        self.set_reg_value(self.index_to_reg[row_idx], new_expr, RegisterView.dirty_color)
+        self.set_reg_value(
+            self.index_to_reg[row_idx], new_expr, RegisterView.dirty_color)
 
     def notifyOffsetChanged(self, offset):
         pass

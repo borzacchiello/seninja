@@ -3,78 +3,79 @@ import z3
 from .arch_abstract import Arch
 from .arch_x86_sph import ArchX86SPH
 
+
 class x86Arch(Arch):
     REGS = {
         'eax': {
             'size': 4,
             'sub': {
-                'ax':  { 'offset': 2,  'size': 2  },
-                'al':  { 'offset': 3,  'size': 1  },
-                'ah':  { 'offset': 2,  'size': 1  }
+                'ax':  {'offset': 2,  'size': 2},
+                'al':  {'offset': 3,  'size': 1},
+                'ah':  {'offset': 2,  'size': 1}
             }
         },
         'ebx': {
             'size': 4,
             'sub': {
-                'bx':  { 'offset': 2, 'size': 2  },
-                'bl':  { 'offset': 3, 'size': 1  },
-                'bh':  { 'offset': 2, 'size': 1  }
+                'bx':  {'offset': 2, 'size': 2},
+                'bl':  {'offset': 3, 'size': 1},
+                'bh':  {'offset': 2, 'size': 1}
             }
         },
         'ecx': {
             'size': 4,
             'sub': {
-                'cx':  { 'offset': 2, 'size': 2  },
-                'cl':  { 'offset': 3, 'size': 1  },
-                'ch':  { 'offset': 2, 'size': 1  }
+                'cx':  {'offset': 2, 'size': 2},
+                'cl':  {'offset': 3, 'size': 1},
+                'ch':  {'offset': 2, 'size': 1}
             }
         },
         'edx': {
             'size': 4,
             'sub': {
-                'dx':  { 'offset': 2, 'size': 2  },
-                'dl':  { 'offset': 3, 'size': 1  },
-                'dh':  { 'offset': 2, 'size': 1  }
+                'dx':  {'offset': 2, 'size': 2},
+                'dl':  {'offset': 3, 'size': 1},
+                'dh':  {'offset': 2, 'size': 1}
             }
         },
         'esi': {
             'size': 4,
             'sub': {
-                'si':  { 'offset': 2, 'size': 2  },
-                'sil': { 'offset': 3, 'size': 1  },
+                'si':  {'offset': 2, 'size': 2},
+                'sil': {'offset': 3, 'size': 1},
             }
         },
         'edi': {
             'size': 4,
             'sub': {
-                'di':  { 'offset': 2, 'size': 2  },
-                'dil': { 'offset': 3, 'size': 1  }
+                'di':  {'offset': 2, 'size': 2},
+                'dil': {'offset': 3, 'size': 1}
             }
         },
         'ebp': {
             'size': 4,
             'sub': {
-                'bp':  { 'offset': 2, 'size': 2  },
-                'bpl': { 'offset': 3, 'size': 1  }
+                'bp':  {'offset': 2, 'size': 2},
+                'bpl': {'offset': 3, 'size': 1}
             }
         },
         'esp': {
             'size': 4,
             'sub': {
-                'sp':  { 'offset': 2, 'size': 2  },
-                'spl': { 'offset': 3, 'size': 1  }
+                'sp':  {'offset': 2, 'size': 2},
+                'spl': {'offset': 3, 'size': 1}
             }
         },
         'eip': {
             'size': 4,
             'sub': {
-                'ip':  { 'offset': 2, 'size': 2  }
+                'ip':  {'offset': 2, 'size': 2}
             }
         },
         'eflags': {
             'size': 4,
             'sub': {
-                'flags':  { 'offset': 2, 'size': 2 }
+                'flags':  {'offset': 2, 'size': 2}
             }
         },
         'gsbase': {
@@ -87,20 +88,20 @@ class x86Arch(Arch):
         }
     }
 
-    FLAGS = { 'c': 0, 'p': 2, 'a': 4, 'z': 6, 's': 7, 'd': 10, 'o': 11, 'c0': 32,
-        'c1': 33, 'c2': 34, 'c3': 35 }
+    FLAGS = {'c': 0, 'p': 2, 'a': 4, 'z': 6, 's': 7, 'd': 10, 'o': 11, 'c0': 32,
+             'c1': 33, 'c2': 34, 'c3': 35}
 
     REG_NAMES = [
         "eip", "esp", "ebp", "eax", "ebx", "ecx", "edx", "esi", "edi",
     ]
-    
+
     FLAGS_CONDS = {
-        'E':   lambda s: s.regs.flags['z'] == 0,
-        'NE':  lambda s: s.regs.flags['z'] == 1,
+        'E': lambda s: s.regs.flags['z'] == 0,
+        'NE': lambda s: s.regs.flags['z'] == 1,
         'NEG': lambda s: s.regs.flags['s'] == 1,
         'POS': lambda s: s.regs.flags['s'] == 0,
-        'O':   lambda s: s.regs.flags['o'] == 1,
-        'NO':  lambda s: s.regs.flags['o'] == 0,
+        'O': lambda s: s.regs.flags['o'] == 1,
+        'NO': lambda s: s.regs.flags['o'] == 0,
         'SGE': lambda s: s.regs.flags['s'] == s.regs.flags['o'],
         'SGT': lambda s: z3.And(
             s.regs.flags['z'] == 0,
@@ -180,5 +181,6 @@ class x86Arch(Arch):
     def execute_special_handler(self, disasm_str, sv):
         res = x86Arch.sph.handle_instruction(disasm_str, sv)
         return res
+
 
 Arch.fix_reg_addressess(x86Arch)

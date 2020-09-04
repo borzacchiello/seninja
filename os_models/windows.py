@@ -2,6 +2,7 @@ from copy import deepcopy
 from ..expr import Bool
 from .os_file import OsFileHandler
 
+
 class Windows(OsFileHandler):
     def __init__(self):
         super().__init__()
@@ -26,7 +27,7 @@ class Windows(OsFileHandler):
         session.seek(0)
         res = session.read(session.symfile.file_size)
         session.seek(session_idx)
-        
+
         return res
 
     def get_stdout_stream(self):
@@ -35,7 +36,7 @@ class Windows(OsFileHandler):
         session.seek(0)
         res = session.read(session.symfile.file_size)
         session.seek(session_idx)
-        
+
         return res
 
     def copy(self):

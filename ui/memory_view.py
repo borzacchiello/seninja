@@ -31,8 +31,10 @@ from ..utility.expr_wrap_util import symbolic, split_bv_in_list
 from ..expr.bitvector import BVS, BVV
 from .hexview import HexViewWidget
 
+
 def _normalize_tab_name(tab_name):
     return tab_name[:tab_name.find("(")-1]
+
 
 class MemoryViewBT(BackgroundTaskThread):
     def __init__(self, msg, mw, callback, pars):
@@ -45,6 +47,7 @@ class MemoryViewBT(BackgroundTaskThread):
         self.mw.setEnabled(False)
         self.callback(*self.pars)
         self.mw.setEnabled(True)
+
 
 class MemoryView(QWidget, DockContextHandler):
 
@@ -70,13 +73,14 @@ class MemoryView(QWidget, DockContextHandler):
         self.button = QPushButton("Monitor Memory")
         self.button.clicked.connect(self.on_monitor_button_click)
 
-        self.hexWidget = HexViewWidget(menu_handler=self.on_customContextMenuRequested)
+        self.hexWidget = HexViewWidget(
+            menu_handler=self.on_customContextMenuRequested)
         self.hexWidget.data_edited.connect(self._handle_data_edited)
         self.hexWidget.setEnabled(False)
 
         self._layout.addWidget(self.button)
         self._layout.addWidget(self.hexWidget)
-        self._layout.setContentsMargins(0,0,0,0)
+        self._layout.setContentsMargins(0, 0, 0, 0)
 
         self.setMaximumWidth(self.hexWidget.optimal_width + 25)
 
@@ -95,8 +99,10 @@ class MemoryView(QWidget, DockContextHandler):
             self.address_start + self.size >= address and
             self.address_start <= address + size
         ):
-            to_monitor_min = max(self.address_start, address) - self.address_start
-            to_monitor_max = min(self.address_start + self.size, address + size) - self.address_start
+            to_monitor_min = max(self.address_start,
+                                 address) - self.address_start
+            to_monitor_max = min(self.address_start + self.size,
+                                 address + size) - self.address_start
             self.changes.add((to_monitor_min, to_monitor_max))
 
     def on_monitor_button_click(self):
@@ -104,7 +110,8 @@ class MemoryView(QWidget, DockContextHandler):
             return
 
         address = get_int_input("Memory address", "Set Memory Monitor")
-        if address is None: return
+        if address is None:
+            return
 
         self.hexWidget.setEnabled(True)
         self.address_start = address
@@ -116,7 +123,7 @@ class MemoryView(QWidget, DockContextHandler):
         self.arch = arch
         self.tab_name = _normalize_tab_name(self.parent.getTabName())
         self.update_mem(state)
-    
+
     def update_mem(self, state):
         self.current_state = state
         if self.address_start is None:
@@ -132,7 +139,7 @@ class MemoryView(QWidget, DockContextHandler):
                 if isinstance(b, BVV):
                     val = "{:02x}".format(b.value)
             data[i] = val
-        
+
         self.hexWidget.full_data_changed.emit(
             self.address_start, data, self.size
         )
@@ -159,7 +166,7 @@ class MemoryView(QWidget, DockContextHandler):
                 self.hexWidget.single_data_changed.emit(i, val)
         # self.hexWidget.view.viewport().update()
         self.changes.clear()
-    
+
     def reset(self):
         self.current_state = None
         self.address_start = None
@@ -167,17 +174,19 @@ class MemoryView(QWidget, DockContextHandler):
         self.hexWidget.full_data_changed.emit(
             0, {}, 0
         )
-    
+
     def _handle_data_edited(self, offset, value):
         if not self.current_state or not self.address_start:
             return
-        
-        self.current_state.mem.store(self.address_start + offset, BVV(value, 8))
+
+        self.current_state.mem.store(
+            self.address_start + offset, BVV(value, 8))
         # self.hexWidget.single_data_changed.emit(address - self.address_start, hex(value)[2:])
 
     def _show_expression(self, address, expr):
-        show_message_box("Expression at %s" % hex(address), str(expr.z3obj.sexpr()))
-    
+        show_message_box("Expression at %s" %
+                         hex(address), str(expr.z3obj.sexpr()))
+
     def _evaluate_with_solver(self, address, expr):
         val = ""
         if not self.current_state.solver.symbolic(expr):
@@ -185,7 +194,7 @@ class MemoryView(QWidget, DockContextHandler):
             self.current_state.mem.store(address, new_expr)
             self.changes.add(
                 (
-                    address - self.address_start, 
+                    address - self.address_start,
                     address-self.address_start+new_expr.size // 8
                 )
             )
@@ -196,7 +205,8 @@ class MemoryView(QWidget, DockContextHandler):
             )
         else:
             val = self.current_state.solver.evaluate(expr).value
-            show_message_box("Value at %s (with solver):" % hex(address), hex(val))
+            show_message_box("Value at %s (with solver):" %
+                             hex(address), hex(val))
 
     def _concretize(self, address, expr):
         new_expr = self.current_state.solver.evaluate(expr)
@@ -222,7 +232,8 @@ class MemoryView(QWidget, DockContextHandler):
         if not self.current_state.solver.satisfiable(
             extra_constraints
         ):
-            show_message_box("Info", "The selected memory is not an ascii str (unsat)")
+            show_message_box(
+                "Info", "The selected memory is not an ascii str (unsat)")
             return
         new_expr = self.current_state.solver.evaluate(
             expr, extra_constraints
@@ -257,7 +268,7 @@ class MemoryView(QWidget, DockContextHandler):
         mime = QMimeData()
         mime.setText(hex(expr.value))
         QApplication.clipboard().setMimeData(mime)
-    
+
     def _copy_little_endian(self, expr):
         mime = QMimeData()
         expr_bytes = split_bv_in_list(expr, 8)
@@ -265,7 +276,7 @@ class MemoryView(QWidget, DockContextHandler):
         i = 0
         for el in reversed(expr_bytes):
             res += el.value << i*8
-            i+=1
+            i += 1
         mime.setText(hex(res))
         QApplication.clipboard().setMimeData(mime)
 
@@ -294,7 +305,7 @@ class MemoryView(QWidget, DockContextHandler):
 
         mime.setText(res)
         QApplication.clipboard().setMimeData(mime)
-    
+
     @staticmethod
     def _condom(f, *pars):
         def g():
@@ -315,34 +326,42 @@ class MemoryView(QWidget, DockContextHandler):
         index = self.hexWidget.view.indexAt(qpoint)
 
         sel_start = self.hexWidget._hsm.start
-        sel_end   = self.hexWidget._hsm.end
+        sel_end = self.hexWidget._hsm.end
         if sel_start is None:
             return
 
         expr = self.current_state.mem.load(
-            sel_start + self.address_start, 
+            sel_start + self.address_start,
             sel_end - sel_start + 1
         )
 
         if symbolic(expr):
             a = menu.addAction("Show expression")
-            a.triggered.connect(MemoryView._condom(self._show_expression, sel_start + self.address_start, expr))
+            a.triggered.connect(MemoryView._condom(
+                self._show_expression, sel_start + self.address_start, expr))
             a = menu.addAction("Evaluate with solver")
-            a.triggered.connect(MemoryView._condom_async(self, self._evaluate_with_solver, sel_start + self.address_start, expr))
+            a.triggered.connect(MemoryView._condom_async(
+                self, self._evaluate_with_solver, sel_start + self.address_start, expr))
             a = menu.addAction("Concretize")
-            a.triggered.connect(MemoryView._condom_async(self, self._concretize, sel_start + self.address_start, expr))
+            a.triggered.connect(MemoryView._condom_async(
+                self, self._concretize, sel_start + self.address_start, expr))
             a = menu.addAction("Concretize (ascii str)")
-            a.triggered.connect(MemoryView._condom_async(self, self._concretize_ascii_str, sel_start + self.address_start, expr))
+            a.triggered.connect(MemoryView._condom_async(
+                self, self._concretize_ascii_str, sel_start + self.address_start, expr))
             a = menu.addAction("Copy expression")
-            a.triggered.connect(MemoryView._condom(self._copy_expression, expr))
+            a.triggered.connect(MemoryView._condom(
+                self._copy_expression, expr))
         else:
             a = menu.addAction("Make symbolic")
-            a.triggered.connect(MemoryView._condom(self._make_symbolic, sel_start + self.address_start, sel_end - sel_start + 1))
+            a.triggered.connect(MemoryView._condom(
+                self._make_symbolic, sel_start + self.address_start, sel_end - sel_start + 1))
             copy_menu = menu.addMenu("Copy...")
             a = copy_menu.addAction("Copy Little Endian")
-            a.triggered.connect(MemoryView._condom(self._copy_little_endian, expr))
+            a.triggered.connect(MemoryView._condom(
+                self._copy_little_endian, expr))
             a = copy_menu.addAction("Copy Big Endian")
-            a.triggered.connect(MemoryView._condom(self._copy_big_endian, expr))
+            a.triggered.connect(MemoryView._condom(
+                self._copy_big_endian, expr))
             a = copy_menu.addAction("Copy String")
             a.triggered.connect(MemoryView._condom(self._copy_string, expr))
             a = copy_menu.addAction("Copy Binary")

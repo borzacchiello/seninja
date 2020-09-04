@@ -1,6 +1,7 @@
 from ..expr import BVV
 from ..memory.sym_flat_memory_not_paged import MemoryConcreteFlatNotPaged
 
+
 def test_1():
     m1 = MemoryConcreteFlatNotPaged("")
     m1.store(BVV(0, m1.bits), BVV(0xff, 8))

@@ -34,6 +34,8 @@ library_functions = {
     'strtoul':          models_libc.strtoul_handler,
 
     # models Teensy Board
-    '_ZN5Print7printlnEi':   models_teensy.println_handler, # Print::println(int)
-    '_ZN5Print7printlnEPKc': models_teensy.println_handler  # Print::println(char*)
+    # Print::println(int)
+    '_ZN5Print7printlnEi':   models_teensy.println_handler,
+    # Print::println(char*)
+    '_ZN5Print7printlnEPKc': models_teensy.println_handler
 }
