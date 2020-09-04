@@ -210,7 +210,7 @@ class Solver(object):
             i += 1
 
     def copy(self, state, fast_copy=False):
-        fast_copy = True  # deepcopy seems broken
+        # fast_copy = True  # deepcopy seems broken
 
         res = Solver(state)
         if not fast_copy:

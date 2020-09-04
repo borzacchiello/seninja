@@ -1,3 +1,4 @@
+from binaryninja import BackgroundTaskThread
 from binaryninja.interaction import (
     show_message_box,
     get_int_input,
@@ -32,6 +33,18 @@ from .hexview import HexViewWidget
 
 def _normalize_tab_name(tab_name):
     return tab_name[:tab_name.find("(")-1]
+
+class MemoryViewBT(BackgroundTaskThread):
+    def __init__(self, msg, mw, callback, pars):
+        BackgroundTaskThread.__init__(self, msg, False)
+        self.mw = mw
+        self.pars = pars
+        self.callback = callback
+
+    def run(self):
+        self.mw.setEnabled(False)
+        self.callback(*self.pars)
+        self.mw.setEnabled(True)
 
 class MemoryView(QWidget, DockContextHandler):
 
@@ -184,30 +197,53 @@ class MemoryView(QWidget, DockContextHandler):
         else:
             val = self.current_state.solver.evaluate(expr).value
             show_message_box("Value at %s (with solver):" % hex(address), hex(val))
-    
+
     def _concretize(self, address, expr):
         new_expr = self.current_state.solver.evaluate(expr)
-        res = get_choice_input(
-            "Concretize *%s to %s?" % (hex(address), hex(new_expr.value)),
-            "Concretize",
-            ["Yes", "No"]
+        self.current_state.mem.store(address, new_expr)
+        self.current_state.solver.add_constraints(
+            expr == new_expr
         )
-        if res == 0:
-            self.current_state.mem.store(address, new_expr)
-            self.current_state.solver.add_constraints(
-                expr == new_expr
+        self.changes.add(
+            (
+                address - self.address_start,
+                address - self.address_start+new_expr.size // 8
             )
-            self.changes.add(
-                (
-                    address - self.address_start,
-                    address - self.address_start+new_expr.size // 8
-                )
+        )
+        self.update_mem_delta(self.current_state)
+
+    def _concretize_ascii_str(self, address, expr):
+        extra_constraints = []
+        for i in range(expr.size // 8):
+            b = expr.Extract(i*8+7, i*8)
+            extra_constraints.extend(
+                [b <= 0x7e, b >= 0x20]
             )
-            self.update_mem_delta(self.current_state)
-    
+        if not self.current_state.solver.satisfiable(
+            extra_constraints
+        ):
+            show_message_box("Info", "The selected memory is not an ascii str (unsat)")
+            return
+        new_expr = self.current_state.solver.evaluate(
+            expr, extra_constraints
+        )
+        self.current_state.mem.store(address, new_expr)
+        self.current_state.solver.add_constraints(
+            expr == new_expr
+        )
+        self.changes.add(
+            (
+                address - self.address_start,
+                address - self.address_start+new_expr.size // 8
+            )
+        )
+        self.update_mem_delta(self.current_state)
+
     def _make_symbolic(self, address, size):
-        expr = BVS("symbol_injected_through_ui_mem_%d" % self.symb_idx, size*8)
-        self.current_state.mem.store(address, expr)
+        for i in range(size):
+            b = BVS("b_ui_mem_%d" % self.symb_idx, 8)
+            self.symb_idx += 1
+            self.current_state.mem.store(address + i, b)
         self.changes.add(
             (
                 address - self.address_start,
@@ -216,7 +252,7 @@ class MemoryView(QWidget, DockContextHandler):
         )
         self.symb_idx += 1
         self.update_mem_delta(self.current_state)
-    
+
     def _copy_big_endian(self, expr):
         mime = QMimeData()
         mime.setText(hex(expr.value))
@@ -232,7 +268,7 @@ class MemoryView(QWidget, DockContextHandler):
             i+=1
         mime.setText(hex(res))
         QApplication.clipboard().setMimeData(mime)
-    
+
     def _copy_string(self, expr):
         mime = QMimeData()
         expr_bytes = split_bv_in_list(expr, 8)
@@ -259,7 +295,14 @@ class MemoryView(QWidget, DockContextHandler):
         def g():
             f(*pars)
         return g
-    
+
+    @staticmethod
+    def _condom_async(mw, f, *pars):
+        def g():
+            bt = MemoryViewBT("MemoryView background task...", mw, f, pars)
+            bt.start()
+        return g
+
     def on_customContextMenuRequested(self, qpoint):
         if self.current_state is None:
             return
@@ -280,9 +323,11 @@ class MemoryView(QWidget, DockContextHandler):
             a = menu.addAction("Show reg expression")
             a.triggered.connect(MemoryView._condom(self._show_reg_expression, sel_start + self.address_start, expr))
             a = menu.addAction("Evaluate with solver")
-            a.triggered.connect(MemoryView._condom(self._evaluate_with_solver, sel_start + self.address_start, expr))
+            a.triggered.connect(MemoryView._condom_async(self, self._evaluate_with_solver, sel_start + self.address_start, expr))
             a = menu.addAction("Concretize")
-            a.triggered.connect(MemoryView._condom(self._concretize, sel_start + self.address_start, expr))
+            a.triggered.connect(MemoryView._condom_async(self, self._concretize, sel_start + self.address_start, expr))
+            a = menu.addAction("Concretize (ascii str)")
+            a.triggered.connect(MemoryView._condom_async(self, self._concretize_ascii_str, sel_start + self.address_start, expr))
         else:
             a = menu.addAction("Make symbolic")
             a.triggered.connect(MemoryView._condom(self._make_symbolic, sel_start + self.address_start, sel_end - sel_start + 1))

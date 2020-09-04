@@ -2,6 +2,7 @@ class Fringe(object):
     def __init__(self):
         self.unsat     = list()
         self.errored   = list()
+        self.avoided   = list()
         self._deferred = dict()
         self.last_added = None
 
@@ -50,3 +51,6 @@ class Fringe(object):
     
     def add_unsat(self, state):
         self.unsat.append(state)
+
+    def add_avoided(self, state):
+        self.avoided.append(state)
