@@ -175,8 +175,8 @@ class MemoryView(QWidget, DockContextHandler):
         self.current_state.mem.store(self.address_start + offset, BVV(value, 8))
         # self.hexWidget.single_data_changed.emit(address - self.address_start, hex(value)[2:])
 
-    def _show_reg_expression(self, address, expr):
-        show_message_box("Expression at %s" % hex(address), str(expr.z3obj))
+    def _show_expression(self, address, expr):
+        show_message_box("Expression at %s" % hex(address), str(expr.z3obj.sexpr()))
     
     def _evaluate_with_solver(self, address, expr):
         val = ""
@@ -279,6 +279,11 @@ class MemoryView(QWidget, DockContextHandler):
         mime.setText(res)
         QApplication.clipboard().setMimeData(mime)
 
+    def _copy_expression(self, expr):
+        mime = QMimeData()
+        mime.setText(str(expr.z3obj.sexpr()))
+        QApplication.clipboard().setMimeData(mime)
+
     def _copy_binary(self, expr):
         mime = QMimeData()
         expr_bytes = split_bv_in_list(expr, 8)
@@ -320,14 +325,16 @@ class MemoryView(QWidget, DockContextHandler):
         )
 
         if symbolic(expr):
-            a = menu.addAction("Show reg expression")
-            a.triggered.connect(MemoryView._condom(self._show_reg_expression, sel_start + self.address_start, expr))
+            a = menu.addAction("Show expression")
+            a.triggered.connect(MemoryView._condom(self._show_expression, sel_start + self.address_start, expr))
             a = menu.addAction("Evaluate with solver")
             a.triggered.connect(MemoryView._condom_async(self, self._evaluate_with_solver, sel_start + self.address_start, expr))
             a = menu.addAction("Concretize")
             a.triggered.connect(MemoryView._condom_async(self, self._concretize, sel_start + self.address_start, expr))
             a = menu.addAction("Concretize (ascii str)")
             a.triggered.connect(MemoryView._condom_async(self, self._concretize_ascii_str, sel_start + self.address_start, expr))
+            a = menu.addAction("Copy expression")
+            a.triggered.connect(MemoryView._condom(self._copy_expression, expr))
         else:
             a = menu.addAction("Make symbolic")
             a.triggered.connect(MemoryView._condom(self._make_symbolic, sel_start + self.address_start, sel_end - sel_start + 1))

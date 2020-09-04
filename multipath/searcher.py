@@ -33,7 +33,6 @@ class DFSSearcher(Searcher):
                 print(traceback.format_exc())
                 break
             if not self.executor.state:
-                res = None
                 break
             ip = self.executor.state.get_ip()
             if ip == self.target:
@@ -41,7 +40,6 @@ class DFSSearcher(Searcher):
                 break
             elif ip in self.avoid:
                 if self.executor.fringe.is_empty():
-                    res = None
                     break
                 old_state = self.executor.state
                 self.executor.fringe.add_avoided(old_state)

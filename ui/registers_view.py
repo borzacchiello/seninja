@@ -4,9 +4,9 @@ from binaryninja.interaction import (
     get_choice_input
 )
 from binaryninjaui import (
-    DockHandler, 
-    DockContextHandler, 
-    getMonospaceFont, 
+    DockHandler,
+    DockContextHandler,
+    getMonospaceFont,
     UIActionHandler
 )
 from PySide2 import QtCore
@@ -152,7 +152,7 @@ class RegisterView(QWidget, DockContextHandler):
         if action is None: return
 
         if action == show_reg_expr:
-            show_message_box("Reg Expression", str(expr.z3obj))
+            show_message_box("Reg Expression", str(expr.z3obj.sexpr()))
         if action == make_reg_symb:
             new_expr = BVS('symb_injected_through_ui_%d' % self.symb_idx, expr.size)
             setattr(self.current_state.regs, self.index_to_reg[row_idx], new_expr)
@@ -189,10 +189,13 @@ class RegisterView(QWidget, DockContextHandler):
                     expr == new_expr
                 )
                 self.set_reg_value(self.index_to_reg[row_idx], new_expr, RegisterView.dirty_color)
-        
+
         if action == copy:
             mime = QMimeData()
-            mime.setText(hex(expr.value))
+            if isinstance(expr, BVV):
+                mime.setText(hex(expr.value))
+            else:
+                mime.setText(str(expr.z3obj.sexpr()))
             QApplication.clipboard().setMimeData(mime)
 
     # double click event
