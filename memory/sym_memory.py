@@ -67,6 +67,12 @@ class Memory(MemoryAbstract):
         self.load_hooks = []
         self.store_hooks = []
 
+    def __str__(self):
+        return "<SymMemory, %d pages>" % len(self.pages)
+
+    def __repr__(self):
+        return self.__str__()
+
     def mmap(self, address: int, size: int, init: InitData = None):
         assert address % self.page_size == 0
         assert size % self.page_size == 0
@@ -84,9 +90,9 @@ class Memory(MemoryAbstract):
             if init_val is None:
                 init_val = b"\x00" * size
                 init_index = 0
-            init_val = b"\x00" * init_index + init_val # fill begin
+            init_val = b"\x00" * init_index + init_val  # fill begin
             init_val = init_val + b"\x00" * \
-                (self.page_size % len(init_val)) # fill end
+                (self.page_size % len(init_val))  # fill end
             init_index = 0
             data_index_i = 0
             data_index_f = self.page_size

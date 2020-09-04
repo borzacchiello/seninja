@@ -24,7 +24,8 @@ class State(object):
         self._bits = self.arch.bits()
 
     def __str__(self):
-        return "<State @ 0x{addr:0{width}X}>".format(
+        return "<SymState 0x{id:x} @ 0x{addr:0{width}X}>".format(
+            id=id(self),
             addr=self.get_ip(),
             width=(self._bits+3) // 4
         )

@@ -48,6 +48,12 @@ class MemoryConcreteFlat(MemoryAbstract):
         self.page_size = page_size
         self.index_bits = math.ceil(math.log(page_size, 2))
 
+    def __str__(self):
+        return "<SymMemoryFlat, %d pages>" % len(self.pages)
+
+    def __repr__(self):
+        return self.__str__()
+
     def mmap(self, address: int, size: int, init=None):
         assert address % self.page_size == 0
         assert size % self.page_size == 0

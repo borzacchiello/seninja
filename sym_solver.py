@@ -16,6 +16,13 @@ class Solver(object):
         self._eval_cache = OrderedDict()
         self._symb_check_cache = OrderedDict()
 
+    def __str__(self):
+        return "<SymSolver id: 0x%x, %d assertions>" % \
+            (id(self), len(self.assertions))
+
+    def __repr__(self):
+        return self.__str__()
+
     def _invalidate_cache(self):
         self._min_cache = OrderedDict()
         self._max_cache = OrderedDict()

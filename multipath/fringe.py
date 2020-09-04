@@ -13,6 +13,11 @@ class Fringe(object):
             res.extend(self._deferred[addr])
         return res
 
+    @property
+    def num_states(self):
+        return len(self.unsat) + len(self.errored) + \
+            len(self.avoided) + len(self.deferred)
+
     def is_empty(self):
         return len(self._deferred) == 0
 

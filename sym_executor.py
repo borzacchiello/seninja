@@ -170,6 +170,13 @@ class SymbolicExecutor(object):
         self.state.set_ip(addr)
         self.llil_ip = current_function.llil.get_instruction_start(addr)
 
+    def __str__(self):
+        return "<SymExecutor id: 0x%x, %d states>" % \
+            (id(self), self.fringe.num_states + 1 if self.state is not None else 0)
+
+    def __repr__(self):
+        return self.__str__()
+
     def _handle_error(self, err):
         if err in {
             ErrorInstruction.DIVISION_BY_ZERO,

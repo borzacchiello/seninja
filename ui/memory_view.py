@@ -71,7 +71,8 @@ class MemoryView(QWidget, DockContextHandler):
 
         self._layout = QVBoxLayout()
         self.button = QPushButton("Monitor Memory")
-        self.button.clicked.connect(self.on_monitor_button_click)
+        self.button.clicked.connect(self._condom_async(
+            self, self.on_monitor_button_click))
 
         self.hexWidget = HexViewWidget(
             menu_handler=self.on_customContextMenuRequested)
@@ -323,11 +324,17 @@ class MemoryView(QWidget, DockContextHandler):
         if self.current_state is None:
             return
         menu = QMenu(self)
-        index = self.hexWidget.view.indexAt(qpoint)
 
         sel_start = self.hexWidget._hsm.start
         sel_end = self.hexWidget._hsm.end
         if sel_start is None:
+            return
+
+        if not self.current_state.mem.is_mapped(
+                self.address_start + sel_start):
+            return
+        if not self.current_state.mem.is_mapped(
+                self.address_start + sel_end):
             return
 
         expr = self.current_state.mem.load(

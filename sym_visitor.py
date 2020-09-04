@@ -46,6 +46,13 @@ class SymbolicVisitor(BNILVisitor):
         super(SymbolicVisitor, self).__init__()
         self.executor = executor
 
+    def __str__(self):
+        return "<SymVisitor @ SymExecutor 0x%x>" % \
+            id(self.executor)
+
+    def __repr__(self):
+        return self.__str__()
+
     def _handle_symbolic_ip(self, expr, max_sol):
         state = self.executor.state
         sols = state.solver.evaluate_upto(expr, max_sol)

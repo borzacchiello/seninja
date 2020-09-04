@@ -7,6 +7,17 @@ class Searcher(object):
         self.avoid = []
         self.executor = executor
 
+    def __str__(self):
+        return "<%s target: %s, %d avoid>" % \
+            (
+                self.__class__.__name__,
+                hex(self.target) if self.target is not None else "None",
+                len(self.avoid)
+            )
+
+    def __repr__(self):
+        return self.__str__()
+
     def set_target(self, target: int):
         self.target = target
 

@@ -15,7 +15,7 @@ class SymFile(object):
             self.file_size = symfile.file_size
 
     def __str__(self):
-        return "<SymFile %s>" % self.filename
+        return "<SymFile %s, size: %s>" % (self.filename, self.file_size)
 
     def __repr__(self):
         return self.__str__()

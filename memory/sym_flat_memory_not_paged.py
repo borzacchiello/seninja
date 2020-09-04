@@ -10,6 +10,12 @@ class MemoryConcreteFlatNotPaged(MemoryAbstract):
         self.values = {}
         self._lazycopy = False
 
+    def __str__(self):
+        return "<SymMemoryFlatNotPaged, %d values>" % len(self.values)
+
+    def __repr__(self):
+        return self.__str__()
+
     def _handle_lazycopy(self):
         if self._lazycopy:
             self._lazycopy = False
