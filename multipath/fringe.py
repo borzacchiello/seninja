@@ -1,3 +1,6 @@
+import random
+
+
 class Fringe(object):
     def __init__(self):
         self.unsat = list()
@@ -43,6 +46,19 @@ class Fringe(object):
         if states:
             self._deferred[addr] = states
         return state
+
+    def get_random_deferred(self):
+        assert not self.is_empty()
+        addresses = list(self._deferred.keys())
+        random.shuffle(addresses)
+        random_address = addresses[0]
+        states = self._deferred[random_address]
+        random.shuffle(states)
+        random_state = states.pop()
+        if not states:
+            del self._deferred[random_address]
+
+        return random_state
 
     def add_deferred(self, state):
         self.last_added = state

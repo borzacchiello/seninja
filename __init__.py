@@ -45,6 +45,7 @@ class TaskInBackground(BackgroundTaskThread):
 
 executor = None
 dfs_searcher = None
+bfs_searcher = None
 searcher_tags = {}
 _stop = False
 _running = False
@@ -110,7 +111,7 @@ def _async_start_se(bv, address):
         return False
 
     def f(tb):
-        global executor, dfs_searcher, _running
+        global executor, bfs_searcher, dfs_searcher, _running
         try:
             executor = SymbolicExecutor(bv, address)
         except Exception as e:
@@ -120,6 +121,7 @@ def _async_start_se(bv, address):
             return
 
         dfs_searcher = searcher.DFSSearcher(executor)
+        bfs_searcher = searcher.BFSSearcher(executor)
         initialize_ui()
         sync_ui(bv)
         enable_widgets()
@@ -146,10 +148,12 @@ def _set_run_target(bv, address):
     tag = func.create_auto_tag(tt, "SENINJA: target address")
     func.add_auto_address_tag(address, tag)
     searcher_tags[address] = tag
-    if address == dfs_searcher.avoid:
+    if address in dfs_searcher.avoid:
         dfs_searcher.avoid.remove(address)
+        bfs_searcher.avoid.remove(address)
 
     dfs_searcher.set_target(address)
+    bfs_searcher.set_target(address)
 
 
 def _set_run_avoid(bv, address):
@@ -168,8 +172,10 @@ def _set_run_avoid(bv, address):
     searcher_tags[address] = tag
     if address == dfs_searcher.target:
         dfs_searcher.target = None
+        bfs_searcher.target = None
 
     dfs_searcher.add_avoid(address)
+    bfs_searcher.add_avoid(address)
 
 
 def _async_run_dfs_searcher(bv):
@@ -205,6 +211,42 @@ def _async_run_dfs_searcher(bv):
     if not _running:
         _running = True
         background_task = TaskInBackground(bv, "seninja: running DFS", f)
+        background_task.start()
+
+
+def _async_run_bfs_searcher(bv):
+    global _running
+    if not __check_executor():
+        return
+    if not bfs_searcher.ready_to_run():
+        log_alert("no target set for searcher")
+        return
+
+    def f(tb):
+        global _running
+        disable_widgets()
+
+        def callback(s):
+            global _stop
+            tb.progress = "seninja: running BFS @ %s" % hex(s.get_ip())
+            if _stop:
+                _stop = False
+                return False
+            return True
+
+        try:
+            bfs_searcher.run(callback)
+        except:
+            print("!ERROR!")
+            print(traceback.format_exc())
+
+        sync_ui(bv, executor._last_error == None)
+        enable_widgets()
+        _running = False
+
+    if not _running:
+        _running = True
+        background_task = TaskInBackground(bv, "seninja: running BFS", f)
         background_task.start()
 
 
@@ -530,6 +572,29 @@ def run_dfs(target: int, avoid: list = None, sync=False):
     return res
 
 
+def run_bfs(target: int, avoid: list = None, sync=False):
+    global _stop
+    if not __check_executor():
+        return
+
+    def callback(s):
+        if _stop:
+            _stop = False
+            return False
+        return True
+
+    bfs_s = searcher.BFSSearcher(executor)
+    bfs_s.set_target(target)
+    if avoid is not None:
+        for a in avoid:
+            bfs_s.add_avoid(a)
+
+    res = bfs_s.run(callback)
+    if sync:
+        sync_ui(executor.state.bv)
+    return res
+
+
 def execute_one_instruction(bv, sync=None):
     if not __check_executor():
         return
@@ -668,6 +733,11 @@ PluginCommand.register(
     "SENinja\\8 - Run\\2 - Run (DFS)",
     "run (target must be set)",
     _async_run_dfs_searcher
+)
+PluginCommand.register(
+    "SENinja\\8 - Run\\3 - Run (BFS)",
+    "run (target must be set)",
+    _async_run_bfs_searcher
 )
 PluginCommand.register(
     "SENinja\\9 - Reset symbolic execution",

@@ -65,3 +65,52 @@ class DFSSearcher(Searcher):
                     break
 
         return res
+
+
+class BFSSearcher(Searcher):
+    def __init__(self, executor):
+        Searcher.__init__(self, executor)
+
+    def _continue_until_branch(self, step_callback):
+        k = self.executor.fringe.last_added
+        i = k
+        while i == k:
+            try:
+                self.executor.execute_one()
+            except Exception as e:
+                print("!ERROR!:")
+                print(traceback.format_exc())
+                return None
+            if not self.executor.state:
+                return None
+            ip = self.executor.state.get_ip()
+            if ip == self.target:
+                return True
+            elif ip in self.avoid:
+                if self.executor.fringe.is_empty():
+                    return None
+                old_state = self.executor.state
+                self.executor.fringe.add_avoided(old_state)
+                self.executor.state = None
+                new_state = self.executor.fringe.get_one_deferred()
+                self.executor.set_current_state(new_state)
+
+            if step_callback is not None:
+                if not step_callback(self.executor.state):
+                    return None
+
+            i = self.executor.fringe.last_added
+
+        return False
+
+    # override
+    def run(self, step_callback=None):
+        while 1:
+            res = self._continue_until_branch(step_callback)
+            if res is None:
+                return None
+            if res:
+                return self.executor.state
+
+            new_state = self.executor.fringe.get_random_deferred()
+            self.executor.set_current_state(new_state)
