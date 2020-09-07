@@ -19,7 +19,7 @@ class Page(object):
         self.dirty = False
         self.mo = MemoryObj(str(addr), bits)
         self._init = init
-        self._lazycopy = False
+        self._lazycopy = 0
 
     def lazy_init(self):
         if self._init is not None:
@@ -35,8 +35,8 @@ class Page(object):
         self.dirty = True
 
         self.lazy_init()
-        if self._lazycopy:
-            self._lazycopy = False
+        if self._lazycopy > 0:
+            self._lazycopy -= 1
             new_page = Page(self.addr, self.size, self.bits)
             new_page.mo = self.mo.copy()
             return new_page.store(index, value)
@@ -50,7 +50,7 @@ class Page(object):
         return self.mo.load(index)
 
     def copy(self):
-        self._lazycopy = True
+        self._lazycopy += 1
         return self
 
 

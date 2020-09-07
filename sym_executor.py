@@ -186,9 +186,10 @@ class SymbolicExecutor(object):
             ErrorInstruction.UNCONSTRAINED_IP,
             ErrorInstruction.UNSAT_STATE
         }:
+            print("WARNING: changing current state due to %s @ 0x%x" %
+                  (err.name, self.state.get_ip()))
             self.state = None
             self._last_error = err
-            print("WARNING: changing current state due to %s" % err.name)
             return
 
         raise Exception("Unknown error")

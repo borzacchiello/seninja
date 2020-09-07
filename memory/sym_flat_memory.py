@@ -13,7 +13,7 @@ class Page(object):
         self.index_bits = index_bits
         self.max_index = 2**index_bits - 1
         self._data = {}
-        self._lazycopy = False
+        self._lazycopy = 0
 
     def read(self, index: int):
         assert 0 <= index <= self.max_index
@@ -24,8 +24,8 @@ class Page(object):
     def write(self, index: int, data: BV):
         assert 0 <= index <= self.max_index
         assert data.size == 8
-        if self._lazycopy:
-            self._lazycopy = False
+        if self._lazycopy > 0:
+            self._lazycopy -= 1
             new_page = Page(self.addr, self.size, self.index_bits)
             new_page._data = deepcopy(self._data)
             return new_page.write(index, data)
@@ -34,7 +34,7 @@ class Page(object):
         return self
 
     def copy(self):
-        self._lazycopy = True
+        self._lazycopy += 1
         return self
 
 
@@ -73,7 +73,6 @@ class MemoryConcreteFlat(MemoryAbstract):
 
         address = address.value
         size = value.size
-
         for i in range((size >> 3) - 1, -1, -1):
             if endness == 'little':
                 addr = address + i
