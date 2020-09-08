@@ -814,17 +814,18 @@ class SymbolicVisitor(BNILVisitor):
         self.executor._wasjmp = True
         return True
 
-        # llil_indexes = expr.targets
+        # ips = expr.targets
         # current_constraint = None
-        # for llil_index in llil_indexes:
-
-        #     dst_ip = curr_fun.llil[llil_index].address
+        # for dst_ip in ips:
+        #     llil_index = self.executor.bncache.get_llil_address(
+        #         curr_fun_name, dst_ip)
         #     if self.executor.state.solver.satisfiable([
         #         destination == dst_ip
         #     ]):
         #         if current_constraint is None:
         #             current_constraint = destination == dst_ip
-        #             self.executor.update_ip(curr_fun, llil_index)
+        #             self.executor.update_ip(
+        #                 curr_fun_name, llil_index)
         #         else:
         #             new_state = self.executor.state.copy()
         #             new_state.solver.add_constraints(

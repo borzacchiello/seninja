@@ -113,7 +113,7 @@ class MemoryView(QWidget, DockContextHandler):
         address = get_int_input("Memory address", "Set Memory Monitor")
         if address is None:
             return
-        address = address & 0xffffffffffffffff # signed to unsigned
+        address = address & 0xffffffffffffffff  # signed to unsigned
 
         self.hexWidget.setEnabled(True)
         self.address_start = address

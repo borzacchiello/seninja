@@ -57,6 +57,27 @@ class BVArray(object):
         self._z3objConcCache = res
         return res
 
+    def _try_build_reduced_array(self, index_min, index_max):
+        if self._z3obj is not None:
+            # symbolic mode
+            return self._z3obj
+        if index_max - index_min >= 2**self.index_width:
+            return self.z3obj
+
+        res = z3.Array(
+            self.name,
+            z3.BitVecSort(self.index_width),
+            z3.BitVecSort(self.value_width)
+        )
+        for i in range(index_min, index_max + 1):
+            if i in self._conc_store:
+                res = z3.Store(
+                    res,
+                    z3.BitVecVal(i, self.index_width),
+                    self._conc_store[i].z3obj
+                )
+        return res
+
     def _switch_to_symbolic(self):
         if self._conc_store is not None:
             assert self._z3obj is None
@@ -161,7 +182,8 @@ class BVArray(object):
         # no need to switch to symbolic mode! (is this right?)
         res = BVExpr(self.value_width,
                      z3.Select(
-                         self.z3obj,
+                         self._try_build_reduced_array(
+                             index.interval.low, index.interval.high),
                          index.z3obj
                      )
                      )

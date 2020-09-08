@@ -10,7 +10,7 @@ class Solver(object):
     def __init__(self, state):
         self.state = state
         self.assertions = []
-        self._solver = z3.Solver()  # z3.Optimize()
+        self._solver = z3.Optimize()  # z3.Solver()
         self._min_cache = OrderedDict()
         self._max_cache = OrderedDict()
         self._eval_cache = OrderedDict()
@@ -32,11 +32,12 @@ class Solver(object):
     def get_path_constraint(self):
         return self.assertions
 
-    def add_constraints(self, *constraints):
+    def add_constraints(self, *constraints, simplify_constraint=True):
         self._invalidate_cache()
         for c in constraints:
             assert isinstance(c, Bool)
-            c = c.simplify()
+            if simplify_constraint:
+                c = c.simplify()
             cz3 = c.z3obj
             if not z3.BoolVal(True).eq(cz3):
                 self._solver.add(cz3)
@@ -124,14 +125,18 @@ class Solver(object):
         return ub
 
     def _max_z3_optimize(self, val: BV):
-        opt = z3.Optimize()
-        for c in self.assertions:
-            opt.add(c.z3obj)
+        # opt = z3.Optimize()
+        # for c in self.assertions:
+        #     opt.add(c.z3obj)
+        # h = opt.maximize(val.z3obj)
+        # assert opt.check().r == 1
+        # res = opt.upper(h).as_long()
 
-        h = opt.maximize(val.z3obj)
-        assert opt.check().r == 1
-        res = opt.upper(h).as_long()
-
+        self._solver.push()
+        h = self._solver.maximize(val.z3obj)
+        assert self._solver.check().r == 1
+        res = self._solver.upper(h).as_long()
+        self._solver.pop()
         return res
 
     def max(self, val: BV):
@@ -142,6 +147,7 @@ class Solver(object):
 
         # res = self._max_binary_search(val)
         res = self._max_z3_optimize(val)
+        val.interval.high = res
 
         self._max_cache[val] = res
         return res
@@ -158,14 +164,18 @@ class Solver(object):
         return lb
 
     def _min_z3_optimize(self, val: BV):
-        opt = z3.Optimize()
-        for c in self.assertions:
-            opt.add(c.z3obj)
+        # opt = z3.Optimize()
+        # for c in self.assertions:
+        #     opt.add(c.z3obj)
+        # h = opt.minimize(val.z3obj)
+        # assert opt.check().r == 1
+        # res = opt.lower(h).as_long()
 
-        h = opt.minimize(val.z3obj)
-        assert opt.check().r == 1
-        res = opt.lower(h).as_long()
-
+        self._solver.push()
+        h = self._solver.minimize(val.z3obj)
+        assert self._solver.check().r == 1
+        res = self._solver.lower(h).as_long()
+        self._solver.pop()
         return res
 
     def min(self, val: BV):
@@ -176,6 +186,7 @@ class Solver(object):
 
         # res = self._min_binary_search(val)
         res = self._min_z3_optimize(val)
+        val.interval.low = res
 
         self._min_cache[val] = res
         return res
@@ -218,7 +229,7 @@ class Solver(object):
             i += 1
 
     def copy(self, state, fast_copy=False):
-        # fast_copy = True  # deepcopy seems broken
+        fast_copy = True  # deepcopy seems broken
 
         res = Solver(state)
         if not fast_copy:
@@ -229,7 +240,7 @@ class Solver(object):
             for a in self._solver.assertions():
                 res._solver.add(a)
 
-        res.assertions = deepcopy(self.assertions)
+        res.assertions = self.assertions[:]
         self._copy_cache(res, 3)
         return res
 
