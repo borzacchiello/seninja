@@ -157,11 +157,20 @@ class RegisterView(QWidget, DockContextHandler):
             "Concretize") if not isinstance(expr, BVV) else None
         copy = menu.addAction("Copy to clipboard") if not isinstance(
             expr, BVS) else None
+        alloc_symb_buffer = menu.addAction("Allocate symb buffer")
 
         action = menu.exec_(self._table.viewport().mapToGlobal(pos))
         if action is None:
             return
 
+        if action == alloc_symb_buffer:
+            buff_p = BVV(self.current_state.mem.allocate(1),
+                         self.current_state.arch.bits())
+            setattr(self.current_state.regs,
+                    self.index_to_reg[row_idx],
+                    buff_p)
+            self.set_reg_value(
+                self.index_to_reg[row_idx], buff_p, RegisterView.dirty_color)
         if action == show_reg_expr:
             show_message_box("Reg Expression", str(expr.z3obj.sexpr()))
         if action == make_reg_symb:
