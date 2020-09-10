@@ -9,6 +9,15 @@ class Fringe(object):
         self._deferred = dict()
         self.last_added = None
 
+    def __str__(self):
+        return "<Fringe id: 0x%x, unsat: %d, errored: %d, avoided: %d, deferred: %d>" % (
+            id(self), len(self.unsat), len(self.errored), len(
+                self.avoided), len(self.deferred)
+        )
+
+    def __repr__(self):
+        return self.__str__()
+
     @property
     def deferred(self):
         res = list()

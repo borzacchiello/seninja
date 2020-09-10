@@ -9,10 +9,24 @@ def str_to_int(s):
     return int(res, 16)
 
 
-def str_to_bv_list(s):
+def str_to_bv_list(s, terminator=False):
     res = list()
     for c in s:
         res.append(BVV(ord(c), 8))
+    if terminator:
+        res += [BVV(0, 8)]
+    return res
+
+
+def str_to_bv(s, terminator=False):
+    if len(s) == 0:
+        return None
+
+    res = BVV(ord(s[0]), 8)
+    for c in s[1:]:
+        res = res.Concat(BVV(ord(c), 8))
+    if terminator:
+        res = res.Concat(BVV(0, 8))
     return res
 
 

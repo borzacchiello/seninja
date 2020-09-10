@@ -19,7 +19,7 @@ from .utility.string_util import (
 )
 from .sym_state import State
 from .models import function_models as seninja_models
-from .expr import *
+from .expr import BVV, BVS, BV, And, Or, ITE
 from .multipath import searcher
 from .ui import (
     ui_set_arch,
@@ -141,7 +141,7 @@ def _set_run_target(bv, address):
     address = get_address_after_merge(bv, address)
     func = executor.bncache.get_function(address)
     if address in searcher_tags:
-        bv.remove_auto_data_tag(address, searcher_tags[address])
+        func.remove_auto_address_tag(address, searcher_tags[address])
         del searcher_tags[address]
 
     tt = get_target_tt(bv)
@@ -163,7 +163,7 @@ def _set_run_avoid(bv, address):
     address = get_address_after_merge(bv, address)
     func = executor.bncache.get_function(address)
     if address in searcher_tags:
-        bv.remove_auto_data_tag(address, searcher_tags[address])
+        func.remove_auto_address_tag(address, searcher_tags[address])
         del searcher_tags[address]
 
     tt = get_avoid_tt(bv)
@@ -481,8 +481,8 @@ def _async_reset_se(bv):
             func.remove_auto_address_tag(addr, tag)
 
         disable_widgets()
-        executor.reset()
         reset_ui()
+        executor.reset()
         executor = None
         _running = False
 
@@ -526,7 +526,7 @@ def continue_until_branch(sync=False):
 
     _stop = False
     if sync:
-        sync_ui(executor.state.bv)
+        sync_ui(executor.view)
     return executor.state, executor.fringe.last_added
 
 
@@ -545,7 +545,7 @@ def continue_until_address(address, sync=False):
         ip = executor.state.get_ip()
 
     if sync:
-        sync_ui(executor.state.bv)
+        sync_ui(executor.view)
     return executor.state
 
 
@@ -568,7 +568,7 @@ def run_dfs(target: int, avoid: list = None, sync=False):
 
     res = dfs_s.run(callback)
     if sync:
-        sync_ui(executor.state.bv)
+        sync_ui(executor.view)
     return res
 
 
@@ -591,7 +591,7 @@ def run_bfs(target: int, avoid: list = None, sync=False):
 
     res = bfs_s.run(callback)
     if sync:
-        sync_ui(executor.state.bv)
+        sync_ui(executor.view)
     return res
 
 
@@ -625,7 +625,7 @@ def change_current_state(address_or_state, sync=False):
         return
 
     if sync:
-        sync_ui(state.bv)
+        sync_ui(executor.view)
     executor.set_current_state(state)
 
 
@@ -633,6 +633,35 @@ def focus_current_state(bv):
     if not __check_executor():
         return
     bv.file.navigate(bv.file.view, executor.state.get_ip())
+
+
+def setup_argv(*args, sync=False):
+    if not __check_executor():
+        return
+
+    filename = executor.view.file.filename
+    state = executor.state
+    argv_p = BVV(state.mem.allocate((len(args) + 1) *
+                                    (state.arch.bits() // 8)), state.arch.bits())
+    argv_1_p = BVV(state.mem.allocate(len(filename)), state.arch.bits())
+    for i, b in enumerate(str_to_bv_list(filename, terminator=True)):
+        state.mem.store(argv_1_p + i, b)
+    state.mem.store(argv_p, argv_1_p, 'little')
+
+    for i, arg in enumerate(args):
+        if not isinstance(arg, BV):
+            print("ERROR: %s is not a BitVector" % str(arg))
+            return
+        argv_el_p = BVV(state.mem.allocate(
+            arg.size // 8 + 1), state.arch.bits())
+        state.mem.store(argv_el_p, arg)
+        state.mem.store(argv_p + (i + 1) *
+                        (state.arch.bits() // 8), argv_el_p, 'little')
+
+    state.regs.rdi = BVV(len(args) + 1, state.arch.bits())
+    state.regs.rsi = argv_p
+    if sync:
+        sync_ui(executor.view)
 
 
 def reset_se(bv=None):
