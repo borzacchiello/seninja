@@ -15,7 +15,8 @@ from .utility.string_util import (
     str_to_int,
     as_bytes,
     get_byte,
-    str_to_bv_list
+    str_to_bv_list,
+    str_to_bv
 )
 from .sym_state import State
 from .models import function_models as seninja_models
@@ -635,7 +636,7 @@ def focus_current_state(bv):
     bv.file.navigate(bv.file.view, executor.state.get_ip())
 
 
-def setup_argv(*args, sync=False):
+def setup_argv(*args, argc_loc=None, argv_loc=None, sync=False):
     if not __check_executor():
         return
 
@@ -658,10 +659,44 @@ def setup_argv(*args, sync=False):
         state.mem.store(argv_p + (i + 1) *
                         (state.arch.bits() // 8), argv_el_p, 'little')
 
-    state.regs.rdi = BVV(len(args) + 1, state.arch.bits())
-    state.regs.rsi = argv_p
+    argc = BVV(len(args) + 1, state.arch.bits())
+    if argc_loc is None:
+        state.regs.rdi = argc
+    elif isinstance(argc_loc, str):
+        setattr(state.regs, argc_loc, argc)
+    elif isinstance(argc_loc, BV):
+        state.mem.store(argc_loc, argc, state.arch.endness())
+    else:
+        print("ERROR: invalid argc_loc %s" % str(argc_loc))
+        return
+
+    if argv_loc is None:
+        state.regs.rsi = argv_p
+    elif isinstance(argv_loc, str):
+        setattr(state.regs, argc_loc, argv_p)
+    elif isinstance(argv_loc, BV):
+        state.mem.store(argv_loc, argv_p, state.arch.endness())
+    else:
+        print("ERROR: invalid argv_loc %s" % str(argv_loc))
+        return
+
     if sync:
         sync_ui(executor.view)
+
+
+def constraint_bv(bv_list: list, pattern: str):
+    if not __check_executor():
+        return
+
+    state = executor.state
+    for bv in bv_list:
+        assert bv.size == 8
+
+        expr = Or(*list(map(lambda x: bv == BVV(x, 8), pattern)))
+        print(expr)
+        state.solver.add_constraints(
+            expr
+        )
 
 
 def reset_se(bv=None):

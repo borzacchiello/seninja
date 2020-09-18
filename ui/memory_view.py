@@ -15,7 +15,7 @@ from PySide2.QtCore import Qt, QMimeData
 from PySide2.QtGui import QBrush, QColor, QStandardItemModel, QStandardItem
 from PySide2.QtWidgets import (
     QApplication,
-    QVBoxLayout,
+    QGridLayout,
     QWidget,
     QComboBox,
     QTableWidget,
@@ -67,20 +67,28 @@ class MemoryView(QWidget, DockContextHandler):
         self.changes = set()
         self.tab_name = None
 
+        self.monitor_history = list()
+
         self.symb_idx = 0
 
-        self._layout = QVBoxLayout()
+        self._layout = QGridLayout()
         self.button = QPushButton("Monitor Memory")
+        self.button.setStyleSheet("margin-left: 10px;")
         self.button.clicked.connect(self._condom_async(
             self, self.on_monitor_button_click))
+        self.back_button = QPushButton("Back")
+        self.back_button.setStyleSheet("margin-right: 10px;")
+        self.back_button.clicked.connect(self._condom_async(
+            self, self.on_back_click))
 
         self.hexWidget = HexViewWidget(
             menu_handler=self.on_customContextMenuRequested)
         self.hexWidget.data_edited.connect(self._handle_data_edited)
         self.hexWidget.setEnabled(False)
 
-        self._layout.addWidget(self.button)
-        self._layout.addWidget(self.hexWidget)
+        self._layout.addWidget(self.button, 0, 0, 1, 4)
+        self._layout.addWidget(self.back_button, 0, 4, 1, 1)
+        self._layout.addWidget(self.hexWidget, 1, 0, 1, 5)
         self._layout.setContentsMargins(0, 0, 0, 0)
 
         self.setMaximumWidth(self.hexWidget.optimal_width + 25)
@@ -114,6 +122,23 @@ class MemoryView(QWidget, DockContextHandler):
         if address is None:
             return
         address = address & 0xffffffffffffffff  # signed to unsigned
+        self.monitor_history.append(address)
+
+        self.hexWidget.setEnabled(True)
+        self.address_start = address
+        self.size = 512
+        self.current_state.mem.register_store_hook(self._monitor_changes)
+        self.update_mem(self.current_state)
+
+    def on_back_click(self):
+        if self.current_state is None:
+            return
+
+        if len(self.monitor_history) < 2:
+            return
+
+        self.monitor_history.pop()
+        address = self.monitor_history[-1]
 
         self.hexWidget.setEnabled(True)
         self.address_start = address

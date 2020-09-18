@@ -5,12 +5,13 @@ from collections import OrderedDict
 from .utility.expr_wrap_util import symbolic
 from .expr import BV, BVV, Bool, And, Or
 
+USE_OPT_SOLVER = 0
 
 class Solver(object):
     def __init__(self, state):
         self.state = state
         self.assertions = []
-        self._solver = z3.Optimize()  # z3.Solver()
+        self._solver = z3.Optimize() if USE_OPT_SOLVER else z3.Solver()
         self._min_cache = OrderedDict()
         self._max_cache = OrderedDict()
         self._eval_cache = OrderedDict()
@@ -125,18 +126,19 @@ class Solver(object):
         return ub
 
     def _max_z3_optimize(self, val: BV):
-        # opt = z3.Optimize()
-        # for c in self.assertions:
-        #     opt.add(c.z3obj)
-        # h = opt.maximize(val.z3obj)
-        # assert opt.check().r == 1
-        # res = opt.upper(h).as_long()
-
-        self._solver.push()
-        h = self._solver.maximize(val.z3obj)
-        assert self._solver.check().r == 1
-        res = self._solver.upper(h).as_long()
-        self._solver.pop()
+        if USE_OPT_SOLVER:
+            self._solver.push()
+            h = self._solver.maximize(val.z3obj)
+            assert self._solver.check().r == 1
+            res = self._solver.upper(h).as_long()
+            self._solver.pop()
+        else:
+            opt = z3.Optimize()
+            for c in self.assertions:
+                opt.add(c.z3obj)
+            h = opt.maximize(val.z3obj)
+            assert opt.check().r == 1
+            res = opt.upper(h).as_long()
         return res
 
     def max(self, val: BV):
@@ -164,18 +166,19 @@ class Solver(object):
         return lb
 
     def _min_z3_optimize(self, val: BV):
-        # opt = z3.Optimize()
-        # for c in self.assertions:
-        #     opt.add(c.z3obj)
-        # h = opt.minimize(val.z3obj)
-        # assert opt.check().r == 1
-        # res = opt.lower(h).as_long()
-
-        self._solver.push()
-        h = self._solver.minimize(val.z3obj)
-        assert self._solver.check().r == 1
-        res = self._solver.lower(h).as_long()
-        self._solver.pop()
+        if USE_OPT_SOLVER:
+            self._solver.push()
+            h = self._solver.minimize(val.z3obj)
+            assert self._solver.check().r == 1
+            res = self._solver.lower(h).as_long()
+            self._solver.pop()
+        else:
+            opt = z3.Optimize()
+            for c in self.assertions:
+                opt.add(c.z3obj)
+            h = opt.minimize(val.z3obj)
+            assert opt.check().r == 1
+            res = opt.lower(h).as_long()
         return res
 
     def min(self, val: BV):
@@ -234,7 +237,7 @@ class Solver(object):
         res = Solver(state)
         if not fast_copy:
             # print("copying the solver slow")
-            res._solver = deepcopy(self._solver)
+            res._solver = self._solver.__deepcopy__()
             # print("copying done")
         else:
             for a in self._solver.assertions():

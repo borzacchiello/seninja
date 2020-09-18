@@ -317,6 +317,12 @@ class SymbolicExecutor(object):
                 check_unsupported(res, expr)
                 if check_error(res):
                     self._handle_error(res)
+            else:
+                self._wasjmp = True
+                self.ip = self.ip + self.view.get_instruction_length(self.ip)
+                self.state.set_ip(self.ip)
+                self.llil_ip = self.bncache.get_function(
+                    self.ip).llil.get_instruction_start(self.ip)
 
         if self.state is None:
             if self.fringe.is_empty():

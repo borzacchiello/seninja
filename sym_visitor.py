@@ -853,22 +853,27 @@ class SymbolicVisitor(BNILVisitor):
 
         save_unsat = self.executor.bncache.get_setting("save_unsat") == 'true'
 
-        if isinstance(condition, BV):
-            assert condition.size == 1
-            condition = condition == 1
-        curr_fun_name = self.executor.bncache.get_function_name(
-            self.executor.ip)
-
         true_sat = True
         false_sat = True
-        if not self.executor.state.solver.satisfiable(extra_constraints=[
-            condition
-        ]):
-            true_sat = False
-        if not self.executor.state.solver.satisfiable(extra_constraints=[
-            condition.Not()
-        ]):
-            false_sat = False
+        if isinstance(condition, BV):
+            # Fast path
+            assert condition.size == 1
+            condition = condition == 1
+
+            true_sat = condition.value == 1
+            false_sat = condition.value == 0
+        else:
+            if not self.executor.state.solver.satisfiable(extra_constraints=[
+                condition
+            ]):
+                true_sat = False
+            if not self.executor.state.solver.satisfiable(extra_constraints=[
+                condition.Not()
+            ]):
+                false_sat = False
+
+        curr_fun_name = self.executor.bncache.get_function_name(
+            self.executor.ip)
 
         if true_sat and false_sat:
             true_state = self.executor.state
