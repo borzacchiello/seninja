@@ -661,8 +661,10 @@ def setup_argv(*args, argc_loc=None, argv_loc=None, sync=False):
 
     argc = BVV(len(args) + 1, state.arch.bits())
     if argc_loc is None:
-        state.regs.rdi = argc
-    elif isinstance(argc_loc, str):
+        current_function = executor.bncache.get_function(executor.ip)
+        argc_loc = current_function.calling_convention.int_arg_regs[0]
+
+    if isinstance(argc_loc, str):
         setattr(state.regs, argc_loc, argc)
     elif isinstance(argc_loc, BV):
         state.mem.store(argc_loc, argc, state.arch.endness())
@@ -671,8 +673,10 @@ def setup_argv(*args, argc_loc=None, argv_loc=None, sync=False):
         return
 
     if argv_loc is None:
-        state.regs.rsi = argv_p
-    elif isinstance(argv_loc, str):
+        current_function = executor.bncache.get_function(executor.ip)
+        argv_loc = current_function.calling_convention.int_arg_regs[1]
+
+    if isinstance(argv_loc, str):
         setattr(state.regs, argv_loc, argv_p)
     elif isinstance(argv_loc, BV):
         state.mem.store(argv_loc, argv_p, state.arch.endness())

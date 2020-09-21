@@ -39,19 +39,10 @@ class DFSSearcher(Searcher):
     def run(self, step_callback=None):
         res = None
         while 1:
-            try:
-                self.executor.execute_one()
-            except Exception as e:
-                print("!ERROR!:")
-                print(traceback.format_exc())
-                break
             if not self.executor.state:
                 break
             ip = self.executor.state.get_ip()
-            if ip == self.target:
-                res = self.executor.state
-                break
-            elif ip in self.avoid:
+            if ip in self.avoid:
                 if self.executor.fringe.is_empty():
                     break
                 old_state = self.executor.state
@@ -59,6 +50,17 @@ class DFSSearcher(Searcher):
                 self.executor.state = None
                 new_state = self.executor.fringe.get_one_deferred()
                 self.executor.set_current_state(new_state)
+            ip = self.executor.state.get_ip()
+            if ip == self.target:
+                res = self.executor.state
+                break
+
+            try:
+                self.executor.execute_one()
+            except Exception as e:
+                print("!ERROR!:")
+                print(traceback.format_exc())
+                break
 
             if step_callback is not None:
                 if not step_callback(self.executor.state):
@@ -75,18 +77,10 @@ class BFSSearcher(Searcher):
         k = self.executor.fringe.last_added
         i = k
         while i == k:
-            try:
-                self.executor.execute_one()
-            except Exception as e:
-                print("!ERROR!:")
-                print(traceback.format_exc())
-                return None
             if not self.executor.state:
                 return None
             ip = self.executor.state.get_ip()
-            if ip == self.target:
-                return True
-            elif ip in self.avoid:
+            if ip in self.avoid:
                 if self.executor.fringe.is_empty():
                     return None
                 old_state = self.executor.state
@@ -94,6 +88,16 @@ class BFSSearcher(Searcher):
                 self.executor.state = None
                 new_state = self.executor.fringe.get_one_deferred()
                 self.executor.set_current_state(new_state)
+            ip = self.executor.state.get_ip()
+            if ip == self.target:
+                return True
+
+            try:
+                self.executor.execute_one()
+            except Exception as e:
+                print("!ERROR!:")
+                print(traceback.format_exc())
+                return None
 
             if step_callback is not None:
                 if not step_callback(self.executor.state):

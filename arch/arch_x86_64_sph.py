@@ -12,10 +12,11 @@ class ArchX8664SPH(ArchX86SPH):
         self._vpshufb_idx = 0
 
     def cpuid_handler(self, sv, parameters):
-        sv.state.regs.rax = BVV(0x00870f10, 64)
-        sv.state.regs.rbx = BVV(0x010c0800, 64)
-        sv.state.regs.rcx = BVV(0x7ed8320b, 64)
-        sv.state.regs.rdx = BVV(0x178bfbff, 64)
+        return self.cpuid_util(sv, 64)
+
+    def xgetbv_handler(self, sv, parameters):
+        sv.state.regs.rax = BVV(7, 64)
+        sv.state.regs.rdx = BVV(0, 64)
         return True
 
     # --- AVX2 ---

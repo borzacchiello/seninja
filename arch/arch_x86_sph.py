@@ -78,11 +78,45 @@ class ArchX86SPH(SpecialInstructionHandler):
         )
         return True
 
+    def cpuid_util(self, sv, bits):
+        dst_eax = 'eax' if bits == 32 else 'rax'
+        dst_ebx = 'ebx' if bits == 32 else 'rbx'
+        dst_ecx = 'ecx' if bits == 32 else 'rcx'
+        dst_edx = 'edx' if bits == 32 else 'rdx'
+
+        eax_v = sv.state.regs.eax
+        ecx_v = sv.state.regs.ecx
+        if not isinstance(eax_v, BVV):
+            raise Exception("cpuid: symbolic eax")
+        if not isinstance(ecx_v, BVV):
+            raise Exception("cpuid: symbolic ecx")
+        eax_v = eax_v.value
+        ecx_v = ecx_v.value
+        if eax_v == 0 and ecx_v == 0:
+            setattr(sv.state.regs, dst_eax, BVV(0x00000010, bits))
+            setattr(sv.state.regs, dst_ebx, BVV(0x68747541, bits))
+            setattr(sv.state.regs, dst_ecx, BVV(0x444d4163, bits))
+            setattr(sv.state.regs, dst_edx, BVV(0x69746e65, bits))
+        elif eax_v == 1 and ecx_v == 0:
+            setattr(sv.state.regs, dst_eax, BVV(0x00870f10, bits))
+            setattr(sv.state.regs, dst_ebx, BVV(0x000c0800, bits))
+            setattr(sv.state.regs, dst_ecx, BVV(0x7ed8320b, bits))
+            setattr(sv.state.regs, dst_edx, BVV(0x178bfbff, bits))
+        elif eax_v == 7 and ecx_v == 0:
+            setattr(sv.state.regs, dst_eax, BVV(0x00000000, bits))
+            setattr(sv.state.regs, dst_ebx, BVV(0x219c91a9, bits))
+            setattr(sv.state.regs, dst_ecx, BVV(0x00400004, bits))
+            setattr(sv.state.regs, dst_edx, BVV(0x00000000, bits))
+        else:
+            raise Exception("cpuid: unsupported (eax, ecx) value (%d, %d)" % (eax_v, ecx_v))
+        return True
+
     def cpuid_handler(self, sv, parameters):
-        sv.state.regs.eax = BVV(0x00870f10, 32)
-        sv.state.regs.ebx = BVV(0x010c0800, 32)
-        sv.state.regs.ecx = BVV(0x7ed8320b, 32)
-        sv.state.regs.edx = BVV(0x178bfbff, 32)
+        return self.cpuid_util(sv, 32)
+
+    def xgetbv_handler(self, sv, parameters):
+        sv.state.regs.eax = BVV(7, 32)
+        sv.state.regs.edx = BVV(0, 32)
         return True
 
     def paddb_handler(self, sv, parameters):
