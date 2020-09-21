@@ -363,6 +363,14 @@ class BVV(BV):
         self.value = value & self._mask
         self._signMask = 2 << (size-1-1) if size > 1 else 0
 
+    def as_bytes(self):
+        assert self.size % 8 == 0
+        res = b""
+        for i in range(0, self.size, 8):
+            bv = self.Extract(i+8-1, i)
+            res = bytes([bv.value]) + res
+        return res
+
     def simplify(self):
         return self
 

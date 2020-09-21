@@ -684,6 +684,21 @@ def setup_argv(*args, argc_loc=None, argv_loc=None, sync=False):
         sync_ui(executor.view)
 
 
+def constraint_alphanumeric_string(bv):
+    if not __check_executor():
+        return
+
+    state = executor.state
+    for bv in split_bv_in_list(bv, 8):
+        state.solver.add_constraints(
+            Or(
+                And(bv >= ord("a"), bv <= ord("z")),
+                And(bv >= ord("A"), bv <= ord("Z")),
+                And(bv >= ord("0"), bv <= ord("9"))
+            )
+        )
+
+
 def constraint_bv(bv_list: list, pattern: str):
     if not __check_executor():
         return
