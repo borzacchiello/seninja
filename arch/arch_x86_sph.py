@@ -78,6 +78,13 @@ class ArchX86SPH(SpecialInstructionHandler):
         )
         return True
 
+    def cpuid_handler(self, sv, parameters):
+        sv.state.regs.eax = BVV(0x00870f10, 32)
+        sv.state.regs.ebx = BVV(0x010c0800, 32)
+        sv.state.regs.ecx = BVV(0x7ed8320b, 32)
+        sv.state.regs.edx = BVV(0x178bfbff, 32)
+        return True
+
     def paddb_handler(self, sv, parameters):
         return False
 

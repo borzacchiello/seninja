@@ -11,6 +11,13 @@ class ArchX8664SPH(ArchX86SPH):
         self._vpermd_idx = 0
         self._vpshufb_idx = 0
 
+    def cpuid_handler(self, sv, parameters):
+        sv.state.regs.rax = BVV(0x00870f10, 64)
+        sv.state.regs.rbx = BVV(0x010c0800, 64)
+        sv.state.regs.rcx = BVV(0x7ed8320b, 64)
+        sv.state.regs.rdx = BVV(0x178bfbff, 64)
+        return True
+
     # --- AVX2 ---
     def vmovdqu_handler(self, sv, parameters):
         dst_p = parameters[0]
