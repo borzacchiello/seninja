@@ -647,7 +647,7 @@ def setup_argv(*args, argc_loc=None, argv_loc=None, sync=False):
     argv_1_p = BVV(state.mem.allocate(len(filename)), state.arch.bits())
     for i, b in enumerate(str_to_bv_list(filename, terminator=True)):
         state.mem.store(argv_1_p + i, b)
-    state.mem.store(argv_p, argv_1_p, 'little')
+    state.mem.store(argv_p, argv_1_p, state.arch.endness())
 
     for i, arg in enumerate(args):
         if not isinstance(arg, BV):
@@ -657,7 +657,7 @@ def setup_argv(*args, argc_loc=None, argv_loc=None, sync=False):
             arg.size // 8 + 1), state.arch.bits())
         state.mem.store(argv_el_p, arg)
         state.mem.store(argv_p + (i + 1) *
-                        (state.arch.bits() // 8), argv_el_p, 'little')
+                        (state.arch.bits() // 8), argv_el_p, state.arch.endness())
 
     argc = BVV(len(args) + 1, state.arch.bits())
     if argc_loc is None:
@@ -673,7 +673,7 @@ def setup_argv(*args, argc_loc=None, argv_loc=None, sync=False):
     if argv_loc is None:
         state.regs.rsi = argv_p
     elif isinstance(argv_loc, str):
-        setattr(state.regs, argc_loc, argv_p)
+        setattr(state.regs, argv_loc, argv_p)
     elif isinstance(argv_loc, BV):
         state.mem.store(argv_loc, argv_p, state.arch.endness())
     else:
