@@ -123,9 +123,6 @@ def _async_start_se(bv, address):
 
         dfs_searcher = searcher.DFSSearcher(executor)
         bfs_searcher = searcher.BFSSearcher(executor)
-        initialize_ui()
-        sync_ui(bv)
-        enable_widgets()
         _running = False
 
     if not _running:
@@ -133,6 +130,11 @@ def _async_start_se(bv, address):
         background_task = TaskInBackground(
             bv, "seninja: starting symbolic execution", f)
         background_task.start()
+        background_task.join()
+
+        initialize_ui()
+        sync_ui(bv)
+        enable_widgets()
 
 
 def _set_run_target(bv, address):
@@ -481,14 +483,16 @@ def _async_reset_se(bv):
             func = executor.bncache.get_function(addr)
             func.remove_auto_address_tag(addr, tag)
 
-        disable_widgets()
-        reset_ui()
         executor.reset()
         executor = None
         _running = False
 
     if not _running:
         _running = True
+
+        disable_widgets()
+        reset_ui()
+
         background_task = TaskInBackground(
             bv, "seninja: resetting symbolic execution", f)
         background_task.start()
