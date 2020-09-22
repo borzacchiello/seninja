@@ -10,7 +10,7 @@ from .models.function_models import library_functions
 from .utility.expr_wrap_util import (
     bvv_from_bytes, symbolic
 )
-from .expr import BV, BVV, BVS, Bool, ITE
+from .expr import BV, BVV, BVS, Bool, BoolV, ITE
 from .utility.bninja_util import (
     get_imported_functions_and_addresses,
     find_os,
@@ -856,12 +856,14 @@ class SymbolicVisitor(BNILVisitor):
         true_sat = True
         false_sat = True
         if isinstance(condition, BV):
-            # Fast path
             assert condition.size == 1
             condition = condition == 1
 
-            true_sat = condition.value == 1
-            false_sat = condition.value == 0
+        if isinstance(condition, BoolV):
+            # Fast path
+            true_sat = condition.value
+            false_sat = not condition.value
+            print(true_sat, false_sat)
         else:
             if not self.executor.state.solver.satisfiable(extra_constraints=[
                 condition
