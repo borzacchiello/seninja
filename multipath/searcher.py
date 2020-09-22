@@ -36,8 +36,8 @@ class DFSSearcher(Searcher):
         Searcher.__init__(self, executor)
 
     # override
-    def run(self, step_callback=None):
-        res = None
+    def run(self, step_callback=None, findall=False):
+        res = []
         while 1:
             if not self.executor.state:
                 break
@@ -52,8 +52,12 @@ class DFSSearcher(Searcher):
                 self.executor.set_current_state(new_state)
             ip = self.executor.state.get_ip()
             if ip == self.target:
-                res = self.executor.state
-                break
+                res.append(self.executor.state)
+                if not findall or self.executor.fringe.is_empty():
+                    break
+                self.executor.state = None
+                new_state = self.executor.fringe.get_one_deferred()
+                self.executor.set_current_state(new_state)
 
             try:
                 self.executor.execute_one()
@@ -66,7 +70,14 @@ class DFSSearcher(Searcher):
                 if not step_callback(self.executor.state):
                     break
 
-        return res
+        if not findall:
+            return res[0] if len(res) > 0 else None
+
+        state_res = res[0]
+        self.executor.set_current_state(state_res)
+        for state in res[1:]:
+            self.executor.fringe.add_deferred(state)
+        return state_res
 
 
 class BFSSearcher(Searcher):

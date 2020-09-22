@@ -202,7 +202,43 @@ def _async_run_dfs_searcher(bv):
             return True
 
         try:
-            dfs_searcher.run(callback)
+            dfs_searcher.run(step_callback=callback)
+        except:
+            print("!ERROR!")
+            print(traceback.format_exc())
+
+        sync_ui(bv, executor._last_error == None)
+        enable_widgets()
+        _running = False
+
+    if not _running:
+        _running = True
+        background_task = TaskInBackground(bv, "seninja: running DFS", f)
+        background_task.start()
+
+
+def _async_run_dfs_searcher_findall(bv):
+    global _running
+    if not __check_executor():
+        return
+    if not dfs_searcher.ready_to_run():
+        log_alert("no target set for searcher")
+        return
+
+    def f(tb):
+        global _running
+        disable_widgets()
+
+        def callback(s):
+            global _stop
+            tb.progress = "seninja: running DFS @ %s" % hex(s.get_ip())
+            if _stop:
+                _stop = False
+                return False
+            return True
+
+        try:
+            dfs_searcher.run(step_callback=callback, findall=True)
         except:
             print("!ERROR!")
             print(traceback.format_exc())
@@ -822,7 +858,12 @@ PluginCommand.register(
     _async_run_dfs_searcher
 )
 PluginCommand.register(
-    "SENinja\\8 - Run\\3 - Run (BFS)",
+    "SENinja\\8 - Run\\3 - Run (DFS) findall",
+    "run (target must be set)",
+    _async_run_dfs_searcher_findall
+)
+PluginCommand.register(
+    "SENinja\\8 - Run\\4 - Run (BFS)",
     "run (target must be set)",
     _async_run_bfs_searcher
 )
