@@ -84,6 +84,7 @@ class RegisterView(QWidget, DockContextHandler):
     def reset(self):
         self.tab_name = None
         self.arch = None
+        self.reg_to_index = dict()
         self.symb_idx = 0
         self._table.setRowCount(0)
         self.hide()
