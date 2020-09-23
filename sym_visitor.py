@@ -868,7 +868,6 @@ class SymbolicVisitor(BNILVisitor):
             # Fast path
             true_sat = condition.value
             false_sat = not condition.value
-            print(true_sat, false_sat)
         else:
             if not self.executor.state.solver.satisfiable(extra_constraints=[
                 condition

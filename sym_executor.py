@@ -316,10 +316,6 @@ class SymbolicExecutor(object):
             ):
                 expr = self.bncache.get_llil(func_name, self.llil_ip)
                 res = self.visitor.visit(expr)
-
-                if res is None:
-                    raise Exception("")
-
                 check_unsupported(res, expr)
                 if check_error(res):
                     self._handle_error(res)
