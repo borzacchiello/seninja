@@ -8,3 +8,4 @@ class ErrorInstruction(Enum):
     NO_DEST = 3
     UNCONSTRAINED_IP = 4
     UNSAT_STATE = 5
+    EXITED_STATE = 6

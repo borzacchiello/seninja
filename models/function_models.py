@@ -30,6 +30,7 @@ library_functions = {
     'time':             models_other.time_handler,
     'stat':             models_unistd.stat_handler,
     '__xstat':          models_unistd.xstat_handler,
+    'exit':             models_libc.exit_handler,
 
     # concrete models
     'strtoul':          models_libc.strtoul_handler,

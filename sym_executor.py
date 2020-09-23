@@ -178,13 +178,15 @@ class SymbolicExecutor(object):
         return self.__str__()
 
     def _handle_error(self, err):
+        # TODO use exceptions... this thing is horrible
         if err in {
             ErrorInstruction.DIVISION_BY_ZERO,
             ErrorInstruction.UNMAPPED_READ,
             ErrorInstruction.UNMAPPED_WRITE,
             ErrorInstruction.NO_DEST,
             ErrorInstruction.UNCONSTRAINED_IP,
-            ErrorInstruction.UNSAT_STATE
+            ErrorInstruction.UNSAT_STATE,
+            ErrorInstruction.EXITED_STATE
         }:
             print("WARNING: changing current state due to %s @ 0x%x" %
                   (err.name, self.state.get_ip()))
@@ -197,6 +199,9 @@ class SymbolicExecutor(object):
     def put_in_deferred(self, state):
         self.fringe.add_deferred(state)
 
+    def put_in_exited(self, state):
+        self.fringe.add_exited(state)
+
     def put_in_unsat(self, state):
         save_unsat = self.bncache.get_setting("save_unsat") == 'true'
         if save_unsat:
@@ -208,6 +213,7 @@ class SymbolicExecutor(object):
         )
 
     def set_colors(self, reset=False):
+        # TODO write an UI manager, this does not belong to the executor
         old_ip = self._last_colored_ip
         if old_ip is not None:
             old_func = self.bncache.get_function(old_ip)

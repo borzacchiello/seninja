@@ -17,6 +17,7 @@ from .utility.bninja_util import (
     parse_disasm_str
 )
 from .utility.binary_ninja_cache import BNCache
+from .utility.models_util import ExitException
 from .memory.sym_memory import InitData
 from .multipath.fringe import Fringe
 from .utility.error_codes import ErrorInstruction
@@ -644,15 +645,19 @@ class SymbolicVisitor(BNILVisitor):
 
         # check if we have an handler
         if dest_fun_name in library_functions:
-            res = library_functions[dest_fun_name](
-                self.executor.state, self.executor.view)
+            try:
+                res = library_functions[dest_fun_name](
+                    self.executor.state, self.executor.view)
+            except ExitException:
+                self.executor.put_in_exited(self.executor.state)
+                return ErrorInstruction.EXITED_STATE
 
             try:
                 dest_fun = self.executor.bncache.get_function(dest.value)
                 calling_convention = dest_fun.calling_convention
             except IndexError:
                 # dest_fun is not a function (imported). We do not have the info about the calling convention..
-                # Let's use the caller conventio
+                # Let's use the caller convention
                 curr_fun = self.executor.bncache.get_function(self.executor.ip)
                 calling_convention = curr_fun.calling_convention
             self.executor.arch.save_result_value(
@@ -1173,5 +1178,6 @@ class SymbolicVisitor(BNILVisitor):
 
         return True
 
-    # def visit_LLIL_NORET(self, expr):
-    #     log_alert("VM Halted.")
+    def visit_LLIL_NORET(self, expr):
+        return ErrorInstruction.EXITED_STATE
+

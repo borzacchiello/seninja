@@ -6,13 +6,14 @@ class Fringe(object):
         self.unsat = list()
         self.errored = list()
         self.avoided = list()
+        self.exited = list()
         self._deferred = dict()
         self.last_added = None
 
     def __str__(self):
-        return "<Fringe id: 0x%x, unsat: %d, errored: %d, avoided: %d, deferred: %d>" % (
+        return "<Fringe id: 0x%x, unsat: %d, errored: %d, avoided: %d, deferred: %d, exited: %d>" % (
             id(self), len(self.unsat), len(self.errored), len(
-                self.avoided), len(self.deferred)
+                self.avoided), len(self.deferred), len(self.exited)
         )
 
     def __repr__(self):
@@ -28,7 +29,8 @@ class Fringe(object):
     @property
     def num_states(self):
         return len(self.unsat) + len(self.errored) + \
-            len(self.avoided) + len(self.deferred)
+            len(self.avoided) + len(self.deferred) + \
+            len(self.exited)
 
     def is_empty(self):
         return len(self._deferred) == 0
@@ -84,3 +86,6 @@ class Fringe(object):
 
     def add_avoided(self, state):
         self.avoided.append(state)
+
+    def add_exited(self, state):
+        self.exited.append(state)

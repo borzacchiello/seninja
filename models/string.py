@@ -155,7 +155,7 @@ def strcpy_handler(state: State, view):
         src_b = state.mem.load(src + i, 1)
 
     state.mem.store(dst + i, BVV(0, 8))
-    return BVV(dst, state.arch.bits())
+    return dst
 
 
 def strncpy_handler(state: State, view):
@@ -165,10 +165,16 @@ def strncpy_handler(state: State, view):
 
     assert not symbolic(dst) or not state.solver.symbolic(dst)
     assert not symbolic(src) or not state.solver.symbolic(src)
+    assert not symbolic(n) or not state.solver.symbolic(n)
     if symbolic(dst):
         dst = state.solver.evaluate(dst)
     if symbolic(src):
         src = state.solver.evaluate(src)
+    if symbolic(n):
+        n = state.solver.evaluate(n)
+
+    n = n.value
+    print(src, dst, n)
 
     i = 0
     src_b = state.mem.load(src, 1)
@@ -185,4 +191,4 @@ def strncpy_handler(state: State, view):
         state.mem.store(dst + i, BVV(0, 8))
         i += 1
 
-    return BVV(dst, state.arch.bits())
+    return dst

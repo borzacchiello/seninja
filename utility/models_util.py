@@ -3,6 +3,10 @@ from .expr_wrap_util import symbolic
 from .bninja_util import get_function
 
 
+class ExitException(Exception):
+    pass
+
+
 def get_arg_k(state, k, size, view):
 
     ip = state.get_ip()

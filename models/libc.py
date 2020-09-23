@@ -1,7 +1,7 @@
 from ..sym_state import State
 from ..utility.expr_wrap_util import symbolic
 from ..expr import BVV, BVS, BoolV, ITE, Or, And
-from ..utility.models_util import get_arg_k
+from ..utility.models_util import get_arg_k, ExitException
 from ..utility.string_util import as_bytes, str_to_bv_list
 from ..memory.sym_memory import InitData
 import re
@@ -58,6 +58,8 @@ def strtoul_handler(state: State, view):
     return BVV(_native_res, state.arch.bits())
 # -----------------------------------
 
+def exit_handler(state: State, view):
+    raise ExitException()
 
 def _intbv_to_strbv16(intbv):
     # int bv to string bv in hex
