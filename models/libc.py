@@ -1,7 +1,8 @@
 from ..sym_state import State
 from ..utility.expr_wrap_util import symbolic
 from ..expr import BVV, BVS, BoolV, ITE, Or, And
-from ..utility.models_util import get_arg_k, ExitException
+from ..utility.models_util import get_arg_k
+from ..utility.exceptions import ExitException
 from ..utility.string_util import as_bytes, str_to_bv_list
 from ..memory.sym_memory import InitData
 import re

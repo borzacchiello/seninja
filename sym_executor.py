@@ -11,15 +11,11 @@ from .utility.bninja_util import (
     get_imported_functions_and_addresses,
     find_os
 )
+from .utility import exceptions
 from .expr import BVV, BVS
 from .utility.binary_ninja_cache import BNCache
 from .memory.sym_memory import InitData
 from .multipath.fringe import Fringe
-from .utility.error_codes import ErrorInstruction
-from .utility.executor_utility import (
-    check_unsupported,
-    check_error
-)
 
 NO_COLOR = enums.HighlightStandardColor(0)
 CURR_STATE_COLOR = enums.HighlightStandardColor.GreenHighlightColor
@@ -177,25 +173,6 @@ class SymbolicExecutor(object):
     def __repr__(self):
         return self.__str__()
 
-    def _handle_error(self, err):
-        # TODO use exceptions... this thing is horrible
-        if err in {
-            ErrorInstruction.DIVISION_BY_ZERO,
-            ErrorInstruction.UNMAPPED_READ,
-            ErrorInstruction.UNMAPPED_WRITE,
-            ErrorInstruction.NO_DEST,
-            ErrorInstruction.UNCONSTRAINED_IP,
-            ErrorInstruction.UNSAT_STATE,
-            ErrorInstruction.EXITED_STATE
-        }:
-            print("WARNING: changing current state due to %s @ 0x%x" %
-                  (err.name, self.state.get_ip()))
-            self.state = None
-            self._last_error = err
-            return
-
-        raise Exception("Unknown error")
-
     def put_in_deferred(self, state):
         self.fringe.add_deferred(state)
 
@@ -315,10 +292,17 @@ class SymbolicExecutor(object):
                 not self.arch.execute_special_handler(disasm_str, self)
             ):
                 expr = self.bncache.get_llil(func_name, self.llil_ip)
-                res = self.visitor.visit(expr)
-                check_unsupported(res, expr)
-                if check_error(res):
-                    self._handle_error(res)
+                try:
+                    self.visitor.visit(expr)
+                except exceptions.ExitException:
+                    self.put_in_exited(self.state)
+                    self.state = None
+                except exceptions.SENinjaError as err:
+                    print("An error occurred: %s" % err.message)
+                    self.state = None
+                    self._last_error = err
+                    if err.is_fatal():
+                        raise err
             else:
                 self._wasjmp = True
                 self.ip = self.ip + self.view.get_instruction_length(self.ip)

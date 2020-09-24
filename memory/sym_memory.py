@@ -2,8 +2,8 @@ import math
 
 from collections import namedtuple
 from ..utility.expr_wrap_util import symbolic, split_bv, heuristic_find_base
+from ..utility import exceptions
 from ..expr import BV, BVV, Bool, Or, ITE
-from ..utility.error_codes import ErrorInstruction
 from .memory_object import MemoryObj
 from .memory_abstract import MemoryAbstract
 
@@ -285,7 +285,7 @@ class Memory(MemoryAbstract):
                     self.state.executor.put_in_errored(
                         self.state, "write unmapped"
                     )
-                    return ErrorInstruction.UNMAPPED_WRITE
+                    raise exceptions.UnmappedWrite(self.state.get_ip())
                 self._store(page_address, page_index,
                             value.Extract(8*(i+1)-1, 8*i))
             else:  # symbolic access
@@ -306,7 +306,7 @@ class Memory(MemoryAbstract):
                     self.state.executor.put_in_errored(
                         self.state, "write unmapped"
                     )
-                    return ErrorInstruction.UNMAPPED_WRITE
+                    raise exceptions.UnmappedWrite(self.state.get_ip())
             if conditions:
                 check_unmapped = self.state.executor.bncache.get_setting(
                     "memory.check_unmapped") == 'true'
@@ -349,7 +349,7 @@ class Memory(MemoryAbstract):
                     self.state.executor.put_in_errored(
                         self.state, "read unmapped"
                     )
-                    return ErrorInstruction.UNMAPPED_READ
+                    raise exceptions.UnmappedRead(self.state.get_ip())
                 tmp = self._load(page_address, page_index)
             else:  # symbolic access
                 conditions = list()
@@ -371,7 +371,7 @@ class Memory(MemoryAbstract):
                     self.state.executor.put_in_errored(
                         self.state, "read unmapped"
                     )
-                    return ErrorInstruction.UNMAPPED_READ
+                    raise exceptions.UnmappedRead(self.state.get_ip())
             res = tmp if res is None else res.Concat(tmp)
 
         if conditions:

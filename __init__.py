@@ -113,13 +113,7 @@ def _async_start_se(bv, address):
 
     def f(tb):
         global executor, bfs_searcher, dfs_searcher, _running
-        try:
-            executor = SymbolicExecutor(bv, address)
-        except Exception as e:
-            print("!ERROR!")
-            print(traceback.format_exc())
-            _running = False
-            return
+        executor = SymbolicExecutor(bv, address)
 
         dfs_searcher = searcher.DFSSearcher(executor)
         bfs_searcher = searcher.BFSSearcher(executor)
@@ -191,7 +185,6 @@ def _async_run_dfs_searcher(bv):
 
     def f(tb):
         global _running
-        disable_widgets()
 
         def callback(s):
             global _stop
@@ -201,18 +194,15 @@ def _async_run_dfs_searcher(bv):
                 return False
             return True
 
-        try:
-            dfs_searcher.run(step_callback=callback)
-        except:
-            print("!ERROR!")
-            print(traceback.format_exc())
+        dfs_searcher.run(step_callback=callback)
 
-        sync_ui(bv, executor._last_error == None)
         enable_widgets()
+        sync_ui(bv, executor._last_error == None)
         _running = False
 
     if not _running:
         _running = True
+        disable_widgets()
         background_task = TaskInBackground(bv, "seninja: running DFS", f)
         background_task.start()
 
@@ -227,7 +217,6 @@ def _async_run_dfs_searcher_findall(bv):
 
     def f(tb):
         global _running
-        disable_widgets()
 
         def callback(s):
             global _stop
@@ -237,17 +226,14 @@ def _async_run_dfs_searcher_findall(bv):
                 return False
             return True
 
-        try:
-            dfs_searcher.run(step_callback=callback, findall=True)
-        except:
-            print("!ERROR!")
-            print(traceback.format_exc())
+        dfs_searcher.run(step_callback=callback, findall=True)
 
-        sync_ui(bv, executor._last_error == None)
         enable_widgets()
+        sync_ui(bv, executor._last_error == None)
         _running = False
 
     if not _running:
+        disable_widgets()
         _running = True
         background_task = TaskInBackground(bv, "seninja: running DFS", f)
         background_task.start()
@@ -263,7 +249,6 @@ def _async_run_bfs_searcher(bv):
 
     def f(tb):
         global _running
-        disable_widgets()
 
         def callback(s):
             global _stop
@@ -273,17 +258,14 @@ def _async_run_bfs_searcher(bv):
                 return False
             return True
 
-        try:
-            bfs_searcher.run(callback)
-        except:
-            print("!ERROR!")
-            print(traceback.format_exc())
+        bfs_searcher.run(callback)
 
-        sync_ui(bv, executor._last_error == None)
         enable_widgets()
+        sync_ui(bv, executor._last_error == None)
         _running = False
 
     if not _running:
+        disable_widgets()
         _running = True
         background_task = TaskInBackground(bv, "seninja: running BFS", f)
         background_task.start()
@@ -297,11 +279,8 @@ def _async_step(bv):
     def f(tb):
         global _running
         disable_widgets()
-        try:
-            executor.execute_one()
-        except Exception as e:
-            print("!ERROR!")
-            print(traceback.format_exc())
+
+        executor.execute_one()
 
         sync_ui(bv, executor._last_error == None)
         enable_widgets()
@@ -326,14 +305,10 @@ def _async_continue_until_branch(bv):
         i = k
         count = 0
         while not _stop and i == k:
-            try:
-                executor.execute_one()
-            except Exception as e:
-                print("!ERROR!:")
-                print(traceback.format_exc())
-                break
+            executor.execute_one()
             if not executor.state:
                 break
+
             i = len(executor.fringe.deferred)
             ip = executor.state.get_ip()
             count = (count+1) % 20
@@ -367,14 +342,10 @@ def _async_continue_until_address(bv, address):
 
         count = 0
         while not _stop and ip != address:
-            try:
-                executor.execute_one()
-            except Exception as e:
-                print("!ERROR!:")
-                print(traceback.format_exc())
-                break
+            executor.execute_one()
             if not executor.state:
                 break
+
             ip = executor.state.get_ip()
             count = (count+1) % 20
             if count == 0:
@@ -555,12 +526,7 @@ def continue_until_branch(sync=False):
     k = executor.fringe.last_added
     i = k
     while not _stop and i == k:
-        try:
-            executor.execute_one()
-        except Exception as e:
-            print("!ERROR!:")
-            print(traceback.format_exc())
-            break
+        executor.execute_one()
         if not executor.state:
             break
         i = executor.fringe.last_added
@@ -575,12 +541,7 @@ def continue_until_address(address, sync=False):
     ip = executor.state.get_ip()
 
     while ip != address:
-        try:
-            executor.execute_one()
-        except Exception as e:
-            print("!ERROR!:")
-            print(traceback.format_exc())
-            break
+        executor.execute_one()
         if not executor.state:
             break
         ip = executor.state.get_ip()
@@ -640,12 +601,7 @@ def execute_one_instruction(bv, sync=None):
     if not __check_executor():
         return
 
-    try:
-        executor.execute_one()
-    except Exception as e:
-        print("!ERROR!:")
-        print(traceback.format_exc())
-        return
+    executor.execute_one()
 
     if sync:
         sync_ui(bv)
