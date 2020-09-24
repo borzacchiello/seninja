@@ -287,28 +287,30 @@ class SymbolicExecutor(object):
             dont_use_special_handlers = \
                 self.bncache.get_setting("dont_use_special_handlers") == 'true'
             disasm_str = self.bncache.get_disasm(self.ip)
-            if (
-                dont_use_special_handlers or
-                not self.arch.execute_special_handler(disasm_str, self)
-            ):
-                expr = self.bncache.get_llil(func_name, self.llil_ip)
-                try:
+
+            try:
+                if (
+                    dont_use_special_handlers or
+                    not self.arch.execute_special_handler(disasm_str, self)
+                ):
+                    expr = self.bncache.get_llil(func_name, self.llil_ip)
                     self.visitor.visit(expr)
-                except exceptions.ExitException:
-                    self.put_in_exited(self.state)
-                    self.state = None
-                except exceptions.SENinjaError as err:
-                    print("An error occurred: %s" % err.message)
-                    self.state = None
-                    self._last_error = err
-                    if err.is_fatal():
-                        raise err
-            else:
-                self._wasjmp = True
-                self.ip = self.ip + self.view.get_instruction_length(self.ip)
-                self.state.set_ip(self.ip)
-                self.llil_ip = self.bncache.get_function(
-                    self.ip).llil.get_instruction_start(self.ip)
+                else:
+                    self._wasjmp = True
+                    self.ip = self.ip + \
+                        self.view.get_instruction_length(self.ip)
+                    self.state.set_ip(self.ip)
+                    self.llil_ip = self.bncache.get_function(
+                        self.ip).llil.get_instruction_start(self.ip)
+            except exceptions.ExitException:
+                self.put_in_exited(self.state)
+                self.state = None
+            except exceptions.SENinjaError as err:
+                print("An error occurred: %s" % err.message)
+                self.state = None
+                self._last_error = err
+                if err.is_fatal():
+                    raise err
 
         if self.state is None:
             if self.fringe.is_empty():
