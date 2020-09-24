@@ -6,7 +6,7 @@ class SENinjaError(Exception):
 class DivByZero(SENinjaError):
     def __init__(self, pc):
         self.pc = pc
-        self.message = "Division by zero occurred at 0x%x" % pc
+        self.message = "division by zero occurred at 0x%x" % pc
         super().__init__(self.message)
 
     def is_fatal(self):
@@ -15,7 +15,7 @@ class DivByZero(SENinjaError):
 class UnmappedRead(SENinjaError):
     def __init__(self, pc):
         self.pc = pc
-        self.message = "Unmapped read at 0x%x" % pc
+        self.message = "unmapped read at 0x%x" % pc
         super().__init__(self.message)
 
     def is_fatal(self):
@@ -24,7 +24,7 @@ class UnmappedRead(SENinjaError):
 class UnmappedWrite(SENinjaError):
     def __init__(self, pc):
         self.pc = pc
-        self.message = "Unmapped write at 0x%x" % pc
+        self.message = "unmapped write at 0x%x" % pc
         super().__init__(self.message)
 
     def is_fatal(self):
@@ -32,7 +32,7 @@ class UnmappedWrite(SENinjaError):
 
 class NoDestination(SENinjaError):
     def __init__(self):
-        self.message = "No destination"
+        self.message = "no destination"
         super().__init__(self.message)
 
     def is_fatal(self):
@@ -40,7 +40,7 @@ class NoDestination(SENinjaError):
 
 class UnconstrainedIp(SENinjaError):
     def __init__(self):
-        self.message = "Unconstrained ip"
+        self.message = "unconstrained ip"
         super().__init__(self.message)
 
     def is_fatal(self):
@@ -59,6 +59,24 @@ class UnimplementedInstruction(SENinjaError):
     def __init__(self, instr_name):
         self.instr_name = instr_name
         self.message = "%s instruction is unimplemented" % instr_name
+        super().__init__(self.message)
+
+    def is_fatal(self):
+        return True
+
+class UnimplementedModel(SENinjaError):
+    def __init__(self, f_name):
+        self.f_name = f_name
+        self.message = "unimplemented model for function %s" % f_name
+        super().__init__(self.message)
+
+    def is_fatal(self):
+        return True
+
+class UnimplementedSyscall(SENinjaError):
+    def __init__(self, syscall_n):
+        self.syscall_n = syscall_n
+        self.message = "unimplemented syscall %d" % syscall_n
         super().__init__(self.message)
 
     def is_fatal(self):

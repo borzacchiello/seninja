@@ -12,7 +12,8 @@ from .utility.expr_wrap_util import (
 )
 from .utility.exceptions import (
     UnimplementedInstruction, DivByZero, NoDestination, 
-    UnconstrainedIp, UnsatState, ExitException
+    UnconstrainedIp, UnsatState, ExitException,
+    UnimplementedModel, UnimplementedSyscall
 )
 from .expr import BV, BVV, BVS, Bool, BoolV, ITE
 from .utility.bninja_util import (
@@ -441,7 +442,7 @@ class SymbolicVisitor(BNILVisitor):
         dest = self.visit(expr.dest)
 
         if symbolic(dest):
-            raise Exception("symbolic IP")
+            raise UnconstrainedIp()
 
         curr_fun_name = self.executor.bncache.get_function_name(
             self.executor.ip)
@@ -481,7 +482,7 @@ class SymbolicVisitor(BNILVisitor):
         elif dest.value in self.executor.imported_functions:
             name = self.executor.imported_functions[dest.value]
             if name not in library_functions:
-                raise Exception("unsupported external function '%s'" % name)
+                raise UnimplementedModel(name)
 
             res = library_functions[name](
                 self.executor.state, self.executor.view)
@@ -506,7 +507,7 @@ class SymbolicVisitor(BNILVisitor):
         dest = self.visit(expr.dest)
 
         if symbolic(dest):
-            raise Exception("symbolic IP")
+            raise UnconstrainedIp()
 
         if dest.value in self.executor.imported_functions:
             dest_fun_name = self.executor.imported_functions[dest.value]
@@ -525,7 +526,7 @@ class SymbolicVisitor(BNILVisitor):
             # retrive return address
             dest = self.executor.arch.get_return_address(self.executor.state)
             if symbolic(dest):
-                raise Exception("symbolic IP")
+                raise UnconstrainedIp()
 
             dest_fun_name = self.executor.bncache.get_function_name(dest.value)
 
@@ -533,7 +534,7 @@ class SymbolicVisitor(BNILVisitor):
         if dest.value in self.executor.imported_functions:
             name = self.executor.imported_functions[dest.value]
             if name not in library_functions:
-                raise Exception("unsupported external function '%s'" % name)
+                raise UnimplementedModel(name)
 
             res = library_functions[name](
                 self.executor.state, self.executor.view)
@@ -545,7 +546,7 @@ class SymbolicVisitor(BNILVisitor):
             # retrive return address
             dest = self.executor.arch.get_return_address(self.executor.state)
             if symbolic(dest):
-                raise Exception("symbolic IP")
+                raise UnconstrainedIp()
 
             dest_fun_name = self.executor.bncache.get_function_name(dest.value)
 
@@ -876,7 +877,7 @@ class SymbolicVisitor(BNILVisitor):
 
         handler = self.executor.state.os.get_syscall_by_number(n)
         if handler is None:
-            raise Exception("Unsopported syscall #%d" % n)
+            raise UnimplementedSyscall(n)
 
         res = handler(self.executor.state)
         res_reg = self.executor.state.os.get_out_syscall_reg()
