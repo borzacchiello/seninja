@@ -108,7 +108,8 @@ class ArchX86SPH(SpecialInstructionHandler):
             setattr(sv.state.regs, dst_ecx, BVV(0x00400004, bits))
             setattr(sv.state.regs, dst_edx, BVV(0x00000000, bits))
         else:
-            raise Exception("cpuid: unsupported (eax, ecx) value (%d, %d)" % (eax_v, ecx_v))
+            raise Exception(
+                "cpuid: unsupported (eax, ecx) value (%d, %d)" % (eax_v, ecx_v))
         return True
 
     def cpuid_handler(self, sv, parameters):

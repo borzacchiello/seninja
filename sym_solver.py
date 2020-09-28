@@ -7,6 +7,7 @@ from .expr import BV, BVV, Bool, And, Or
 
 USE_OPT_SOLVER = 0
 
+
 class Solver(object):
     def __init__(self, state):
         self.state = state

@@ -1,7 +1,8 @@
 # ERRORS
 class SENinjaError(Exception):
     def is_fatal(self):
-        raise NotImplementedError # override
+        raise NotImplementedError  # override
+
 
 class DivByZero(SENinjaError):
     def __init__(self, pc):
@@ -12,6 +13,7 @@ class DivByZero(SENinjaError):
     def is_fatal(self):
         return False
 
+
 class UnmappedRead(SENinjaError):
     def __init__(self, pc):
         self.pc = pc
@@ -20,6 +22,7 @@ class UnmappedRead(SENinjaError):
 
     def is_fatal(self):
         return False
+
 
 class UnmappedWrite(SENinjaError):
     def __init__(self, pc):
@@ -30,6 +33,7 @@ class UnmappedWrite(SENinjaError):
     def is_fatal(self):
         return False
 
+
 class NoDestination(SENinjaError):
     def __init__(self):
         self.message = "no destination"
@@ -38,6 +42,7 @@ class NoDestination(SENinjaError):
     def is_fatal(self):
         return False
 
+
 class UnconstrainedIp(SENinjaError):
     def __init__(self):
         self.message = "unconstrained ip"
@@ -45,6 +50,7 @@ class UnconstrainedIp(SENinjaError):
 
     def is_fatal(self):
         return False
+
 
 class UnsatState(SENinjaError):
     def __init__(self, pc):
@@ -55,6 +61,7 @@ class UnsatState(SENinjaError):
     def is_fatal(self):
         return True
 
+
 class UnimplementedInstruction(SENinjaError):
     def __init__(self, instr_name):
         self.instr_name = instr_name
@@ -64,6 +71,7 @@ class UnimplementedInstruction(SENinjaError):
     def is_fatal(self):
         return True
 
+
 class UnimplementedModel(SENinjaError):
     def __init__(self, f_name):
         self.f_name = f_name
@@ -72,6 +80,7 @@ class UnimplementedModel(SENinjaError):
 
     def is_fatal(self):
         return True
+
 
 class UnimplementedSyscall(SENinjaError):
     def __init__(self, syscall_n):
@@ -84,8 +93,10 @@ class UnimplementedSyscall(SENinjaError):
 
 # *****
 
+
 class SENinjaExeption(Exception):
     pass
+
 
 class ExitException(SENinjaExeption):
     pass

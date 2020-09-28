@@ -59,8 +59,10 @@ def strtoul_handler(state: State, view):
     return BVV(_native_res, state.arch.bits())
 # -----------------------------------
 
+
 def exit_handler(state: State, view):
     raise ExitException()
+
 
 def _intbv_to_strbv16(intbv):
     # int bv to string bv in hex

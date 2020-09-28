@@ -7,6 +7,7 @@ _running = False
 TARGET_TAG_TYPE = None
 AVOID_TAG_TYPE = None
 
+
 class SENinjaGlobManager(object):
     # TODO write this
     pass

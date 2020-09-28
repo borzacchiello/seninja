@@ -180,9 +180,11 @@ class BufferView(QWidget, DockContextHandler):
         if self.current_state is None:
             return
 
-        blacklisted_names = [b[0].name for b in self.current_state.symbolic_buffers]
+        blacklisted_names = [
+            b[0].name for b in self.current_state.symbolic_buffers]
 
-        new_buff_dialog = CreateBufferDialog(blacklisted_names=blacklisted_names)
+        new_buff_dialog = CreateBufferDialog(
+            blacklisted_names=blacklisted_names)
         new_buff_dialog.exec_()
 
         if new_buff_dialog.res_name is None:
@@ -262,8 +264,8 @@ class BufferView(QWidget, DockContextHandler):
             mime.setText(repr(res))
             QApplication.clipboard().setMimeData(mime)
 
-
     # double click event
+
     def on_doubleClick(self, item):
         # row_idx = item.row()
         pass

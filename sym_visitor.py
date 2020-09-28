@@ -11,7 +11,7 @@ from .utility.expr_wrap_util import (
     bvv_from_bytes, symbolic
 )
 from .utility.exceptions import (
-    UnimplementedInstruction, DivByZero, NoDestination, 
+    UnimplementedInstruction, DivByZero, NoDestination,
     UnconstrainedIp, UnsatState, ExitException,
     UnimplementedModel, UnimplementedSyscall
 )
