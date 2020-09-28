@@ -61,6 +61,8 @@ class CreateBufferDialog(QDialog):
     def __init__(self, blacklisted_names=[], parent=None):
         super(CreateBufferDialog, self).__init__(parent)
 
+        self.setWindowTitle('Create new buffer')
+
         self.blacklisted_names = blacklisted_names
 
         layout = QVBoxLayout()
@@ -80,7 +82,7 @@ class CreateBufferDialog(QDialog):
             self.constraints[cid] = item
             layout.addWidget(item)
 
-        self.checkbox_terminator = QCheckBox("terminator")
+        self.checkbox_terminator = QCheckBox("Terminator")
         self.checkbox_terminator.setChecked(True)
         layout.addWidget(self.checkbox_terminator)
 
