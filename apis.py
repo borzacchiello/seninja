@@ -30,7 +30,7 @@ def __check_executor():
 
 
 def start_se(bv, address):
-    if not __check_executor():
+    if __check_executor():
         log_alert("seninja is already running")
         return False
     globs.executor = SymbolicExecutor(bv, address)

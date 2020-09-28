@@ -29,6 +29,8 @@ from .utility.expr_wrap_util import split_bv_in_list
 from .utility.bninja_util import get_address_after_merge
 
 
+# TODO bring all logic from here to apis.py
+
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):
         BackgroundTaskThread.__init__(self, msg, False)
