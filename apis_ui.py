@@ -1,8 +1,10 @@
 import seninja.seninja_globals as globs
 from .ui import (
-    ui_set_arch,
+    ui_sync_view,
+    ui_reset_view,
     enable_widgets,
-    disable_widgets
+    disable_widgets,
+    ui_set_arch
 )
 from binaryninja import (
     log_alert,
@@ -10,7 +12,6 @@ from binaryninja import (
     BackgroundTaskThread,
     PluginCommand
 )
-from .apis import sync_ui, reset_ui
 from .sym_executor import SymbolicExecutor
 from .multipath import searcher
 from .sym_state import State
@@ -26,6 +27,7 @@ from .utility.string_util import (
 )
 from .utility.expr_wrap_util import split_bv_in_list
 from .utility.bninja_util import get_address_after_merge
+
 
 class TaskInBackground(BackgroundTaskThread):
     def __init__(self, bv, msg, callback):
@@ -44,6 +46,23 @@ def __check_executor():
         log_alert("seninja not running")
         return False
     return True
+
+
+def sync_ui(bv, delta=True):
+    if not __check_executor():
+        return
+    globs.executor.set_colors()
+    if globs.executor.state is not None:
+        ui_sync_view(globs.executor.state, delta)
+        bv.file.navigate(bv.file.view, globs.executor.state.get_ip())
+    else:
+        disable_widgets()
+
+
+def reset_ui():
+    if not __check_executor():
+        return
+    ui_reset_view()
 
 
 def get_target_tt(bv):
@@ -394,7 +413,8 @@ def _async_change_active_state_ip(bv, address):
         state = globs.executor.state
         state.set_ip(address)
         func_name = globs.executor.bncache.get_function_name(address)
-        state.llil_ip = globs.executor.bncache.get_llil_address(func_name, address)
+        state.llil_ip = globs.executor.bncache.get_llil_address(
+            func_name, address)
 
         globs.executor.state = None
         globs.executor.set_current_state(state)

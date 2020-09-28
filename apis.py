@@ -5,12 +5,6 @@ from binaryninja import (
     BackgroundTaskThread,
     PluginCommand
 )
-from .ui import (
-    ui_sync_view,
-    ui_reset_view,
-    enable_widgets,
-    disable_widgets
-)
 from .sym_executor import SymbolicExecutor
 from .multipath import searcher
 from .sym_state import State
@@ -35,24 +29,7 @@ def __check_executor():
     return True
 
 
-def sync_ui(bv, delta=True):
-    if not __check_executor():
-        return
-    globs.executor.set_colors()
-    if globs.executor.state is not None:
-        ui_sync_view(globs.executor.state, delta)
-        bv.file.navigate(bv.file.view, globs.executor.state.get_ip())
-    else:
-        disable_widgets()
-
-
-def reset_ui():
-    if not __check_executor():
-        return
-    ui_reset_view()
-
-
-def start_se(bv, address, ui=False):
+def start_se(bv, address):
     if not __check_executor():
         log_alert("seninja is already running")
         return False
@@ -60,12 +37,9 @@ def start_se(bv, address, ui=False):
     globs.dfs_searcher = searcher.DFSSearcher(globs.executor)
     globs.bfs_searcher = searcher.BFSSearcher(globs.executor)
 
-    if ui:
-        sync_ui(bv)
 
-
-def continue_until_branch(ui=False):
-    if not ui and not __check_executor():
+def continue_until_branch():
+    if not __check_executor():
         return
 
     k = globs.executor.fringe.last_added
@@ -77,12 +51,10 @@ def continue_until_branch(ui=False):
         i = globs.executor.fringe.last_added
 
     globs._stop = False
-    if ui:
-        sync_ui(globs.executor.view)
     return globs.executor.state, globs.executor.fringe.last_added
 
 
-def continue_until_address(address, sync=False):
+def continue_until_address(address):
     ip = globs.executor.state.get_ip()
 
     while ip != address:
@@ -91,12 +63,10 @@ def continue_until_address(address, sync=False):
             break
         ip = globs.executor.state.get_ip()
 
-    if sync:
-        sync_ui(globs.executor.view)
     return globs.executor.state
 
 
-def run_dfs(target: int, avoid: list = None, sync=False):
+def run_dfs(target: int, avoid: list = None):
     if not __check_executor():
         return
 
@@ -113,12 +83,10 @@ def run_dfs(target: int, avoid: list = None, sync=False):
             dfs_s.add_avoid(a)
 
     res = dfs_s.run(callback)
-    if sync:
-        sync_ui(globs.executor.view)
     return res
 
 
-def run_bfs(target: int, avoid: list = None, sync=False):
+def run_bfs(target: int, avoid: list = None):
     if not __check_executor():
         return
 
@@ -135,23 +103,19 @@ def run_bfs(target: int, avoid: list = None, sync=False):
             bfs_s.add_avoid(a)
 
     res = bfs_s.run(callback)
-    if sync:
-        sync_ui(globs.executor.view)
     return res
 
 
-def execute_one_instruction(bv, sync=None):
+def execute_one_instruction(bv):
     if not __check_executor():
         return
 
     globs.executor.execute_one()
 
-    if sync:
-        sync_ui(bv)
     return globs.executor.state
 
 
-def change_current_state(address_or_state, sync=False):
+def change_current_state(address_or_state):
     # take only the first one at the given address. TODO
     if not __check_executor():
         return
@@ -164,8 +128,6 @@ def change_current_state(address_or_state, sync=False):
         log_alert("no such deferred state")
         return
 
-    if sync:
-        sync_ui(globs.executor.view)
     globs.executor.set_current_state(state)
 
 
@@ -175,7 +137,7 @@ def focus_current_state(bv):
     bv.file.navigate(bv.file.view, globs.executor.state.get_ip())
 
 
-def setup_argv(*args, argc_loc=None, argv_loc=None, sync=False):
+def setup_argv(*args, argc_loc=None, argv_loc=None):
     if not __check_executor():
         return
 
@@ -225,9 +187,6 @@ def setup_argv(*args, argc_loc=None, argv_loc=None, sync=False):
         print("ERROR: invalid argv_loc %s" % str(argv_loc))
         return
 
-    if sync:
-        sync_ui(globs.executor.view)
-
 
 def constraint_bv(bv_list: list, pattern: str):
     if not __check_executor():
@@ -238,7 +197,6 @@ def constraint_bv(bv_list: list, pattern: str):
         assert bv.size == 8
 
         expr = Or(*list(map(lambda x: bv == BVV(x, 8), pattern)))
-        print(expr)
         state.solver.add_constraints(
             expr
         )
@@ -249,7 +207,6 @@ def reset_se(bv=None):
         return
 
     globs.executor.reset()
-    reset_ui()
     globs.executor = None
 
 

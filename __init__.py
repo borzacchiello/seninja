@@ -30,7 +30,8 @@ from .apis_ui import (
     _async_run_dfs_searcher,
     _async_run_dfs_searcher_findall,
     _async_run_bfs_searcher,
-    _async_reset_se
+    _async_reset_se,
+    sync_ui
 )
 from .apis import (
     setup_argv,

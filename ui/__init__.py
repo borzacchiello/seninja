@@ -44,6 +44,7 @@ def _launchArgvDialog(context):
         return
     d = GetArgvDialog(globs.executor.state)
     d.exec_()
+    ui_sync_view(globs.executor.state, True)
 
 
 def _registerDynamicWidgets():

@@ -7,6 +7,9 @@ from PySide2.QtWidgets import (
     QComboBox
 )
 from binaryninja.interaction import show_message_box
+from ..utility.string_util import str_to_bv
+from ..apis import setup_argv
+from ..expr import BVV
 
 
 class GetArgvDialog(QDialog):
@@ -58,7 +61,7 @@ class GetArgvDialog(QDialog):
         self._layout.addWidget(line_edit, self.n_args + 2, 1, 1, 1)
 
         self.args.append(
-            (label, line_edit)
+            ("conc", label, line_edit)
         )
 
     def onSymbClick(self):
@@ -69,7 +72,7 @@ class GetArgvDialog(QDialog):
         combo_box = QComboBox()
         buffer_names = [
             b[0].name for b in self.state.symbolic_buffers]
-        
+
         if len(buffer_names) == 0:
             show_message_box("Error", "No symbolic buffer")
             return
@@ -81,11 +84,31 @@ class GetArgvDialog(QDialog):
         self._layout.addWidget(combo_box, self.n_args + 2, 1, 1, 1)
 
         self.args.append(
-            (label, combo_box)
+            ("symb", label, combo_box)
         )
 
+    def _get_buff_from_name(self, name):
+        for buff, _, _ in self.state.symbolic_buffers:
+            if buff.name == name:
+                return buff
+        return None
+
+    def _get_arguments(self):
+        res = list()
+        for t, _, obj in self.args:
+            if t == "conc":
+                res.append(str_to_bv(obj.text(), True))
+            else:
+                buff = self._get_buff_from_name(
+                    obj.currentText())
+                assert buff is not None
+                res.append(buff.Concat(BVV(0, 8)))
+        return res
+
     def onOkClick(self):
-        print("Ok clicked")
+        args = self._get_arguments()
+        setup_argv(*args)
+        self.accept()
 
     def onCancelClick(self):
-        print("Cancel clicked")
+        self.reject()

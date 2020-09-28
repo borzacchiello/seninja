@@ -23,7 +23,8 @@ from PySide2.QtWidgets import (
     QDialog,
     QLineEdit,
     QRadioButton,
-    QPushButton
+    QPushButton,
+    QCheckBox
 )
 
 from ..utility.expr_wrap_util import symbolic
@@ -79,6 +80,10 @@ class CreateBufferDialog(QDialog):
             self.constraints[cid] = item
             layout.addWidget(item)
 
+        self.checkbox_terminator = QCheckBox("terminator")
+        self.checkbox_terminator.setChecked(True)
+        layout.addWidget(self.checkbox_terminator)
+
         self.ok = QPushButton("Ok")
         self.ok.clicked.connect(self.on_okClick)
         self.cancel = QPushButton("Cancel")
@@ -112,6 +117,7 @@ class CreateBufferDialog(QDialog):
             if el.isChecked():
                 self.res_constraints = cid
                 break
+        self.res_terminator = self.checkbox_terminator.isChecked()
 
         self.accept()
 
@@ -183,6 +189,11 @@ class BufferView(QWidget, DockContextHandler):
             return
 
         buff = BVS(new_buff_dialog.res_name, new_buff_dialog.res_width * 8)
+        if new_buff_dialog.res_terminator:
+            buff_to_store = buff.Concat(BVV(0, 8))
+        else:
+            buff_to_store = buff
+
         address = self.current_state.mem.allocate(new_buff_dialog.res_width)
         if new_buff_dialog.res_constraints == ALPHANUMERIC_STRING:
             constraint_alphanumeric_string(buff, self.current_state)
@@ -192,7 +203,7 @@ class BufferView(QWidget, DockContextHandler):
         constraint_str = ""
         if new_buff_dialog.res_constraints != NO_CONSTRAINTS:
             constraint_str = CreateBufferDialog.constraint_list[new_buff_dialog.res_constraints]
-        self.current_state.mem.store(address, buff)
+        self.current_state.mem.store(address, buff_to_store)
         self.current_state.symbolic_buffers.append(
             (buff, address, constraint_str)
         )
