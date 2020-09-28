@@ -1,4 +1,5 @@
-from ..expr import BV, BVV
+from ..expr import BV, BVV, And, Or
+from .expr_wrap_util import split_bv_in_list
 
 
 def str_to_int(s):
@@ -45,3 +46,21 @@ def as_bytes(bv: BV):
 
 def get_byte(bv: BV, i: int):
     return bv.Extract(bv.size-i*8-1, bv.size-i*8-8)
+
+
+def constraint_alphanumeric_string(bv, state):
+    for bv in split_bv_in_list(bv, 8):
+        state.solver.add_constraints(
+            Or(
+                And(bv >= ord("a"), bv <= ord("z")),
+                And(bv >= ord("A"), bv <= ord("Z")),
+                And(bv >= ord("0"), bv <= ord("9"))
+            )
+        )
+
+
+def constraint_ascii_string(bv, state):
+    for bv in split_bv_in_list(bv, 8):
+        state.solver.add_constraints(
+            bv >= 0x20, bv <= 0x7E
+        )

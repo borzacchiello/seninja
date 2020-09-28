@@ -20,6 +20,7 @@ class State(object):
         self.events = list()
         self.llil_ip = None
         self.executor = executor
+        self.symbolic_buffers = list()
         self._ipreg = self.arch.getip_reg()
         self._bits = self.arch.bits()
 
@@ -71,9 +72,17 @@ class State(object):
         new_state.regs = self.regs.copy(new_state)
         new_state.solver = self.solver.copy(new_state, solver_copy_fast)
         new_state.events = list(self.events)
+        new_state.symbolic_buffers = list(self.symbolic_buffers)
         new_state.llil_ip = self.llil_ip
 
         return new_state
+
+    def merge_symb_buffers(self, other):
+        self_buffers_name = [b[0].name for b in self.symbolic_buffers]
+        for el in other.symbolic_buffers:
+            buff = el[0]
+            if buff.name not in self_buffers_name:
+                self.symbolic_buffers.append(el)
 
     def merge(self, other):
         assert isinstance(other, State)
