@@ -38,6 +38,7 @@ from .apis import (
     execute_one_instruction,
     stop,
     get_current_state,
+    get_executor,
     register_hook,
     register_logger,
     reload_settings
