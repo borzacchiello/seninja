@@ -1,3 +1,4 @@
+import seninja.ui as sui
 from binaryninja import BackgroundTaskThread
 from binaryninja.interaction import (
     show_message_box,
@@ -281,10 +282,11 @@ class MemoryView(QWidget, DockContextHandler):
         self.update_mem_delta(self.current_state)
 
     def _make_symbolic(self, address, size):
-        for i in range(size):
-            b = BVS("b_ui_mem_%d" % self.symb_idx, 8)
-            self.symb_idx += 1
-            self.current_state.mem.store(address + i, b)
+        buff = BVS("b_ui_mem_%d" % self.symb_idx, size * 8)
+        self.current_state.mem.store(address, buff)
+        self.current_state.symbolic_buffers.append(
+            (buff, address, "")
+        )
         self.changes.add(
             (
                 address - self.address_start,
@@ -293,6 +295,7 @@ class MemoryView(QWidget, DockContextHandler):
         )
         self.symb_idx += 1
         self.update_mem_delta(self.current_state)
+        sui.BW.onNewBufferSignal.emit(self.current_state)
 
     def _copy_big_endian(self, expr):
         mime = QMimeData()

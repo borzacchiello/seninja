@@ -156,10 +156,13 @@ def _makewidget(parent, val, center=False):
 
 
 class BufferView(QWidget, DockContextHandler):
+    onNewBufferSignal = QtCore.Signal(object)
 
     def __init__(self, parent, name, data):
         QWidget.__init__(self, parent)
         DockContextHandler.__init__(self, self, name)
+
+        self.onNewBufferSignal.connect(self.update)
 
         self.parent = parent
         self.current_state = None
@@ -281,6 +284,9 @@ class BufferView(QWidget, DockContextHandler):
         copy_eval = menu.addAction("Copy evaluated bytes")
         copy_eval.triggered.connect(BufferView._condom_async(
             self, self._menuAction_copy_evaluated_buffer, row_idx))
+        add_constraint = menu.addAction("Add constraint")
+        add_constraint.triggered.connect(BufferView._condom(
+            self._menuAction_add_constraint, row_idx))
 
         menu.exec_(self._table.viewport().mapToGlobal(pos))
 
@@ -302,6 +308,30 @@ class BufferView(QWidget, DockContextHandler):
         res = '"' + repr(res)[2:-1] + '"'
         mime.setText(res)
         QApplication.clipboard().setMimeData(mime)
+
+    def _menuAction_add_constraint(self, buffer_id):
+        buff = self.current_state.symbolic_buffers[buffer_id][0]
+        constraints = self.current_state.symbolic_buffers[buffer_id][2]
+        if constraints != "":
+            show_message_box("Error", "The buffer already has a constraint.")
+            return
+
+        choices = [CreateBufferDialog.constraint_list[i]
+                   for i in CreateBufferDialog.constraint_list.keys() if i != NO_CONSTRAINTS]
+        res = get_choice_input(
+            "Constraint buffer", "choices:", choices
+        )
+        if choices[res] == "Alphanumeric string":
+            constraint_alphanumeric_string(buff, self.current_state)
+        elif choices[res] == "ASCII string":
+            constraint_ascii_string(buff, self.current_state)
+        else:
+            return
+
+        t = self.current_state.symbolic_buffers[buffer_id]
+        t = t[0], t[1], choices[res]
+        self.current_state.symbolic_buffers[buffer_id] = t
+        self.update(self.current_state)
 
     # double click event
     def on_doubleClick(self, item):

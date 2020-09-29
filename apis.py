@@ -229,6 +229,16 @@ def get_executor():
     return globs.executor
 
 
+def mk_symb_buffer(state, name, size):
+    buff = BVS(name, size * 8)
+    address = state.mem.allocate(size)
+    state.mem.store(address, buff)
+    state.symbolic_buffers.append(
+        (buff, address, "")
+    )
+    return buff
+
+
 def register_hook(address, func):
     if not __check_executor():
         return
