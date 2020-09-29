@@ -1,3 +1,4 @@
+from binaryninja import BackgroundTaskThread
 from binaryninja.interaction import (
     show_message_box,
     get_int_input,
@@ -49,6 +50,19 @@ def get_int(v):
         except:
             pass
     return None
+
+
+class BufferViewBT(BackgroundTaskThread):
+    def __init__(self, msg, bw, callback, pars):
+        BackgroundTaskThread.__init__(self, msg, False)
+        self.bw = bw
+        self.pars = pars
+        self.callback = callback
+
+    def run(self):
+        self.bw.setEnabled(False)
+        self.callback(*self.pars)
+        self.bw.setEnabled(True)
 
 
 class CreateBufferDialog(QDialog):
@@ -237,6 +251,19 @@ class BufferView(QWidget, DockContextHandler):
             self._table.setItem(i, 3, _makewidget(self, constraints))
             i += 1
 
+    @staticmethod
+    def _condom(f, *pars):
+        def g():
+            f(*pars)
+        return g
+
+    @staticmethod
+    def _condom_async(bw, f, *pars):
+        def g():
+            bt = BufferViewBT("BufferView background task...", bw, f, pars)
+            bt.start()
+        return g
+
     # right click menu
     def on_customContextMenuRequested(self, pos):
         item = self._table.itemAt(pos)
@@ -244,35 +271,41 @@ class BufferView(QWidget, DockContextHandler):
             return
         row_idx = item.row()
         menu = QMenu()
-        copy_address = menu.addAction("Copy address")
-        eval_as_bytes = menu.addAction("Evaluate as bytes")
-        copy_eval = menu.addAction("Copy evaluated bytes")
 
-        action = menu.exec_(self._table.viewport().mapToGlobal(pos))
-        if action is None:
-            return
-        if action == eval_as_bytes:
-            buff = self.current_state.symbolic_buffers[row_idx][0]
-            res = self.current_state.solver.evaluate(buff).as_bytes()
-            show_message_box("%s evaluate" % buff.name, repr(res))
-        elif action == copy_address:
-            mime = QMimeData()
-            mime.setText(hex(self.current_state.symbolic_buffers[row_idx][1]))
-            QApplication.clipboard().setMimeData(mime)
-        elif action == copy_eval:
-            mime = QMimeData()
-            buff = self.current_state.symbolic_buffers[row_idx][0]
-            res = self.current_state.solver.evaluate(buff).as_bytes()
-            mime.setText(repr(res))
-            QApplication.clipboard().setMimeData(mime)
+        copy_address = menu.addAction("Copy address")
+        copy_address.triggered.connect(BufferView._condom(
+            self._menuAction_copy_address, row_idx))
+        eval_as_bytes = menu.addAction("Evaluate as bytes")
+        eval_as_bytes.triggered.connect(BufferView._condom_async(
+            self, self._menuAction_evaluate_buffer, row_idx))
+        copy_eval = menu.addAction("Copy evaluated bytes")
+        copy_eval.triggered.connect(BufferView._condom_async(
+            self, self._menuAction_copy_evaluated_buffer, row_idx))
+
+        menu.exec_(self._table.viewport().mapToGlobal(pos))
+
+    def _menuAction_copy_address(self, buffer_id):
+        mime = QMimeData()
+        mime.setText(hex(self.current_state.symbolic_buffers[buffer_id][1]))
+        QApplication.clipboard().setMimeData(mime)
+
+    def _menuAction_evaluate_buffer(self, buffer_id):
+        buff = self.current_state.symbolic_buffers[buffer_id][0]
+        res = self.current_state.solver.evaluate(buff).as_bytes()
+        res = repr(res)[2:-1]
+        show_message_box("%s evaluate" % buff.name, res)
+
+    def _menuAction_copy_evaluated_buffer(self, buffer_id):
+        mime = QMimeData()
+        buff = self.current_state.symbolic_buffers[buffer_id][0]
+        res = self.current_state.solver.evaluate(buff).as_bytes()
+        res = repr(res)[2:-1]
+        mime.setText(res)
+        QApplication.clipboard().setMimeData(mime)
 
     # double click event
-
     def on_doubleClick(self, item):
         # row_idx = item.row()
-        pass
-
-    def notifyOffsetChanged(self, offset):
         pass
 
     def shouldBeVisible(self, view_frame):

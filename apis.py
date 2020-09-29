@@ -30,7 +30,7 @@ def __check_executor():
 
 
 def start_se(bv, address):
-    if __check_executor():
+    if globs.executor is not None:
         log_alert("seninja is already running")
         return False
     globs.executor = SymbolicExecutor(bv, address)
@@ -217,9 +217,16 @@ def stop():
 
 def get_current_state():
     if not __check_executor():
-        return
+        return None
 
     return globs.executor.state
+
+
+def get_executor():
+    if not __check_executor():
+        return None
+
+    return globs.executor
 
 
 def register_hook(address, func):

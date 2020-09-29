@@ -41,9 +41,9 @@ class GetArgvDialog(QDialog):
 
         self.label = QLabel("Number of args: " + str(self.n_args))
 
-        self._layout.addWidget(self.add_conc_button, 0, 0, 1, 1)
-        self._layout.addWidget(self.add_symb_button, 0, 1, 1, 1)
-        self._layout.addWidget(self.label, 1, 0, 2, 1)
+        self._layout.addWidget(self.add_conc_button, 0, 0, 1, 5)
+        self._layout.addWidget(self.add_symb_button, 0, 5, 1, 5)
+        self._layout.addWidget(self.label, 1, 0, 1, 10)
 
         self.setLayout(self._outerLayout)
 
@@ -58,7 +58,7 @@ class GetArgvDialog(QDialog):
         line_edit = QLineEdit("arg value...")
 
         self._layout.addWidget(label, self.n_args + 2, 0, 1, 1)
-        self._layout.addWidget(line_edit, self.n_args + 2, 1, 1, 1)
+        self._layout.addWidget(line_edit, self.n_args + 2, 1, 1, 9)
 
         self.args.append(
             ("conc", label, line_edit)
@@ -81,7 +81,7 @@ class GetArgvDialog(QDialog):
             combo_box.addItem(name)
 
         self._layout.addWidget(label, self.n_args + 2, 0, 1, 1)
-        self._layout.addWidget(combo_box, self.n_args + 2, 1, 1, 1)
+        self._layout.addWidget(combo_box, self.n_args + 2, 1, 1, 9)
 
         self.args.append(
             ("symb", label, combo_box)
