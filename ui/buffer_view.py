@@ -299,7 +299,7 @@ class BufferView(QWidget, DockContextHandler):
         mime = QMimeData()
         buff = self.current_state.symbolic_buffers[buffer_id][0]
         res = self.current_state.solver.evaluate(buff).as_bytes()
-        res = repr(res)[2:-1]
+        res = '"' + repr(res)[2:-1] + '"'
         mime.setText(res)
         QApplication.clipboard().setMimeData(mime)
 
