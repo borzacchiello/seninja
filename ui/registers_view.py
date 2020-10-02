@@ -153,7 +153,7 @@ class RegisterView(QWidget, DockContextHandler):
         show_reg_expr = menu.addAction(
             "Show reg expression") if not isinstance(expr, BVV) else None
         make_reg_symb = menu.addAction(
-            "Make reg symbolic") if not isinstance(expr, BVS) else None
+            "Make reg symbolic") if isinstance(expr, BVV) else None
         set_reg_value = menu.addAction("Set reg value")
         eval_with_sol = menu.addAction(
             "Evaluate with solver") if not isinstance(expr, BVV) else None
