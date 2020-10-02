@@ -48,21 +48,21 @@ def _registerDynamicWidgets():
         _get_registerview_widget,
         Qt.RightDockWidgetArea,
         Qt.Vertical,
-        True
+        False
     )
     dock_handler.addDockWidget(
         "SENinja Memory",
         _get_memoryview_widget,
         Qt.BottomDockWidgetArea,
         Qt.Horizontal,
-        True
+        False
     )
     dock_handler.addDockWidget(
         "SENinja Buffers",
         _get_buffer_view_widget,
         Qt.RightDockWidgetArea,
         Qt.Vertical,
-        True
+        False
     )
 
 
