@@ -14,8 +14,6 @@ BW = None
 
 def _get_registerview_widget(name, parent, data):
     global RW
-    if RW is not None:
-        return RW
     RW = RegisterView(parent, name, data)
     RW.setEnabled(False)
     return RW
@@ -23,8 +21,6 @@ def _get_registerview_widget(name, parent, data):
 
 def _get_memoryview_widget(name, parent, data):
     global MW
-    if MW is not None:
-        return MW
     MW = MemoryView(parent, name, data)
     MW.setEnabled(False)
     return MW
@@ -32,8 +28,6 @@ def _get_memoryview_widget(name, parent, data):
 
 def _get_buffer_view_widget(name, parent, data):
     global BW
-    if BW is not None:
-        return BW
     BW = BufferView(parent, name, data)
     BW.setEnabled(False)
     return BW
@@ -48,28 +42,27 @@ def _launchArgvDialog(context):
 
 
 def _registerDynamicWidgets():
-    mw = QApplication.allWidgets()[0].window()
-    dock_handler = mw.findChild(DockHandler, '__DockHandler')
+    dock_handler = DockHandler.getActiveDockHandler()
     dock_handler.addDockWidget(
         "SENinja Registers",
         _get_registerview_widget,
         Qt.RightDockWidgetArea,
         Qt.Vertical,
-        False
+        True
     )
     dock_handler.addDockWidget(
         "SENinja Memory",
         _get_memoryview_widget,
         Qt.BottomDockWidgetArea,
         Qt.Horizontal,
-        False
+        True
     )
     dock_handler.addDockWidget(
         "SENinja Buffers",
         _get_buffer_view_widget,
         Qt.RightDockWidgetArea,
         Qt.Vertical,
-        False
+        True
     )
 
 
