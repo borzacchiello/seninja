@@ -228,21 +228,19 @@ class BufferView(QWidget, DockContextHandler):
         self.current_state.symbolic_buffers.append(
             (buff, address, constraint_str)
         )
-        self.update(self.current_state)
+        self.update_state(self.current_state)
 
     def reset(self):
         self.tab_name = None
         self.current_state = None
         self._table.setRowCount(0)
-        self.hide()
 
     def init(self, state):
         self.current_state = state
         self.tab_name = _normalize_tab_name(self.parent.getTabName())
-        self.update(state)
-        self.show()
+        self.update_state(state)
 
-    def update(self, state):
+    def update_state(self, state):
         self.current_state = state
         self._table.setRowCount(0)
         self._table.setRowCount(len(self.current_state.symbolic_buffers))
@@ -331,7 +329,7 @@ class BufferView(QWidget, DockContextHandler):
         t = self.current_state.symbolic_buffers[buffer_id]
         t = t[0], t[1], choices[res]
         self.current_state.symbolic_buffers[buffer_id] = t
-        self.update(self.current_state)
+        self.update_state(self.current_state)
 
     # double click event
     def on_doubleClick(self, item):

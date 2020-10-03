@@ -433,7 +433,7 @@ def _async_change_active_state_ip(bv, address):
         background_task.start()
 
 
-def _async_reset_se(bv):
+def _async_reset_se(bv, address):
     if not __check_executor():
         return
 
@@ -452,6 +452,7 @@ def _async_reset_se(bv):
 
         disable_widgets()
         reset_ui()
+        bv.file.navigate(bv.file.view, address)  # just an hack, to redraw widgets. find another way
 
         background_task = TaskInBackground(
             bv, "seninja: resetting symbolic execution", f)

@@ -17,6 +17,17 @@ class BNCache(object):
         self.instruction_len_cache = dict()
         self.settings = dict()
 
+    def reset(self):
+        self.addr_to_func_cache = dict()
+        self.name_to_func_cache = dict()
+        self.func_name_cache = dict()
+        self.llil_cache = dict()
+        self.llil_addr_cache = dict()
+        self.addr_cache = dict()
+        self.disasm_cache = dict()
+        self.instruction_len_cache = dict()
+        self.settings = dict()
+
     def get_function(self, address):
         if address in self.addr_to_func_cache:
             return self.addr_to_func_cache[address]

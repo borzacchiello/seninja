@@ -109,7 +109,7 @@ PluginCommand.register(
     "run (target must be set)",
     _async_run_bfs_searcher
 )
-PluginCommand.register(
+PluginCommand.register_for_address(
     "SENinja\\7   Reset",
     "delete all states",
     _async_reset_se

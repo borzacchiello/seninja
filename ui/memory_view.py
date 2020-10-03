@@ -151,7 +151,6 @@ class MemoryView(QWidget, DockContextHandler):
         self.arch = arch
         self.tab_name = _normalize_tab_name(self.parent.getTabName())
         self.update_mem(state)
-        self.show()
 
     def update_mem(self, state):
         self.current_state = state
@@ -204,7 +203,6 @@ class MemoryView(QWidget, DockContextHandler):
         self.hexWidget.full_data_changed.emit(
             0, {}, 0
         )
-        self.hide()
 
     def _handle_data_edited(self, offset, value):
         if not self.current_state or not self.address_start:

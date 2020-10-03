@@ -116,7 +116,7 @@ def ui_sync_view(state, delta=True):
         else:
             MW.update_mem(state)
     if BW.isVisible():
-        BW.update(state)
+        BW.update_state(state)
 
 
 def ui_reset_view():

@@ -87,7 +87,6 @@ class RegisterView(QWidget, DockContextHandler):
         self.reg_to_index = dict()
         self.symb_idx = 0
         self._table.setRowCount(0)
-        self.hide()
 
     def init(self, arch, state):
         self.arch = arch
@@ -103,7 +102,6 @@ class RegisterView(QWidget, DockContextHandler):
             self._table.setItem(i, 1, _makewidget(self, ""))
 
         self.set_reg_values(state)
-        self.show()
 
     def set_reg_value(self, reg, value, color=None):
         assert self.arch is not None
