@@ -442,6 +442,7 @@ def _async_reset_se(bv, address):
             tag = globs.searcher_tags[addr]
             func = globs.executor.bncache.get_function(addr)
             func.remove_auto_address_tag(addr, tag)
+        globs.searcher_tags = dict()
 
         globs.executor.reset()
         globs.executor = None
@@ -452,7 +453,8 @@ def _async_reset_se(bv, address):
 
         disable_widgets()
         reset_ui()
-        bv.file.navigate(bv.file.view, address)  # just an hack, to redraw widgets. find another way
+        # just an hack to redraw widgets. find another way
+        bv.file.navigate(bv.file.view, address)
 
         background_task = TaskInBackground(
             bv, "seninja: resetting symbolic execution", f)
