@@ -13,7 +13,7 @@ The plugin adds the following commands:
 
 More APIs can be executed through the python shell. For example, we can use the solver to _prove_ a condition for the current state:
 ``` python
->>> import seninja
+>>> import borzacchiello_seninja as seninja
 >>> s = seninja.get_current_state()
 >>> s.solver.satisfiable(extra_constraints=[s.regs.eax == 3])
 ```

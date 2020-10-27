@@ -1,4 +1,4 @@
-import seninja.seninja_globals as globs
+from ..seninja_globals import globs
 from PySide2.QtWidgets import QApplication
 from binaryninjaui import DockHandler, UIAction, UIActionHandler, Menu
 from PySide2.QtCore import Qt
@@ -7,30 +7,28 @@ from .memory_view import MemoryView
 from .buffer_view import BufferView
 from .argv_form import GetArgvDialog
 
-RW = None
-MW = None
-BW = None
+class BNWidgets(object):
+    RW = None
+    MW = None
+    BW = None
 
 
 def _get_registerview_widget(name, parent, data):
-    global RW
-    RW = RegisterView(parent, name, data)
-    RW.setEnabled(False)
-    return RW
+    BNWidgets.RW = RegisterView(parent, name, data)
+    BNWidgets.RW.setEnabled(False)
+    return BNWidgets.RW
 
 
 def _get_memoryview_widget(name, parent, data):
-    global MW
-    MW = MemoryView(parent, name, data)
-    MW.setEnabled(False)
-    return MW
+    BNWidgets.MW = MemoryView(parent, name, data, BNWidgets)
+    BNWidgets.MW.setEnabled(False)
+    return BNWidgets.MW
 
 
 def _get_buffer_view_widget(name, parent, data):
-    global BW
-    BW = BufferView(parent, name, data)
-    BW.setEnabled(False)
-    return BW
+    BNWidgets.BW = BufferView(parent, name, data)
+    BNWidgets.BW.setEnabled(False)
+    return BNWidgets.BW
 
 
 def _launchArgvDialog(context):
@@ -74,59 +72,59 @@ def _registerUIActions():
 
 
 def enable_widgets():
-    assert RW is not None
-    assert MW is not None
-    assert BW is not None
+    assert BNWidgets.RW is not None
+    assert BNWidgets.MW is not None
+    assert BNWidgets.BW is not None
 
-    RW.setEnabled(True)
-    MW.setEnabled(True)
-    BW.setEnabled(True)
+    BNWidgets.RW.setEnabled(True)
+    BNWidgets.MW.setEnabled(True)
+    BNWidgets.BW.setEnabled(True)
 
 
 def disable_widgets():
-    assert RW is not None
-    assert MW is not None
-    assert BW is not None
+    assert BNWidgets.RW is not None
+    assert BNWidgets.MW is not None
+    assert BNWidgets.BW is not None
 
-    RW.setEnabled(False)
-    MW.setEnabled(False)
-    BW.setEnabled(False)
+    BNWidgets.RW.setEnabled(False)
+    BNWidgets.MW.setEnabled(False)
+    BNWidgets.BW.setEnabled(False)
 
 
 def ui_set_arch(arch, state):
-    assert RW is not None
-    assert MW is not None
-    assert BW is not None
+    assert BNWidgets.RW is not None
+    assert BNWidgets.MW is not None
+    assert BNWidgets.BW is not None
 
-    RW.init(arch, state)
-    MW.init(arch, state)
-    BW.init(state)
+    BNWidgets.RW.init(arch, state)
+    BNWidgets.MW.init(arch, state)
+    BNWidgets.BW.init(state)
 
 
 def ui_sync_view(state, delta=True):
-    assert RW is not None
-    assert MW is not None
-    assert BW is not None
+    assert BNWidgets.RW is not None
+    assert BNWidgets.MW is not None
+    assert BNWidgets.BW is not None
 
-    if RW.isVisible():
-        RW.set_reg_values(state)
-    if MW.isVisible():
+    if BNWidgets.RW.isVisible():
+        BNWidgets.RW.set_reg_values(state)
+    if BNWidgets.MW.isVisible():
         if delta:
-            MW.update_mem_delta(state)
+            BNWidgets.MW.update_mem_delta(state)
         else:
-            MW.update_mem(state)
-    if BW.isVisible():
-        BW.update_state(state)
+            BNWidgets.MW.update_mem(state)
+    if BNWidgets.BW.isVisible():
+        BNWidgets.BW.update_state(state)
 
 
 def ui_reset_view():
-    assert RW is not None
-    assert MW is not None
-    assert BW is not None
+    assert BNWidgets.RW is not None
+    assert BNWidgets.MW is not None
+    assert BNWidgets.BW is not None
 
-    RW.reset()
-    MW.reset()
-    BW.reset()
+    BNWidgets.RW.reset()
+    BNWidgets.MW.reset()
+    BNWidgets.BW.reset()
 
 
 _registerDynamicWidgets()

@@ -1,4 +1,4 @@
-import seninja.seninja_globals as globs
+from .seninja_globals import globs
 from binaryninja import (
     log_alert,
     log_info,

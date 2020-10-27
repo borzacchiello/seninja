@@ -1,4 +1,3 @@
-import seninja.ui as sui
 from binaryninja import BackgroundTaskThread
 from binaryninja.interaction import (
     show_message_box,
@@ -32,7 +31,6 @@ from ..utility.expr_wrap_util import symbolic, split_bv_in_list
 from ..expr.bitvector import BVS, BVV
 from .hexview import HexViewWidget
 
-
 def _normalize_tab_name(tab_name):
     return tab_name[:tab_name.find("(")-1]
 
@@ -52,7 +50,7 @@ class MemoryViewBT(BackgroundTaskThread):
 
 class MemoryView(QWidget, DockContextHandler):
 
-    def __init__(self, parent, name, data):
+    def __init__(self, parent, name, data, bnwidgets):
         QWidget.__init__(self, parent)
         DockContextHandler.__init__(self, self, name)
 
@@ -60,6 +58,7 @@ class MemoryView(QWidget, DockContextHandler):
         self.actionHandler.setupActionHandler(self)
         self.data = data
         self.parent = parent
+        self.bnwidgets = bnwidgets
 
         self.current_state = None
         self.arch = None
@@ -293,7 +292,7 @@ class MemoryView(QWidget, DockContextHandler):
         )
         self.symb_idx += 1
         self.update_mem_delta(self.current_state)
-        sui.BW.onNewBufferSignal.emit(self.current_state)
+        self.bnwidgets.BW.onNewBufferSignal.emit(self.current_state)
 
     def _copy_big_endian(self, expr):
         mime = QMimeData()

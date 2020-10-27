@@ -1,4 +1,4 @@
-import seninja.seninja_globals as globs
+from .seninja_globals import globs
 from .ui import (
     ui_sync_view,
     ui_reset_view,
