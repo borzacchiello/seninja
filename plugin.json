@@ -24,6 +24,12 @@
       "Windows": "Install `z3-solver` using pip: `pip install z3-solver`",
       "Linux": "Install `z3-solver` using pip: `pip install z3-solver`"
    },
+   "dependencies": {
+		"pip": ["z3-solver"],
+		"apt": [],
+		"installers": [],
+		"other": []
+	},
    "version": "0.2.2",
    "minimumbinaryninjaversion": 2100
 }
