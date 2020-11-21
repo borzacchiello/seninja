@@ -1,4 +1,5 @@
 from binaryninja import SymbolType
+from .exceptions import UnsupportedOs
 from ..os_models.linux import Linuxi386, Linuxia64, LinuxArmV7
 from ..os_models.windows import Windows
 
@@ -74,4 +75,4 @@ def find_os(view):
     elif platform_name == 'windows-x86_64':
         return Windows()
 
-    raise Exception("Unsupported os")
+    raise UnsupportedOs(platform_name)

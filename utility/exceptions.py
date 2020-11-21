@@ -1,5 +1,9 @@
 # ERRORS
 class SENinjaError(Exception):
+    def __init__(self, msg):
+        self.message = msg
+        super().__init__(msg)
+
     def is_fatal(self):
         raise NotImplementedError  # override
 
@@ -62,6 +66,16 @@ class UnsatState(SENinjaError):
         return True
 
 
+class ModelError(SENinjaError):
+    def __init__(self, model_name, msg):
+        self.model_name = model_name
+        self.message = "%s: %s" % (model_name, msg)
+        super().__init__(self.message)
+
+    def is_fatal(self):
+        return True
+
+
 class UnimplementedInstruction(SENinjaError):
     def __init__(self, instr_name):
         self.instr_name = instr_name
@@ -91,6 +105,25 @@ class UnimplementedSyscall(SENinjaError):
     def is_fatal(self):
         return True
 
+
+class UnsupportedOs(SENinjaError):
+    def __init__(self, platform_name):
+        self.platform_name = platform_name
+        self.message = "unsupported os %s" % platform_name
+        super().__init__(self.message)
+
+    def is_fatal(self):
+        return True
+
+
+class UnsupportedArch(SENinjaError):
+    def __init__(self, arch_name):
+        self.arch_name = arch_name
+        self.message = "unsupported arch %s" % arch_name
+        super().__init__(self.message)
+
+    def is_fatal(self):
+        return True
 # *****
 
 

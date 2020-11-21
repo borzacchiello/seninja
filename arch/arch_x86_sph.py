@@ -1,7 +1,10 @@
-from ..utility.bninja_util import get_function, get_addr_next_inst
+from ..utility.bninja_util import (
+    get_function, get_addr_next_inst
+)
 from ..utility.x86_native_handlers_util import (
     store_to_dst, get_src
 )
+from ..utility.exceptions import ModelError
 from ..expr import ITE, BVV, Bool
 from .arch_abstract import SpecialInstructionHandler
 
@@ -87,9 +90,9 @@ class ArchX86SPH(SpecialInstructionHandler):
         eax_v = sv.state.regs.eax
         ecx_v = sv.state.regs.ecx
         if not isinstance(eax_v, BVV):
-            raise Exception("cpuid: symbolic eax")
+            raise ModelError("cpuid", "symbolic eax")
         if not isinstance(ecx_v, BVV):
-            raise Exception("cpuid: symbolic ecx")
+            raise ModelError("cpuid", "symbolic ecx")
         eax_v = eax_v.value
         ecx_v = ecx_v.value
         if eax_v == 0 and ecx_v == 0:
@@ -108,8 +111,9 @@ class ArchX86SPH(SpecialInstructionHandler):
             setattr(sv.state.regs, dst_ecx, BVV(0x00400004, bits))
             setattr(sv.state.regs, dst_edx, BVV(0x00000000, bits))
         else:
-            raise Exception(
-                "cpuid: unsupported (eax, ecx) value (%d, %d)" % (eax_v, ecx_v))
+            raise ModelError(
+                "cpuid", "unsupported (eax, ecx) value (%d, %d)" % (eax_v, ecx_v))
+
         return True
 
     def cpuid_handler(self, sv, parameters):

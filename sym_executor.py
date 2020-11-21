@@ -4,13 +4,13 @@ from binaryninja import (
 )
 from .sym_visitor import SymbolicVisitor
 from .sym_state import State
-from .arch.arch_x86 import x86Arch
-from .arch.arch_x86_64 import x8664Arch
-from .arch.arch_armv7 import ArmV7Arch
 from .utility.bninja_util import (
     get_imported_functions_and_addresses,
     find_os
 )
+from .arch.arch_x86 import x86Arch
+from .arch.arch_x86_64 import x8664Arch
+from .arch.arch_armv7 import ArmV7Arch
 from .utility import exceptions
 from .expr import BVV, BVS
 from .utility.binary_ninja_cache import BNCache
@@ -21,6 +21,17 @@ NO_COLOR = enums.HighlightStandardColor(0)
 CURR_STATE_COLOR = enums.HighlightStandardColor.GreenHighlightColor
 DEFERRED_STATE_COLOR = enums.HighlightStandardColor.RedHighlightColor
 ERRORED_STATE_COLOR = enums.HighlightStandardColor.BlackHighlightColor
+
+
+def find_arch(view):
+    if view.arch.name == "x86":
+        return x86Arch()
+    elif view.arch.name == "x86_64":
+        return x8664Arch()
+    elif view.arch.name == "armv7":
+        return ArmV7Arch()
+
+    raise exceptions.UnsupportedArch(view.arch.name)
 
 
 class SymbolicExecutor(object):
@@ -46,14 +57,8 @@ class SymbolicExecutor(object):
             "init_reg_mem_with_zero") == "true"
 
         self._wasjmp = False
-        if self.view.arch.name == "x86":
-            self.arch = x86Arch()
-        elif self.view.arch.name == "x86_64":
-            self.arch = x8664Arch()
-        elif self.view.arch.name == "armv7":
-            self.arch = ArmV7Arch()
 
-        assert self.arch is not None
+        self.arch = find_arch(self.view)
         page_size = int(self.bncache.get_setting("memory.page_size"))
         self.state = State(self, arch=self.arch,
                            os=find_os(view), page_size=page_size)
