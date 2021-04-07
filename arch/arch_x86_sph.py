@@ -4,6 +4,7 @@ from ..utility.bninja_util import (
 from ..utility.x86_native_handlers_util import (
     store_to_dst, get_src
 )
+from ..utility.expr_wrap_util import split_bv_in_list
 from ..utility.exceptions import ModelError
 from ..expr import ITE, BVV, Bool
 from .arch_abstract import SpecialInstructionHandler
@@ -125,7 +126,20 @@ class ArchX86SPH(SpecialInstructionHandler):
         return True
 
     def paddb_handler(self, sv, parameters):
-        return False
+        src1 = get_src(sv.state, parameters[0])
+        src1_bytes = split_bv_in_list(src1, 8)
+        src2 = get_src(sv.state, parameters[1])
+        src2_bytes = split_bv_in_list(src2, 8)
+
+        res = None
+        for b1, b2 in zip(src1_bytes, src2_bytes):
+            if res is None:
+                res = b1 + b2
+            else:
+                res = (b1 + b2).Concat(res)
+
+        store_to_dst(sv.state, parameters[0], res)
+        return True
 
     def paddw_handler(self, sv, parameters):
         return False
@@ -166,8 +180,12 @@ class ArchX86SPH(SpecialInstructionHandler):
 
         # get src (64bit)
         src = get_src(sv.state, src_p)
-        assert src.size == 64
+        if src.size > 64:
+            src = src.Extract(63, 0)
 
-        store_to_dst(sv.state, dst_p, src.ZeroExt(16*8-64))
+        if "[" not in dst_p:
+            store_to_dst(sv.state, dst_p, src.ZeroExt(16*8-64))
+        else:
+            store_to_dst(sv.state, dst_p, src)
         return True
     # ----------------

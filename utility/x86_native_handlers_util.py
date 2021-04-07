@@ -56,7 +56,7 @@ def __find_address_mem(state, parameter):
         if was_add:
             res = m_res if res is None else (res + m_res)
         else:
-            res = m_res if res is None else (res - m_res)
+            res = m_res if res is None else (m_res - res)
 
     return res, size
 

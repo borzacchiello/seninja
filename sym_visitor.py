@@ -37,7 +37,7 @@ class BNILVisitor(object):
         if hasattr(self, method_name):
             value = getattr(self, method_name)(expression)
         else:
-            raise UnimplementedInstruction(expression.operation.name)
+            raise UnimplementedInstruction(expression.operation.name, self.executor.state.get_ip())
         return value
 
 
@@ -378,6 +378,7 @@ class SymbolicVisitor(BNILVisitor):
     def visit_LLIL_STORE(self, expr):
         dest = self.visit(expr.dest)
         src = self.visit(expr.src)
+        assert expr.size*8 == src.size
 
         self.executor.state.mem.store(
             dest, src, endness=self.executor.arch.endness())

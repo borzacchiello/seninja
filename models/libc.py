@@ -20,6 +20,14 @@ ascii_numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
 # ---- NATIVE CONCRETE HANDLERS -----
 
+def srand_handler(state: State, view):
+    seed = get_arg_k(state, 1, state.arch.bits() // 8, view)
+    libc_native.srand(seed.value)
+    return BVV(1, 32)
+
+def rand_handler(state: State, view):
+    val = libc_native.rand()
+    return BVV(val, 32)
 
 def strtoul_handler(state: State, view):
     str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)

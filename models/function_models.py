@@ -34,6 +34,8 @@ library_functions = {
 
     # concrete models
     'strtoul':          models_libc.strtoul_handler,
+    'srand':            models_libc.srand_handler,
+    'rand':             models_libc.rand_handler,
 
     # models Teensy Board
     # Print::println(int)

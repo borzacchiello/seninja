@@ -77,9 +77,9 @@ class ModelError(SENinjaError):
 
 
 class UnimplementedInstruction(SENinjaError):
-    def __init__(self, instr_name):
+    def __init__(self, instr_name, ip):
         self.instr_name = instr_name
-        self.message = "%s instruction is unimplemented" % instr_name
+        self.message = "%s instruction is unimplemented @ %#x" % (instr_name, ip)
         super().__init__(self.message)
 
     def is_fatal(self):
