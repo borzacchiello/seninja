@@ -147,7 +147,7 @@ class BVExpr(BV):
         new_interval = self.interval.LShR(other.interval)
         if new_interval.low == new_interval.high:
             # concrete path
-            return BVV(self.size, new_interval.low)
+            return BVV(new_interval.low, self.size)
         return BVExpr(self.size, self.z3obj >> other.z3obj, new_interval)
 
     def __eq__(self, other):
@@ -251,7 +251,7 @@ class BVExpr(BV):
         new_interval = self.interval.LShR(other.interval)
         if new_interval.low == new_interval.high:
             # concrete path
-            return BVV(self.size, new_interval.low)
+            return BVV(new_interval.low, self.size)
         return BVExpr(self.size, z3.LShR(self.z3obj, other.z3obj), new_interval)
 
     def AShR(self, other):
