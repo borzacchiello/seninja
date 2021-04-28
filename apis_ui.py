@@ -27,6 +27,9 @@ from .utility.string_util import (
 )
 from .utility.expr_wrap_util import split_bv_in_list
 from .utility.bninja_util import get_address_after_merge
+from .utility.exceptions import SENinjaError
+
+import sys
 
 
 # TODO bring all logic from here to apis.py
@@ -93,7 +96,12 @@ def _async_start_se(bv, address):
         return False
 
     def f(tb):
-        globs.executor = SymbolicExecutor(bv, address)
+        try:
+            globs.executor = SymbolicExecutor(bv, address)
+        except SENinjaError as e:
+            sys.stderr.write(e.message + "\n")
+            globs._running = False
+            return
 
         globs.dfs_searcher = searcher.DFSSearcher(globs.executor)
         globs.bfs_searcher = searcher.BFSSearcher(globs.executor)
@@ -105,6 +113,10 @@ def _async_start_se(bv, address):
             bv, "seninja: starting symbolic execution", f)
         background_task.start()
         background_task.join()
+
+        if not __check_executor():
+            # something wrong
+            return
 
         initialize_ui()
         sync_ui(bv)
