@@ -46,13 +46,6 @@ class ArchX86SPH(SpecialInstructionHandler):
         v = ITE(cond, BVV(1, 8), BVV(0, 8))
         store_to_dst(executor.state, parameters[0], v)
 
-        executor._wasjmp = True
-        executor.update_ip(
-            func.name,
-            func.llil.get_instruction_start(
-                executor.ip + executor.bncache.get_instruction_len(executor.ip)
-            )
-        )
         return True
 
     def _cmovCC(self, executor, parameters):
@@ -73,13 +66,6 @@ class ArchX86SPH(SpecialInstructionHandler):
 
         store_to_dst(executor.state, parameters[0], cond_data)
 
-        executor._wasjmp = True
-        executor.update_ip(
-            func.name,
-            func.llil.get_instruction_start(
-                executor.ip + executor.bncache.get_instruction_len(executor.ip)
-            )
-        )
         return True
 
     def cpuid_util(self, sv, bits):

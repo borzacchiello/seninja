@@ -1,8 +1,12 @@
+from ..expr import BVV, BVS
 from . import others as models_other
 from . import libc as models_libc
 from . import unistd as models_unistd
 from . import string as models_string
 from . import teensy as models_teensy
+
+def reval_model(val, nbits):
+    return lambda state, view: BVV(val, nbits)
 
 library_functions = {
     'printf':           models_libc.printf_handler,
