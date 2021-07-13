@@ -36,6 +36,10 @@ library_functions = {
     '__xstat':          models_unistd.xstat_handler,
     'exit':             models_libc.exit_handler,
 
+    # C++
+    '_Znwm':            models_libc.malloc_handler,
+    '_Znwj':            models_libc.malloc_handler,
+
     # concrete models
     'strtoul':          models_libc.strtoul_handler,
     'srand':            models_libc.srand_handler,

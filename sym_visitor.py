@@ -178,6 +178,20 @@ class SymbolicVisitor(BNILVisitor):
 
         return left - right
 
+    def visit_LLIL_SBB(self, expr):
+        left = self.visit(expr.left)
+        right = self.visit(expr.right)
+        carry = self.visit(expr.carry)
+
+        if right.size > left.size:
+            left = left.SignExt(right.size - left.size)
+        if left.size > right.size:
+            right = right.SignExt(left.size - right.size)
+        if carry.size < left.size:
+            carry = carry.ZeroExt(left.size - carry.size)
+
+        return left - (right + carry)
+
     def visit_LLIL_MUL(self, expr):
         left = self.visit(expr.left)
         right = self.visit(expr.right)

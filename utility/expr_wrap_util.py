@@ -24,7 +24,7 @@ def bvv_from_bytes(val: bytes):  # DONT USE IT TO CREATE LONG BV!!
 def split_bv(bv: BV, split_index: int):
     return (
         bv.Extract(bv.size - 1, split_index),  # most significant
-        bv.Extract(split_index - 1, 0)           # least significant
+        bv.Extract(split_index - 1, 0)         # least significant
     )
 
 

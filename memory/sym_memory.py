@@ -55,6 +55,8 @@ class Page(object):
 
 
 class Memory(MemoryAbstract):
+    CHECK_SYMB_ADDR_WITH_SOLVER = False
+
     def __init__(self, state, page_size=0x1000, bits=64, symb_uninitialized=False):
         # page_size must be a power of 2
         assert (page_size & (page_size - 1)) == 0
@@ -125,7 +127,7 @@ class Memory(MemoryAbstract):
 
         if isinstance(address, BVV):
             return address, None, None
-        if not self.state.solver.symbolic(address):  # check with solver
+        if Memory.CHECK_SYMB_ADDR_WITH_SOLVER and not self.state.solver.symbolic(address):  # check with solver
             return self.state.solver.evaluate(address), None, None
 
         print("WARNING: memory %s, symbolic memory access" % op_type)
@@ -180,7 +182,7 @@ class Memory(MemoryAbstract):
 
         if symb_access_mode == "fully_symbolic":
             return (
-                address_conc,
+                address,
                 min_addr_approx if min_addr is None else min_addr,
                 max_addr_approx if max_addr is None else max_addr
             )

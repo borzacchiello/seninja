@@ -5,7 +5,7 @@ from collections import OrderedDict
 from .utility.expr_wrap_util import symbolic
 from .expr import BV, BVV, Bool, And, Or
 
-USE_OPT_SOLVER = 0
+USE_OPT_SOLVER = False
 
 
 class Solver(object):
