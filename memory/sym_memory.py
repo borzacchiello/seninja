@@ -17,7 +17,7 @@ class Page(object):
         self.size = size
         self.bits = bits
         self.dirty = False
-        self.mo = MemoryObj(str(addr), bits)
+        self.mo = MemoryObj("%Xh" % addr, bits)
         self._init = init
         self._lazycopy = 0
 
@@ -74,6 +74,12 @@ class Memory(MemoryAbstract):
 
     def __repr__(self):
         return self.__str__()
+
+    def get_assertions_for_page(self, page_addr):
+        if page_addr not in self.pages:
+            return None
+
+        return self.pages[page_addr].mo.bvarray.get_assertions()
 
     def mmap(self, address: int, size: int, init: InitData = None):
         assert address % self.page_size == 0

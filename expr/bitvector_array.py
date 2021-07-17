@@ -16,6 +16,7 @@ class BVArray(object):
         self.index_width = index_width
         self.value_width = value_width
         self._conc_store = {}
+        self._assertions = list()
         self._z3obj = None
         self._z3objConcCache = None
 
@@ -86,14 +87,16 @@ class BVArray(object):
                 z3.BitVecSort(self.index_width),
                 z3.BitVecSort(self.value_width)
             )
+            # The solver needs to add those constraints! (even lazly)
             for index in self._conc_store:
-                self._z3obj = z3.Store(
-                    self._z3obj,
-                    z3.BitVecVal(index, self.index_width),
-                    self._conc_store[index].z3obj
+                self._assertions.append(
+                    z3.Select(self._z3obj, index) == self._conc_store[index].z3obj
                 )
 
             self._conc_store = None
+
+    def get_assertions(self):
+        return self._assertions
 
     def Store(self, index, value):
         if isinstance(index, int):
@@ -179,21 +182,8 @@ class BVArray(object):
             return self._conc_store[index.value]
 
         # symbolic mode
-        # no need to switch to symbolic mode! (is this right?)
-        res = BVExpr(self.value_width,
-                     z3.Select(
-                         self._try_build_reduced_array(
-                             index.interval.low, index.interval.high),
-                         index.z3obj
-                     )
-                     )
-        if (
-            isinstance(index, BVV) and
-            self._conc_store is not None
-        ):
-            # uninitialized read
-            self._conc_store[index.value] = res
-        return res
+        self._switch_to_symbolic()
+        return BVExpr(self.value_width, z3.Select(self._z3obj, index.z3obj))
 
     def copy(self):
         new = BVArray(self.name, self.index_width, self.value_width)
@@ -210,6 +200,8 @@ class BVArray(object):
             if merge_condition.value:
                 return other.copy()
             return self
+
+        # FIXME: broken!! Handle assertions
 
         self._switch_to_symbolic()
         self._z3obj = z3.If(

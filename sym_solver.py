@@ -3,20 +3,24 @@ import z3
 from copy import deepcopy
 from collections import OrderedDict
 from .utility.expr_wrap_util import symbolic
-from .expr import BV, BVV, Bool, And, Or
+from .expr import BV, BVV, Bool, And, Or, BoolExpr
 
 USE_OPT_SOLVER = False
-
+DBG            = False
 
 class Solver(object):
     def __init__(self, state):
         self.state = state
         self.assertions = []
+        self._added_mem_constraints = set()
         self._solver = z3.Optimize() if USE_OPT_SOLVER else z3.Solver()
         self._min_cache = OrderedDict()
         self._max_cache = OrderedDict()
         self._eval_cache = OrderedDict()
         self._symb_check_cache = OrderedDict()
+
+        if DBG:
+            self.dbg_idx = 0
 
     def __str__(self):
         return "<SymSolver id: 0x%x, %d assertions>" % \
@@ -31,10 +35,47 @@ class Solver(object):
         self._eval_cache = OrderedDict()
         self._symb_check_cache = OrderedDict()
 
+    def _rejuvenate(self):
+        self._solver = z3.Optimize() if USE_OPT_SOLVER else z3.Solver()
+        for a in self.assertions:
+            self._solver.add(a.z3obj)
+
+    @staticmethod
+    def _get_all_symbols_from_z3_formula(formula, processed_formulas=None):
+        processed_formulas = processed_formulas or set()
+        res  = set()
+
+        decl = formula.decl()
+        if decl.kind() == z3.Z3_OP_UNINTERPRETED:
+            res.add(decl.name())
+
+        for c in formula.children():
+            if c in processed_formulas:
+                continue
+            processed_formulas.add(c)
+            res |= Solver._get_all_symbols_from_z3_formula(c, processed_formulas)
+        return res
+
+    def _add_memory_constraints(self, *constraints):
+        # If we find a page symbol, then we will add the
+        # eventual concrete values as assertion to the solver
+        for formula in constraints:
+            for s in Solver._get_all_symbols_from_z3_formula(formula.z3obj):
+                if s.startswith("MEMOBJ_") and s.endswith("h"):
+                    page_addr = s.split("_")[1][:-1]
+                    page_addr = int(page_addr, 16)
+
+                    if page_addr in self._added_mem_constraints:
+                        continue
+                    self._added_mem_constraints.add(page_addr)
+                    assertions = self.state.mem.get_assertions_for_page(page_addr)
+                    for a in assertions:
+                        self.add_constraints(BoolExpr(a), simplify_constraint=False, check_mem=False)
+
     def get_path_constraint(self):
         return self.assertions
 
-    def add_constraints(self, *constraints, simplify_constraint=True):
+    def add_constraints(self, *constraints, simplify_constraint=True, check_mem=True):
         self._invalidate_cache()
         for c in constraints:
             assert isinstance(c, Bool)
@@ -42,6 +83,8 @@ class Solver(object):
                 c = c.simplify()
             cz3 = c.z3obj
             if not z3.BoolVal(True).eq(cz3):
+                if check_mem:
+                    self._add_memory_constraints(c)
                 self._solver.add(cz3)
                 self.assertions.append(c)
 
@@ -55,8 +98,15 @@ class Solver(object):
 
     def satisfiable(self, extra_constraints: list = None):
         if extra_constraints:
+            self._add_memory_constraints(*extra_constraints)
             self._solver.push()
             self._add_tmp_constraints(*extra_constraints)
+
+        if DBG:
+            fout = open("/dev/shm/seninja_q_%d" % self.dbg_idx, "w")
+            self.dbg_idx += 1
+            fout.write(self._solver.sexpr())
+            fout.close()
 
         res = self._solver.check().r == 1
 
@@ -66,11 +116,13 @@ class Solver(object):
 
     def evaluate(self, var, extra_constraints: list = None) -> int:
         if extra_constraints:
+            self._add_memory_constraints(*extra_constraints)
             self._solver.push()
             self._add_tmp_constraints(*extra_constraints)
         elif var in self._eval_cache:
             return self._eval_cache[var]
 
+        self._add_memory_constraints(var)
         if not self.satisfiable():
             if extra_constraints:
                 self._solver.pop()
@@ -88,12 +140,15 @@ class Solver(object):
     def evaluate_upto(self, var, n, extra_constraints: list = None) -> list:
         self._solver.push()
         if extra_constraints:
+            self._add_memory_constraints(*extra_constraints)
             self._add_tmp_constraints(*extra_constraints)
 
+        self._add_memory_constraints(var)
         if not self.satisfiable():
             if extra_constraints:
                 self._solver.pop()
             assert False  # not satisfiable!
+
         res = list()
         while n > 0 and self.satisfiable():
             model = self._solver.model()
@@ -148,6 +203,7 @@ class Solver(object):
         if val in self._max_cache:
             return self._max_cache[val]
 
+        self._add_memory_constraints(val)
         # res = self._max_binary_search(val)
         res = self._max_z3_optimize(val)
         val.interval.high = res
@@ -188,6 +244,7 @@ class Solver(object):
         if val in self._min_cache:
             return self._min_cache[val]
 
+        self._add_memory_constraints(val)
         # res = self._min_binary_search(val)
         res = self._min_z3_optimize(val)
         val.interval.low = res
@@ -197,6 +254,7 @@ class Solver(object):
 
     def model(self, extra_constraints: list = None):
         if extra_constraints:
+            self._add_memory_constraints(*extra_constraints)
             self._solver.push()
             self._add_tmp_constraints(*extra_constraints)
 
