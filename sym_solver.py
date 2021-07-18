@@ -41,19 +41,24 @@ class Solver(object):
             self._solver.add(a.z3obj)
 
     @staticmethod
-    def _get_all_symbols_from_z3_formula(formula, processed_formulas=None):
-        processed_formulas = processed_formulas or set()
-        res  = set()
+    def _get_all_symbols_from_z3_formula(formula):
+        processed_formulas = set()
+        res = set()
 
-        decl = formula.decl()
-        if decl.kind() == z3.Z3_OP_UNINTERPRETED:
-            res.add(decl.name())
-
-        for c in formula.children():
-            if c in processed_formulas:
+        queue = [formula]
+        while queue:
+            formula = queue.pop()
+            if formula in processed_formulas:
                 continue
-            processed_formulas.add(c)
-            res |= Solver._get_all_symbols_from_z3_formula(c, processed_formulas)
+            processed_formulas.add(formula)
+
+            decl = formula.decl()
+            if decl.kind() == z3.Z3_OP_UNINTERPRETED:
+                res.add(decl.name())
+
+            for c in formula.children():
+                queue.append(c)
+
         return res
 
     def _add_memory_constraints(self, *constraints):
