@@ -181,6 +181,19 @@ class BVArray(object):
             # concrete mode
             return self._conc_store[index.value]
 
+        if (
+            isinstance(index, BVV) and
+            self._conc_store is not None and
+            index.value not in self._conc_store
+        ):
+            # uninitialized read
+            arr = z3.Array(
+                self.name,
+                z3.BitVecSort(self.index_width),
+                z3.BitVecSort(self.value_width)
+            )
+            return BVExpr(self.value_width, z3.Select(arr, index.z3obj))
+
         # symbolic mode
         self._switch_to_symbolic()
         return BVExpr(self.value_width, z3.Select(self._z3obj, index.z3obj))
