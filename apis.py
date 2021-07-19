@@ -239,6 +239,16 @@ def mk_symb_buffer(state, name, size):
     return buff
 
 
+def get_stdin_bv(state):
+    r = None
+    for el in state.os.get_stdin_stream():
+        if r is None:
+            r = el
+        else:
+            r = r.Concat(el)
+    return r
+
+
 def register_hook(address, func):
     if not __check_executor():
         return

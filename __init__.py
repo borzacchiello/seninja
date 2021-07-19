@@ -34,6 +34,9 @@ from .apis_ui import (
     sync_ui
 )
 from .apis import (
+    start_se,
+    reset_se,
+    continue_until_branch,
     setup_argv,
     execute_one_instruction,
     stop,
@@ -41,6 +44,7 @@ from .apis import (
     get_executor,
     register_hook,
     register_logger,
+    get_stdin_bv,
     reload_settings
 )
 
