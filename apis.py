@@ -106,7 +106,7 @@ def run_bfs(target: int, avoid: list = None):
     return res
 
 
-def execute_one_instruction(bv):
+def execute_one_instruction():
     if not __check_executor():
         return
 
