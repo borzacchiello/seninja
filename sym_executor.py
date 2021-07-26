@@ -251,6 +251,10 @@ class SymbolicExecutor(object):
         self.state.set_ip(self.ip)
         self.state.llil_ip = new_llil_ip
 
+    def _update_state_history(self, state, addr):
+        if self.bncache.get_setting("save_state_history") == 'true':
+            state.insn_history.add(addr)
+
     def _execute_one(self):
         self._last_error = None
         func_name = self.bncache.get_function_name(self.ip)
@@ -264,8 +268,10 @@ class SymbolicExecutor(object):
                 self.state)
 
             for s in new_deferred:
+                self._update_state_history(s, old_ip)
                 self.put_in_deferred(s)
             for s, msg in new_errored:
+                self._update_state_history(s, old_ip)
                 self.put_in_errored(s, msg)
 
             if new_state is not None:
@@ -284,6 +290,7 @@ class SymbolicExecutor(object):
                     dest_func_name,
                     self.bncache.get_llil_address(dest_func_name, new_ip)
                 )
+                self._update_state_history(new_state, old_ip)
                 return self.ip
 
         else:
@@ -292,6 +299,7 @@ class SymbolicExecutor(object):
             dont_use_special_handlers = \
                 self.bncache.get_setting("dont_use_special_handlers") == 'true'
             disasm_str = self.bncache.get_disasm(self.ip)
+            old_ip = self.ip
 
             try:
                 if (
@@ -308,6 +316,7 @@ class SymbolicExecutor(object):
                     self.llil_ip = self.bncache.get_function(
                         self.ip).llil.get_instruction_start(self.ip)
             except exceptions.ExitException:
+                self._update_state_history(self.state, old_ip)
                 self.put_in_exited(self.state)
                 self.state = None
             except exceptions.SENinjaError as err:
@@ -316,6 +325,8 @@ class SymbolicExecutor(object):
                 self._last_error = err
                 if err.is_fatal():
                     raise err
+
+            self._update_state_history(self.state, old_ip)
 
         if self.state is None:
             if self.fringe.is_empty():

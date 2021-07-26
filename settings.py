@@ -99,6 +99,15 @@ Settings().register_setting("seninja.dont_use_special_handlers", """
         "description" : "If true, architecture-specific handlers will not be used."
     }
     """)
+Settings().register_setting("seninja.save_state_history", """
+    {
+        "title" : "Save instructions executed by the state",
+        "type" : "boolean",
+        "default" : false,
+        "description" : "If true, each state will save the instruction that it executed."
+    }
+    """)
+
 
 Settings().register_setting("seninja.models.use_atox_slow_model", """
     {

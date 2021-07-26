@@ -7,3 +7,5 @@ class globs(object):
     _running = False
     TARGET_TAG_TYPE = None
     AVOID_TAG_TYPE = None
+
+    highlighted_state_history = list()

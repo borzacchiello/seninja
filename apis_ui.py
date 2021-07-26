@@ -10,7 +10,8 @@ from binaryninja import (
     log_alert,
     log_info,
     BackgroundTaskThread,
-    PluginCommand
+    PluginCommand,
+    enums
 )
 from .sym_executor import SymbolicExecutor
 from .multipath import searcher
@@ -30,6 +31,9 @@ from .utility.bninja_util import get_address_after_merge
 from .utility.exceptions import SENinjaError
 
 import sys
+
+NO_COLOR = enums.HighlightStandardColor(0)
+HIGHLIGHTED_HISTORY_COLOR = enums.HighlightStandardColor.YellowHighlightColor
 
 
 # TODO bring all logic from here to apis.py
@@ -53,9 +57,22 @@ def __check_executor():
     return True
 
 
+def ui_reset_state_history_highlight():
+    if len(globs.highlighted_state_history) > 0:
+        # Remove highlight
+        for insn in globs.highlighted_state_history:
+            func = globs.executor.bncache.get_function(insn)
+            func.set_auto_instr_highlight(insn, NO_COLOR)
+
+        globs.highlighted_state_history = list()
+
+
 def sync_ui(bv, delta=True):
     if not __check_executor():
         return
+
+    ui_reset_state_history_highlight()
+
     globs.executor.set_colors()
     if globs.executor.state is not None:
         ui_sync_view(globs.executor.state, delta)
@@ -67,6 +84,7 @@ def sync_ui(bv, delta=True):
 def reset_ui():
     if not __check_executor():
         return
+    ui_reset_state_history_highlight()
     ui_reset_view()
 
 
@@ -121,6 +139,29 @@ def _async_start_se(bv, address):
         initialize_ui()
         sync_ui(bv)
         enable_widgets()
+
+
+def _async_toggle_state_history(bv):
+    if not __check_executor():
+        return
+
+    if globs.executor.state is None:
+        return
+
+    if globs.executor.bncache.get_setting("save_state_history") == "false":
+        log_alert("State history is not saved. This can be changed in settings")
+        return
+
+    if len(globs.highlighted_state_history) > 0:
+        # Remove highlight
+        ui_reset_state_history_highlight()
+
+    else:
+        # Set highlight
+        for insn in globs.executor.state.insn_history:
+            globs.highlighted_state_history.append(insn)
+            func = globs.executor.bncache.get_function(insn)
+            func.set_auto_instr_highlight(insn, HIGHLIGHTED_HISTORY_COLOR)
 
 
 def _set_run_target(bv, address):

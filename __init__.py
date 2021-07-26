@@ -31,6 +31,7 @@ from .apis_ui import (
     _async_run_dfs_searcher_findall,
     _async_run_bfs_searcher,
     _async_reset_se,
+    _async_toggle_state_history,
     sync_ui
 )
 from .apis import (
@@ -79,42 +80,47 @@ PluginCommand.register_for_address(
     _async_change_active_state_ip
 )
 PluginCommand.register(
-    "SENinja\\6   Run\\1   Continue until branch",
+    "SENinja\\6   Toggle state history",
+    "highlight instructions executed by the current syaye",
+    _async_toggle_state_history
+)
+PluginCommand.register(
+    "SENinja\\7   Run\\1   Continue until branch",
     "execute instructions in the current state until a fork occurs",
     _async_continue_until_branch
 )
 PluginCommand.register_for_address(
-    "SENinja\\6   Run\\2   Continue until address",
+    "SENinja\\7   Run\\2   Continue until address",
     "execute instructions in the current state until the currently selected address is reached",
     _async_continue_until_address
 )
 PluginCommand.register_for_address(
-    "SENinja\\6   Run\\3   Set searcher target",
+    "SENinja\\7   Run\\3   Set searcher target",
     "set run target",
     _set_run_target
 )
 PluginCommand.register_for_address(
-    "SENinja\\6   Run\\4   Set searcher avoid",
+    "SENinja\\7   Run\\4   Set searcher avoid",
     "set run avoid",
     _set_run_avoid
 )
 PluginCommand.register(
-    "SENinja\\6   Run\\5   Run (DFS)",
+    "SENinja\\7   Run\\5   Run (DFS)",
     "run (target must be set)",
     _async_run_dfs_searcher
 )
 PluginCommand.register(
-    "SENinja\\6   Run\\6   Run (DFS) findall",
+    "SENinja\\7   Run\\6   Run (DFS) findall",
     "run (target must be set)",
     _async_run_dfs_searcher_findall
 )
 PluginCommand.register(
-    "SENinja\\6   Run\\7   Run (BFS)",
+    "SENinja\\7   Run\\7   Run (BFS)",
     "run (target must be set)",
     _async_run_bfs_searcher
 )
 PluginCommand.register_for_address(
-    "SENinja\\7   Reset",
+    "SENinja\\8   Reset",
     "delete all states",
     _async_reset_se
 )

@@ -18,6 +18,7 @@ class State(object):
         self.solver = Solver(self)
         self.os = os
         self.events = list()
+        self.insn_history = set()
         self.llil_ip = None
         self.executor = executor
         self.symbolic_buffers = list()
@@ -63,6 +64,9 @@ class State(object):
         return res
 
     def set_ip(self, new_ip):
+        ip = getattr(self.regs, self._ipreg)
+        if not symbolic(ip):
+            self.executor._update_state_history(self, ip.value)
         setattr(self.regs, self._ipreg, BVV(new_ip, self._bits))
 
     def copy(self, solver_copy_fast=False):
@@ -72,6 +76,7 @@ class State(object):
         new_state.regs = self.regs.copy(new_state)
         new_state.solver = self.solver.copy(new_state, solver_copy_fast)
         new_state.events = list(self.events)
+        new_state.insn_history = set(self.insn_history)
         new_state.symbolic_buffers = list(self.symbolic_buffers)
         new_state.llil_ip = self.llil_ip
 
@@ -103,3 +108,4 @@ class State(object):
                 other.events[:]  # TODO delete common events
             )
         )
+        self.insn_history |= other.insn_history
