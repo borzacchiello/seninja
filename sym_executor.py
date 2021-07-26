@@ -329,7 +329,8 @@ class SymbolicExecutor(object):
                 if err.is_fatal():
                     raise err
 
-            self._update_state_history(self.state, old_ip)
+            if self.state is not None:
+                self._update_state_history(self.state, old_ip)
 
         if self.state is None:
             if self.fringe.is_empty():
