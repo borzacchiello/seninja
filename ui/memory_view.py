@@ -236,6 +236,31 @@ class MemoryView(QWidget, DockContextHandler):
             show_message_box("Value at %s (with solver):" %
                              hex(address), hex(val))
 
+    def _evaluate_upto_with_solver(self, address, expr):
+        val = ""
+        if not self.current_state.solver.symbolic(expr):
+            new_expr = self.current_state.solver.evaluate(expr)
+            self.current_state.mem.store(address, new_expr)
+            self.changes.add(
+                (
+                    address - self.address_start,
+                    address-self.address_start+new_expr.size // 8
+                )
+            )
+            self.update_mem_delta(self.current_state)
+            show_message_box(
+                "Expression at %s" % hex(address),
+                "The value was indeed concrete! State modified"
+            )
+        else:
+            n_eval = get_int_input("How many values (upto) ?", "Number of distinct values")
+            r = ""
+            for i, v in enumerate(self.current_state.solver.evaluate_upto(expr, n_eval)):
+                r += "solution %d: %s\n" % (i, hex(v.value))
+
+            show_message_box("Value at %s (with solver):" %
+                             hex(address), r)
+
     def _concretize(self, address, expr):
         new_expr = self.current_state.solver.evaluate(expr)
         self.current_state.mem.store(address, new_expr)
@@ -378,6 +403,9 @@ class MemoryView(QWidget, DockContextHandler):
             a = menu.addAction("Evaluate with solver")
             a.triggered.connect(MemoryView._condom_async(
                 self, self._evaluate_with_solver, sel_start + self.address_start, expr))
+            a = menu.addAction("Evaluate with solver (upto)")
+            a.triggered.connect(MemoryView._condom_async(
+                self, self._evaluate_upto_with_solver, sel_start + self.address_start, expr))
             a = menu.addAction("Concretize")
             a.triggered.connect(MemoryView._condom_async(
                 self, self._concretize, sel_start + self.address_start, expr))

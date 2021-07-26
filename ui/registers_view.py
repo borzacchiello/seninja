@@ -155,6 +155,8 @@ class RegisterView(QWidget, DockContextHandler):
         set_reg_value = menu.addAction("Set reg value")
         eval_with_sol = menu.addAction(
             "Evaluate with solver") if not isinstance(expr, BVV) else None
+        eval_upto_with_sol = menu.addAction(
+            "Evaluate upto with solver") if not isinstance(expr, BVV) else None
         concretize = menu.addAction(
             "Concretize") if not isinstance(expr, BVV) else None
         copy = menu.addAction("Copy to clipboard") if not isinstance(
@@ -208,6 +210,27 @@ class RegisterView(QWidget, DockContextHandler):
                 show_message_box(
                     "Reg Value (with solver)",
                     hex(self.current_state.solver.evaluate(expr).value)
+                )
+        if action == eval_upto_with_sol:
+            expr = getattr(self.current_state.regs, self.index_to_reg[row_idx])
+            if not self.current_state.solver.symbolic(expr):
+                new_expr = self.current_state.solver.evaluate(expr)
+                setattr(self.current_state.regs,
+                        self.index_to_reg[row_idx], new_expr)
+                self.set_reg_value(
+                    self.index_to_reg[row_idx], new_expr, RegisterView.dirty_color)
+                show_message_box(
+                    "Reg Value (with solver)",
+                    "The value was indeed concrete! State modified"
+                )
+            else:
+                n_eval = get_int_input("How many values (upto) ?", "Number of distinct values")
+                r = ""
+                for i, v in enumerate(self.current_state.solver.evaluate_upto(expr, n_eval)):
+                    r += "solution %d: %s\n" % (i, hex(v.value))
+                show_message_box(
+                    "Reg Value (with solver)",
+                    r
                 )
         if action == concretize:
             expr = getattr(self.current_state.regs, self.index_to_reg[row_idx])
