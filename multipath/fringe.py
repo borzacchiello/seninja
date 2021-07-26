@@ -35,9 +35,21 @@ class Fringe(object):
     def is_empty(self):
         return len(self._deferred) == 0
 
-    def get_deferred_by_address(self, address):
+    def get_list_deferred_by_address(self, address):
         if address in self._deferred:
-            res = self._deferred[address].pop()
+            return self._deferred[address]
+        return list()
+
+    def get_deferred_by_address(self, address, idx=None):
+        if address in self._deferred:
+            if idx is None:
+                res = self._deferred[address].pop()
+            else:
+                if idx >= len(self._deferred[address]):
+                    return None
+                res = self._deferred[address][idx]
+                del self._deferred[address][idx]
+
             if len(self._deferred[address]) == 0:
                 del self._deferred[address]
             return res

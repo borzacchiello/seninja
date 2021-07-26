@@ -205,7 +205,10 @@ class SymbolicExecutor(object):
             func = self.bncache.get_function(ip)
             func.set_auto_instr_highlight(
                 ip, DEFERRED_STATE_COLOR if not reset else NO_COLOR)
-            # func.set_comment_at(ip, str(len(self.fringe._deferred[ip]) if not reset else ""))
+            if reset:
+                func.set_comment_at(ip, None)
+            elif len(self.fringe._deferred[ip]) > 1:
+                func.set_comment_at(ip, "n deferred: %d" % len(self.fringe._deferred[ip]))
 
         for _, state in self.fringe.errored:
             func = self.bncache.get_function(state.get_ip())

@@ -13,6 +13,7 @@ from binaryninja import (
     PluginCommand,
     enums
 )
+from binaryninja.interaction import get_choice_input
 from .sym_executor import SymbolicExecutor
 from .multipath import searcher
 from .sym_state import State
@@ -417,10 +418,15 @@ def _async_change_current_state(bv, address):
     if not __check_executor():
         return
 
-    state = globs.executor.fringe.get_deferred_by_address(address)
-    if state is None:
+    states = globs.executor.fringe.get_list_deferred_by_address(address)
+    if len(states) == 0:
         log_alert("no such deferred state")
         return
+    if len(states) == 1:
+        state = globs.executor.fringe.get_deferred_by_address(address)
+    else:
+        state_idx = get_choice_input("Select state", "states", list(map(str, states)))
+        state = globs.executor.fringe.get_deferred_by_address(address, state_idx)
 
     def f(tb):
         disable_widgets()
