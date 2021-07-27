@@ -38,6 +38,7 @@ from .apis import (
     start_se,
     reset_se,
     continue_until_branch,
+    continue_until_address,
     setup_argv,
     execute_one_instruction,
     stop,
