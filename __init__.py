@@ -120,8 +120,13 @@ PluginCommand.register(
     "run (target must be set)",
     _async_run_bfs_searcher
 )
+PluginCommand.register(
+    "SENinja\\8   Stop",
+    "stop the current exploration (if any)",
+    stop
+)
 PluginCommand.register_for_address(
-    "SENinja\\8   Reset",
+    "SENinja\\9   Reset",
     "delete all states",
     _async_reset_se
 )
