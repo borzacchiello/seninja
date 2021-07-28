@@ -2,7 +2,7 @@ import z3
 
 from enum import Enum
 from copy import deepcopy
-from .bitvector import BV, BVV, BVExpr
+from .bitvector import BV, BVV, BVS, BVExpr
 from .bool_expr import Bool, BoolV
 
 
@@ -23,6 +23,7 @@ class BVArray(object):
         assert value_width > 0
 
         self.name = name
+        self.uninit_id = 0
         self.index_width = index_width
         self.value_width = value_width
         self._conc_store = {}
@@ -191,13 +192,9 @@ class BVArray(object):
             self._mode in {BVArrayState.CONCRETE_MODE, BVArrayState.SEMI_CONCRETE_MODE} and
             index.value not in self._conc_store
         ):
-            # uninitialized read
-            arr = z3.Array(
-                self.name,
-                z3.BitVecSort(self.index_width),
-                z3.BitVecSort(self.value_width)
-            )
-            return BVExpr(self.value_width, z3.Select(arr, index.z3obj))
+            res = BVS("uninit_read_%s_%d" % (self.name, self.uninit_id), self.value_width)
+            self.uninit_id += 1
+            return res
 
         # symbolic mode
         self._switch_to_symbolic(soft=True)
@@ -208,6 +205,7 @@ class BVArray(object):
         new._conc_store = deepcopy(self._conc_store)
         new._z3obj = self._z3obj
         new._assertions = dict(self._assertions)
+        new.uninit_id = self.uninit_id
 
         return new
 
@@ -219,6 +217,8 @@ class BVArray(object):
             if merge_condition.value:
                 return other.copy()
             return self
+
+        self.uninit_id = max(self.uninit_id, other.uninit_id)
 
         if self.get_mode() == BVArrayState.CONCRETE_MODE and other.get_mode() == BVArrayState.CONCRETE_MODE:
             # Handle concrete mode merge (easy)
