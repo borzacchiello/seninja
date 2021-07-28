@@ -50,6 +50,9 @@ class FakeSolver(object):
     def __init__(self, seninja_state):
         self.seninja_state = seninja_state
 
+    def eval(self, v):
+        return self.seninja_state.evaluate(v)
+
     def symbolic(self, v):
         return symbolic(v)
 
@@ -80,6 +83,9 @@ class FakeMemory(object):
         self.seninja_state.mem.store(
             addr, value, endness="little" if endness == "Iend_LE" else "big", store_condition=condition
         )
+
+    def map_region(self, *args):
+        pass # Unimplemented
 
 class FakeState(object):
     def __init__(self, seninja_state):

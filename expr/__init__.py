@@ -17,7 +17,7 @@ def ITE(cond: Bool, iftrue: BV, iffalse: BV):
 
 def ITECases(cases, default: BV):
     res = default
-    for cond, val in cases:
+    for cond, val in cases[::-1]:
         res = ITE(cond, val, res)
     return res
 
