@@ -390,10 +390,22 @@ def _async_merge_states(bv, address):
         log_alert("current state is not at this address")
         return
 
-    to_be_merged = globs.executor.fringe.get_all_deferred_by_address(address)
-    if to_be_merged is None:
+    to_be_merged_all = globs.executor.fringe.get_all_deferred_by_address(
+        address)
+    if to_be_merged_all is None:
         log_alert("no deferred state at this address")
         return
+
+    mergeable, not_mergeable = globs.executor.extract_mergeable_with_current_state(
+        to_be_merged_all)
+    if len(not_mergeable) > 0:
+        print(
+            "WARNING: %d states was not merged since they deviate from the current state after executing the current instruction" % len(not_mergeable))
+        globs.executor.fringe._deferred[address] = not_mergeable
+
+    if len(mergeable) == 0:
+        return
+    to_be_merged = mergeable
 
     def f(tb):
         disable_widgets()
@@ -426,12 +438,15 @@ def _async_change_current_state(bv, address):
     if len(states) == 1:
         state = globs.executor.fringe.get_deferred_by_address(address)
     else:
-        state_idx = get_choice_input("Select state", "states", list(map(str, states)))
-        state = globs.executor.fringe.get_deferred_by_address(address, state_idx)
+        state_idx = get_choice_input(
+            "Select state", "states", list(map(str, states)))
+        state = globs.executor.fringe.get_deferred_by_address(
+            address, state_idx)
 
     def f(tb):
         disable_widgets()
 
+        globs.executor.delete_comment_for_address(address)
         globs.executor.set_current_state(state)
         sync_ui(bv, delta=False)
 

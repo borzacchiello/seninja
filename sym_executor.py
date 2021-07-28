@@ -8,6 +8,7 @@ from .utility.bninja_util import (
     get_imported_functions_and_addresses,
     find_os
 )
+from .utility.expr_wrap_util import symbolic
 from .arch.arch_x86 import x86Arch
 from .arch.arch_x86_64 import x8664Arch
 from .arch.arch_armv7 import ArmV7Arch
@@ -212,8 +213,9 @@ class SymbolicExecutor(object):
                 ip, DEFERRED_STATE_COLOR if not reset else NO_COLOR)
             if reset:
                 func.set_comment_at(ip, None)
-            elif len(self.fringe._deferred[ip]) > 1:
-                func.set_comment_at(ip, "n deferred: %d" % len(self.fringe._deferred[ip]))
+            elif len(self.fringe._deferred[ip]) > 1 or (len(self.fringe._deferred[ip]) == 1 and self.ip == ip):
+                func.set_comment_at(ip, "n deferred: %d" %
+                                    len(self.fringe._deferred[ip]))
 
         for _, state in self.fringe.errored:
             func = self.bncache.get_function(state.get_ip())
@@ -229,6 +231,36 @@ class SymbolicExecutor(object):
 
     def reset(self):
         self.set_colors(reset=True)
+
+    def extract_mergeable_with_current_state(self, to_merge):
+        # returns the set of states that do not deviate from
+        # the current state after executing the current instruction
+
+        func_name = self.bncache.get_function_name(self.ip)
+        expr = self.bncache.get_llil(func_name, self.llil_ip)
+
+        if expr.operation.name in {"LLIL_JUMP", "LLIL_JUMP_TO", "LLIL_CALL", "LLIL_TAILCALL"}:
+            curr_state_dst = self.visitor.visit(expr.dest)
+            if symbolic(curr_state_dst):
+                # I do not want to call the solver... Just return them all
+                return to_merge, list()
+
+            curr_state = self.state
+
+            mergeable = list()
+            not_mergeable = list()
+            for s in to_merge:
+                self.state = s
+                s_dst = self.visitor.visit(expr.dest)
+                if symbolic(s_dst) or s_dst.value == curr_state_dst.value:
+                    mergeable.append(s)
+                else:
+                    not_mergeable.append(s)
+
+            self.state = curr_state
+            return mergeable, not_mergeable
+
+        return to_merge, list()
 
     def set_current_state(self, state):
         if self.state is not None:
