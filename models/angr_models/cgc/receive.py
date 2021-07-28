@@ -1,4 +1,5 @@
-from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, FakeOptions
+from ..procedures_dict import SIM_PROCEDURES
 from itertools import count
 
 fastpath_data_counter = count()
@@ -7,7 +8,7 @@ class receive(FakeSimProcedure):
     #pylint:disable=arguments-differ,attribute-defined-outside-init,redefined-outer-name
 
     def run(self, fd, buf, count, rx_bytes):
-        if angr.options.CGC_ENFORCE_FD in self.state.options:
+        if FakeOptions.CGC_ENFORCE_FD in self.state.options:
             fd = 0
 
         simfd = self.state.posix.get_fd(fd)
@@ -40,7 +41,7 @@ class receive(FakeSimProcedure):
         if not writable:
             return 2
 
-        if CGC_NO_SYMBOLIC_RECEIVE_LENGTH in self.state.options:
+        if FakeOptions.CGC_NO_SYMBOLIC_RECEIVE_LENGTH in self.state.options:
             count = self.state.solver.eval(count)
             if self.state.cgc.max_receive_size > 0:
                 count = min(count, self.state.cgc.max_receive_size)
@@ -80,5 +81,4 @@ class receive(FakeSimProcedure):
             self.state.memory.store(rx_bytes, read_length, condition=rx_bytes != 0, endness='Iend_LE')
             return 0
 
-from ...sim_options import CGC_NO_SYMBOLIC_RECEIVE_LENGTH
 from ...state_plugins.sim_action import SimActionData

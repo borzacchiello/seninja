@@ -1,5 +1,5 @@
-from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
-import claripy
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, FakeOptions
+from ..procedures_dict import SIM_PROCEDURES
 
 class _vsyscall(FakeSimProcedure):
     NO_RET = True

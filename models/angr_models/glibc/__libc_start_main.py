@@ -1,7 +1,8 @@
 
 import logging
 
-from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, FakeOptions
+from ..procedures_dict import SIM_PROCEDURES
 
 l = logging.getLogger(name=__name__)
 
@@ -147,8 +148,8 @@ class __libc_start_main(FakeSimProcedure):
         # Execute those blocks with a blank state, and then dump the arguments
         raise NotImplementedError
         # blank_state = angr.SimState(project=self.project, mode="fastpath", cle_memory_backer=self.project.loader.memory,
-        #                             add_options={angr.options.SYMBOL_FILL_UNCONSTRAINED_MEMORY,
-        #                                          angr.options.SYMBOL_FILL_UNCONSTRAINED_REGISTERS})
+        #                             add_options={FakeOptionsSYMBOL_FILL_UNCONSTRAINED_MEMORY,
+        #                                          FakeOptionsSYMBOL_FILL_UNCONSTRAINED_REGISTERS})
         # # set up the stack pointer
         # blank_state.regs.sp = 0x7ffffff0
 

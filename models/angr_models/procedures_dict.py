@@ -41,7 +41,7 @@ def auto_import_modules(base_module, base_path, ignore_files=()):
         try:
             proc_module = importlib.import_module(".%s" % proc_module_name, base_module)
         except ImportError:
-            l.warning("Unable to autoimport module %s.%s", base_module, proc_module_name, exc_info=True)
+            # l.warning("Unable to autoimport module %s.%s", base_module, proc_module_name, exc_info=True)
             continue
         else:
             yield proc_module_name, proc_module
@@ -61,7 +61,7 @@ SIM_PROCEDURES = {}
 path = os.path.dirname(os.path.abspath(__file__))
 skip_dirs = ['definitions']
 
-for pkg_name, package in auto_import_packages('.', path, skip_dirs):
+for pkg_name, package in auto_import_packages('seninja.models.angr_models', path, skip_dirs):
     for _, mod in filter_module(package, type_req=type(os)):
         for name, proc in filter_module(mod, type_req=type, subclass_req=FakeSimProcedure):
             if hasattr(proc, "__provides__"):

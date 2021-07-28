@@ -1,5 +1,5 @@
-from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
-import claripy
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, FakeOptions
+from ..procedures_dict import SIM_PROCEDURES
 import logging
 
 l = logging.getLogger(name=__name__)
@@ -39,7 +39,7 @@ class LoadLibraryExW(LoadLibraryA):
 class GetProcAddress(FakeSimProcedure):
     def run(self, lib_handle, name_addr):
         if lib_handle.symbolic:
-            raise angr.errors.SimValueError("GetProcAddress called with symbolic library handle %s" % lib_handle)
+            raise FakeSimProcedureError("GetProcAddress called with symbolic library handle %s" % lib_handle)
         lib_handle = self.state.solver.eval(lib_handle)
 
         if lib_handle == 0:

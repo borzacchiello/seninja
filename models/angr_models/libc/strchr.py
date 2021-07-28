@@ -1,4 +1,5 @@
-from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, FakeOptions
+from ..procedures_dict import SIM_PROCEDURES
 from angr.storage.memory_mixins.address_concretization_mixin import MultiwriteAnnotation
 from angr.sim_options import MEMORY_CHUNK_INDIVIDUAL_READS
 

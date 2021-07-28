@@ -1,4 +1,5 @@
-from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, FakeOptions
+from ..procedures_dict import SIM_PROCEDURES
 import datetime
 import time
 
@@ -9,7 +10,7 @@ class GetSystemTimeAsFileTime(FakeSimProcedure):
         self.state.mem[outptr].qword = self.timestamp
 
     def instrument(self):
-        if angr.options.USE_SYSTEM_TIMES in self.state.options:
+        if FakeOptions.USE_SYSTEM_TIMES in self.state.options:
             self.fill_from_timestamp(time.time())
         else:
             self.fill_symbolic()
@@ -53,7 +54,7 @@ class GetLocalTime(FakeSimProcedure):
 
         https://msdn.microsoft.com/en-us/library/windows/desktop/ms724950(v=vs.85).aspx
         """
-        if angr.options.USE_SYSTEM_TIMES in self.state.options:
+        if FakeOptions.USE_SYSTEM_TIMES in self.state.options:
             self.fill_from_timestamp(time.time())
         else:
             self.fill_symbolic()
@@ -101,7 +102,7 @@ class GetLocalTime(FakeSimProcedure):
 
 class QueryPerformanceCounter(FakeSimProcedure):
     def run(self, ptr):
-        if angr.options.USE_SYSTEM_TIMES in self.state.options:
+        if FakeOptions.USE_SYSTEM_TIMES in self.state.options:
             val = int(time.clock() * 1000000) + 12345678
             self.state.mem[ptr].qword = val
         else:
@@ -110,7 +111,7 @@ class QueryPerformanceCounter(FakeSimProcedure):
 
 class GetTickCount(FakeSimProcedure):
     def run(self):
-        if angr.options.USE_SYSTEM_TIMES in self.state.options:
+        if FakeOptions.USE_SYSTEM_TIMES in self.state.options:
             return int(time.clock() * 1000) + 12345
         else:
             val = self.state.solver.BVS('GetTickCount_result', 32, key=('api', 'GetTickCount'))
@@ -119,7 +120,7 @@ class GetTickCount(FakeSimProcedure):
 class GetTickCount64(FakeSimProcedure):
     KEY = ('sim_time', 'GetTickCount')
     def run(self):
-        if angr.options.USE_SYSTEM_TIMES in self.state.options:
+        if FakeOptions.USE_SYSTEM_TIMES in self.state.options:
             return int(time.clock() * 1000) + 12345
         else:
             return self.state.solver.BVS('GetTickCount64_result', 64, key=('api', 'GetTickCount64'))

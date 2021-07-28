@@ -1,4 +1,5 @@
-from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, FakeOptions
+from ..procedures_dict import SIM_PROCEDURES
 import time as _time
 
 class time(FakeSimProcedure):
@@ -14,7 +15,7 @@ class time(FakeSimProcedure):
         self.state.globals[self.KEY] = v
 
     def run(self, pointer):
-        if angr.options.USE_SYSTEM_TIMES in self.state.options:
+        if FakeOptions.USE_SYSTEM_TIMES in self.state.options:
             ts = int(_time.time())
             result = self.state.solver.BVV(ts, self.state.arch.bits)
         else:

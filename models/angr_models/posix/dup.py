@@ -1,4 +1,5 @@
-from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, FakeOptions
+from ..procedures_dict import SIM_PROCEDURES
 from angr.sim_type import SimTypeInt, SimTypeFd
 from angr.state_plugins import SimSystemPosix
 from angr.storage.file import SimFileDescriptor

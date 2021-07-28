@@ -1,4 +1,5 @@
-from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, FakeOptions
+from ..procedures_dict import SIM_PROCEDURES
 
 class sigaction(FakeSimProcedure):
     def run(self, signum, act, oldact): #pylint:disable=arguments-differ,unused-argument

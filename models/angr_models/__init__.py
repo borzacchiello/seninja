@@ -1,5 +1,14 @@
+from enum import Enum
 from ...expr import BVV, BVS
-from .procedures_dict import SIM_PROCEDURES
+
+
+class FakeOptions(Enum):
+    CGC_NON_BLOCKING_FDS = 0
+    CGC_ENFORCE_FD = 1
+    SYMBOL_FILL_UNCONSTRAINED_MEMORY = 2
+    SYMBOL_FILL_UNCONSTRAINED_REGISTERS = 3
+    USE_SYSTEM_TIMES = 4
+
 
 class FakeSimProcedure(object):
     def __init__(self):
@@ -22,7 +31,11 @@ class FakeSimProcedureError(Exception):
 
 class claripy(object):
     def BVV(thing, size=None):
-        raise NotImplementedError
+        if isinstance(thing, bytes):
+            return BVV(int.from_bytes(thing, 'little'), len(thing) * 8)
+        assert size is not None
+        assert isinstance(thing, int)
+        return BVV(thing, size)
 
     def BVS(name, size):
         raise NotImplementedError

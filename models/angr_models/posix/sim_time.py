@@ -1,4 +1,5 @@
-from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, FakeOptions
+from ..procedures_dict import SIM_PROCEDURES
 import time
 
 # pylint: disable=arguments-differ,unused-argument
@@ -8,7 +9,7 @@ class gettimeofday(FakeSimProcedure):
         if self.state.solver.is_true(tv == 0):
             return -1
 
-        if angr.options.USE_SYSTEM_TIMES in self.state.options:
+        if FakeOptions.USE_SYSTEM_TIMES in self.state.options:
             flt = time.time()
             result = {'tv_sec': int(flt), 'tv_usec': int(flt * 1000000)}
         else:
@@ -28,7 +29,7 @@ class clock_gettime(FakeSimProcedure):
         if self.state.solver.is_true(timespec_ptr == 0):
             return -1
 
-        if angr.options.USE_SYSTEM_TIMES in self.state.options:
+        if FakeOptions.USE_SYSTEM_TIMES in self.state.options:
             flt = time.time()
             result = {'tv_sec': int(flt), 'tv_nsec': int(flt * 1000000000)}
         else:

@@ -1,4 +1,5 @@
-from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, FakeOptions
+from ..procedures_dict import SIM_PROCEDURES
 
 import itertools
 fdcount = itertools.count()
@@ -15,7 +16,7 @@ class fdwait(FakeSimProcedure):
         for fd_set in range(0, 32, 8):
             sym_newbits = []
             for fd in range(fd_set, fd_set + 8):
-                if angr.options.CGC_NON_BLOCKING_FDS in self.state.options:
+                if FakeOptions.CGC_NON_BLOCKING_FDS in self.state.options:
                     sym_bit = self.state.solver.BVV(1, 1)
                 else:
                     sym_bit = self.state.solver.Unconstrained('fdwait_read_%d_%d'%(run_count,fd), 1, key=('syscall', 'fdwait', fd, 'read_ready'))
@@ -30,7 +31,7 @@ class fdwait(FakeSimProcedure):
         for fd_set in range(0, 32, 8):
             sym_newbits = []
             for fd in range(fd_set, fd_set + 8):
-                if angr.options.CGC_NON_BLOCKING_FDS in self.state.options:
+                if FakeOptions.CGC_NON_BLOCKING_FDS in self.state.options:
                     sym_bit = self.state.solver.BVV(1, 1)
                 else:
                     sym_bit = self.state.solver.Unconstrained('fdwait_write_%d_%d' % (run_count, fd), 1, key=('syscall', 'fdwait', fd, 'write_ready'))

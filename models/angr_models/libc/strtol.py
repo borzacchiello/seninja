@@ -1,7 +1,6 @@
-from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
-import claripy
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, FakeOptions
+from ..procedures_dict import SIM_PROCEDURES
 import logging
-from angr.errors import SimProcedureError
 
 l = logging.getLogger(name=__name__)
 
@@ -27,7 +26,7 @@ class strtol(FakeSimProcedure):
 
         # sanity check
         if base < 2 or base > 36:
-            raise SimProcedureError("base should be in the range [2,36]")
+            raise FakeSimProcedureError("base should be in the range [2,36]")
 
         # order matters here since we will use an if then else tree, and -0x will have precedence over -
         prefixes = [b"-", b"+", b""]
