@@ -194,6 +194,11 @@ class SymbolicExecutor(object):
             (msg, state)
         )
 
+    def delete_comment_for_address(self, address):
+        # TODO write an UI manager, this does not belong to the executor
+        func = self.bncache.get_function(address)
+        func.set_comment_at(address, None)
+
     def set_colors(self, reset=False):
         # TODO write an UI manager, this does not belong to the executor
         old_ip = self._last_colored_ip

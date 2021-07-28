@@ -404,6 +404,7 @@ def _async_merge_states(bv, address):
             i += 1
             tb.progress = "seninja: merging states %d/%d" % (i, tot)
 
+        globs.executor.delete_comment_for_address(address)
         sync_ui(bv)
         enable_widgets()
         globs._running = False
