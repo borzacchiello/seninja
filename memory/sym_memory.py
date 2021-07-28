@@ -3,7 +3,7 @@ import math
 from collections import namedtuple
 from ..utility.expr_wrap_util import symbolic, split_bv, heuristic_find_base
 from ..utility import exceptions
-from ..expr import BV, BVV, Bool, Or, ITE
+from ..expr import BV, BVV, Bool, And, Or, ITE
 from .memory_object import MemoryObj
 from .memory_abstract import MemoryAbstract
 
@@ -262,7 +262,7 @@ class Memory(MemoryAbstract):
         self.pages[page_address] = self.pages[page_address].store(
             page_index, value, condition)
 
-    def store(self, address, value: BV, endness='big'):
+    def store(self, address, value: BV, endness='big', store_condition=None):
         if isinstance(address, int):
             address = BVV(address, self.state.arch.bits())
         assert address.size == self.bits
@@ -295,7 +295,7 @@ class Memory(MemoryAbstract):
                     )
                     raise exceptions.UnmappedWrite(self.state.get_ip())
                 self._store(page_address, page_index,
-                            value.Extract(8*(i+1)-1, 8*i))
+                            value.Extract(8*(i+1)-1, 8*i), store_condition)
             else:  # symbolic access
                 conditions = list()
                 for p in self.pages:  # can be improved?
@@ -307,6 +307,8 @@ class Memory(MemoryAbstract):
                     ]):
                         at_least_one_page = True
                         condition = p == page_address
+                        if store_condition is not None:
+                            condition = And(store_condition, condition)
                         conditions.append(condition)
                         self._store(p, page_index, value.Extract(
                             8*(i+1)-1, 8*i), condition)

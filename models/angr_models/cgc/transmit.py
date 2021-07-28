@@ -5,7 +5,7 @@ class transmit(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, fd, buf, count, tx_bytes):
-        if FakeOptionsCGC_ENFORCE_FD in self.state.options:
+        if FakeOptions.CGC_ENFORCE_FD in self.state.options:
             fd = 1
 
         simfd = self.state.posix.get_fd(fd)

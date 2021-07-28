@@ -4,9 +4,14 @@ from . import libc as models_libc
 from . import unistd as models_unistd
 from . import string as models_string
 from . import teensy as models_teensy
+from .angr_models.angr_model_provider import AngrModelProvider
+
+AMP = AngrModelProvider()
+
 
 def reval_model(val, nbits):
     return lambda state, view: BVV(val, nbits)
+
 
 library_functions = {
     'printf':           models_libc.printf_handler,

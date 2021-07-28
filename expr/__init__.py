@@ -15,6 +15,13 @@ def ITE(cond: Bool, iftrue: BV, iffalse: BV):
     )
 
 
+def ITECases(cases, default: BV):
+    res = default
+    for cond, val in cases:
+        res = ITE(cond, val, res)
+    return res
+
+
 def Or(*conditions):
     res = None
     for cond in conditions:
