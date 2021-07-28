@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class MessageBoxA(angr.SimProcedure):
+class MessageBoxA(FakeSimProcedure):
     def run(self, hWnd, lpText, lpCaption, uType):
         text = self.extract(lpText)
         if not self.state.solver.is_true(lpCaption == 0):
@@ -29,7 +29,7 @@ class MessageBoxExW(MessageBoxW, MessageBoxExA):
 class MessageBoxIndirectA(MessageBoxExA):
     def run(self, lpMsgBoxParams):
         if self.arch.bits != 32:
-            raise angr.errors.SimProcedureError("MessageBoxIndirectA is only implemented for 32 bit windows")
+            raise FakeSimProcedureError("MessageBoxIndirectA is only implemented for 32 bit windows")
         hwndOwner = self.state.mem[lpMsgBoxParams + 0x4].dword.resolved
         lpszText = self.state.mem[lpMsgBoxParams + 0xc].dword.resolved
         lpszCaption = self.state.mem[lpMsgBoxParams + 0x10].dword.resolved

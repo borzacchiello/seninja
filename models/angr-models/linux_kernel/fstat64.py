@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 # these structs can be easily-ish pulled out of qemu/linux-user/syscall_defs.h
 # TODO FIXME XXX THESE ARE NOT CORRECT
 # we need to actually properly define the data sizes returned from posix.fstat, since they may change from arch to arch
 
-class fstat64(angr.SimProcedure):
+class fstat64(FakeSimProcedure):
 
     def run(self, fd, stat_buf): # pylint:disable=arguments-differ
         stat = self.state.posix.fstat(fd)
@@ -20,7 +20,7 @@ class fstat64(angr.SimProcedure):
         elif self.arch.name.startswith("ARM"):
             self._store_arm(stat_buf, stat)
         else:
-            raise angr.errors.SimProcedureError("Unsupported fstat64 arch: %s" % self.arch.name)
+            raise FakeSimProcedureError("Unsupported fstat64 arch: %s" % self.arch.name)
         return 0
 
     def _store_arm(self, stat_buf, stat):

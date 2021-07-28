@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class tolower(angr.SimProcedure):
+class tolower(FakeSimProcedure):
     # pylint: disable=arguments-differ
     def run(self, c):
         return self.state.solver.If(

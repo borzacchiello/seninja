@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class tzset(angr.SimProcedure):
+class tzset(FakeSimProcedure):
     # emulate as a no-op
     # important because on my libc this contains inlined iolib ops and thus can't be executed when simprocs are enabled.
     def run(self):  # pylint: disable=arguments-differ

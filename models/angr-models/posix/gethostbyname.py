@@ -1,8 +1,8 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class gethostbyname(angr.SimProcedure):
+class gethostbyname(FakeSimProcedure):
     def run(self, name):
-        malloc = angr.SIM_PROCEDURES['libc']['malloc']
+        malloc = SIM_PROCEDURES['libc']['malloc']
         place = self.inline_call(malloc, 32).ret_expr
         self.state.memory.store(place, self.state.solver.BVS('h_name', 64, key=('api', 'gethostbyname', 'h_name')), endness='Iend_LE')
         self.state.memory.store(place, self.state.solver.BVS('h_aliases', 64, key=('api', 'gethostbyname', 'h_aliases')), endness='Iend_LE')

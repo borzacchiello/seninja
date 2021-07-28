@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class GetKeyboardType(angr.SimProcedure):
+class GetKeyboardType(FakeSimProcedure):
     def run(self, param):
         # return the values present at time of author's testing
         if self.state.solver.is_true(param == 0):

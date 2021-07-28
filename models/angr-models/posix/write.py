@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # write
 ######################################
 
-class write(angr.SimProcedure):
+class write(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, fd, src, length):

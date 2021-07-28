@@ -1,5 +1,5 @@
 import logging
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 l = logging.getLogger(name=__name__)
 
@@ -7,7 +7,7 @@ l = logging.getLogger(name=__name__)
 # __initterm
 ######################################
 
-class _initterm(angr.SimProcedure):
+class _initterm(FakeSimProcedure):
     local_vars = ('callbacks',)
     callbacks = []
 

@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class sigprocmask(angr.SimProcedure):
+class sigprocmask(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, how, set_, oldset, sigsetsize):

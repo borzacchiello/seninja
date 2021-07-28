@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class stat(angr.SimProcedure):
+class stat(FakeSimProcedure):
 
     def run(self, file_path, stat_buf):
         # this is a dummy for now

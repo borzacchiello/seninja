@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # listen (but not really)
@@ -6,7 +6,7 @@ import angr
 import logging
 l = logging.getLogger(name=__name__)
 
-class listen(angr.SimProcedure):
+class listen(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, sockfd, backlog): #pylint:disable=unused-argument

@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 from ...storage.file import SimFileDescriptor
 
 import logging
@@ -15,7 +15,7 @@ MAP_ANONYMOUS   = 0x20 #    /* Don't use a file.  */
 MAP_FIXED       = 0x10 #    /* Interpret addr exactly.  */
 
 
-class mmap(angr.SimProcedure):
+class mmap(FakeSimProcedure):
 
     def run(self, addr, length, prot, flags, fd, offset): #pylint:disable=arguments-differ,unused-argument
         #if self.state.solver.symbolic(flags) or self.state.solver.eval(flags) != 0x22:

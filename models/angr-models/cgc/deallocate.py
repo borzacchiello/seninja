@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 import logging
 l = logging.getLogger(name=__name__)
 
-class deallocate(angr.SimProcedure):
+class deallocate(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, addr, length): #pylint:disable=unused-argument

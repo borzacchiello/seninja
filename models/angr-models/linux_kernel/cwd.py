@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import logging
 
 l = logging.getLogger(name=__name__)
 
-class getcwd(angr.SimProcedure):
+class getcwd(FakeSimProcedure):
     def run(self, buf, size):
         cwd = self.state.fs.cwd
         size = self.state.solver.If(size-1 > len(cwd), len(cwd), size-1)
@@ -15,7 +15,7 @@ class getcwd(angr.SimProcedure):
         else:
             return buf
 
-class chdir(angr.SimProcedure):
+class chdir(FakeSimProcedure):
     def run(self, buf):
         cwd = self.state.mem[buf].string.concrete
         l.info('chdir(%r)', cwd)

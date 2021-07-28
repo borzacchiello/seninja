@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class InterlockedExchange(angr.SimProcedure):
+class InterlockedExchange(FakeSimProcedure):
 
     def run(self, target, value): #pylint:disable=arguments-differ
         if not self.state.solver.symbolic(target):

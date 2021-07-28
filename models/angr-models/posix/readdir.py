@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 from collections import namedtuple
 
 import logging
@@ -6,7 +6,7 @@ l = logging.getLogger(name=__name__)
 
 Dirent = namedtuple('dirent', ('d_ino', 'd_off', 'd_reclen', 'd_type', 'd_name'))
 
-class readdir(angr.SimProcedure):
+class readdir(FakeSimProcedure):
     struct = None
     condition = None
 
@@ -18,7 +18,7 @@ class readdir(angr.SimProcedure):
 
         self._build_amd64()
         self.instrument()
-        malloc = angr.SIM_PROCEDURES['libc']['malloc']
+        malloc = SIM_PROCEDURES['libc']['malloc']
         pointer = self.inline_call(malloc, 19 + 256).ret_expr
         self._store_amd64(pointer)
         return self.state.solver.If(self.condition, pointer, self.state.solver.BVV(0, self.state.arch.bits))

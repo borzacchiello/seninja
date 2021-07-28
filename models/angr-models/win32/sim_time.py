@@ -1,8 +1,8 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import datetime
 import time
 
-class GetSystemTimeAsFileTime(angr.SimProcedure):
+class GetSystemTimeAsFileTime(FakeSimProcedure):
     timestamp = None
     def run(self, outptr):
         self.instrument()
@@ -22,7 +22,7 @@ class GetSystemTimeAsFileTime(angr.SimProcedure):
         self.timestamp = self.state.solver.BVS('SystemTimeAsFileTime', 64, key=('api', 'SystemTimeAsFileTime'))
 
 
-class GetLocalTime(angr.SimProcedure):
+class GetLocalTime(FakeSimProcedure):
     wYear = None
     wMonth = None
     wDayOfWeek = None
@@ -99,7 +99,7 @@ class GetLocalTime(angr.SimProcedure):
         self.wSecond = dt.second
         self.wMilliseconds = dt.microsecond // 1000
 
-class QueryPerformanceCounter(angr.SimProcedure):
+class QueryPerformanceCounter(FakeSimProcedure):
     def run(self, ptr):
         if angr.options.USE_SYSTEM_TIMES in self.state.options:
             val = int(time.clock() * 1000000) + 12345678
@@ -108,7 +108,7 @@ class QueryPerformanceCounter(angr.SimProcedure):
             self.state.mem[ptr].qword = self.state.solver.BVS('QueryPerformanceCounter_result', 64, key=('api', 'QueryPerformanceCounter'))
         return 1
 
-class GetTickCount(angr.SimProcedure):
+class GetTickCount(FakeSimProcedure):
     def run(self):
         if angr.options.USE_SYSTEM_TIMES in self.state.options:
             return int(time.clock() * 1000) + 12345
@@ -116,7 +116,7 @@ class GetTickCount(angr.SimProcedure):
             val = self.state.solver.BVS('GetTickCount_result', 32, key=('api', 'GetTickCount'))
             return val
 
-class GetTickCount64(angr.SimProcedure):
+class GetTickCount64(FakeSimProcedure):
     KEY = ('sim_time', 'GetTickCount')
     def run(self):
         if angr.options.USE_SYSTEM_TIMES in self.state.options:

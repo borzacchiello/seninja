@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class strcat(angr.SimProcedure):
+class strcat(FakeSimProcedure):
     # pylint: disable=arguments-differ
     def run(self, dst, src):
-        strlen = angr.SIM_PROCEDURES['libc']['strlen']
-        strncpy = angr.SIM_PROCEDURES['libc']['strncpy']
+        strlen = SIM_PROCEDURES['libc']['strlen']
+        strncpy = SIM_PROCEDURES['libc']['strncpy']
         src_len = self.inline_call(strlen, src).ret_expr
         dst_len = self.inline_call(strlen, dst).ret_expr
 

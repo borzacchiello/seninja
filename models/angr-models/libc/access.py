@@ -1,11 +1,11 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # access
 ######################################
 
 
-class access(angr.SimProcedure):
+class access(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, path, mode):

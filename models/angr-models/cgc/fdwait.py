@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 import itertools
 fdcount = itertools.count()
 
-class fdwait(angr.SimProcedure):
+class fdwait(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, nfds, readfds, writefds, timeout, readyfds):

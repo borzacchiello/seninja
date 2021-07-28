@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 from cle.backends.externs.simdata.io_file import io_file_data_for_arch
 
@@ -22,15 +22,15 @@ def mode_to_flag(mode):
         b"a+" : angr.storage.file.Flags.O_RDWR | angr.storage.file.Flags.O_CREAT | angr.storage.file.Flags.O_APPEND
         }
     if mode not in all_modes:
-        raise angr.SimProcedureError('unsupported file open mode %s' % mode)
+        raise FakeSimProcedureError('unsupported file open mode %s' % mode)
 
     return all_modes[mode]
 
-class fopen(angr.SimProcedure):
+class fopen(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, p_addr, m_addr):
-        strlen = angr.SIM_PROCEDURES['libc']['strlen']
+        strlen = SIM_PROCEDURES['libc']['strlen']
 
         p_strlen = self.inline_call(strlen, p_addr)
         m_strlen = self.inline_call(strlen, m_addr)
@@ -47,7 +47,7 @@ class fopen(angr.SimProcedure):
             return 0
         else:
             # Allocate a FILE struct in heap
-            malloc = angr.SIM_PROCEDURES['libc']['malloc']
+            malloc = SIM_PROCEDURES['libc']['malloc']
             io_file_data = io_file_data_for_arch(self.state.arch)
             file_struct_ptr = self.inline_call(malloc, io_file_data['size']).ret_expr
 

@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import claripy
 import logging
 from angr.errors import SimProcedureError
@@ -7,7 +7,7 @@ l = logging.getLogger(name=__name__)
 
 # note: this does not handle skipping white space
 
-class strtol(angr.SimProcedure):
+class strtol(FakeSimProcedure):
 
     @staticmethod
     def strtol_inner(s, state, region, base, signed, read_length=None):

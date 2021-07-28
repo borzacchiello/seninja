@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # arch_prctl
 ######################################
-class arch_prctl(angr.SimProcedure):
+class arch_prctl(FakeSimProcedure):
     """
     Sets the architecture specific thread state based on the subfunction selected
     using the 'code' parameter. This syscall is only present on x86_64 linux

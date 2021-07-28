@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class tgkill(angr.SimProcedure):
+class tgkill(FakeSimProcedure):
 
     def run(self, addr, length): #pylint:disable=arguments-differ,unused-argument
         # TODO: actually do something

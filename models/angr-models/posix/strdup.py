@@ -1,12 +1,12 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class strdup(angr.SimProcedure):
+class strdup(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, s):
-        strlen = angr.SIM_PROCEDURES['libc']['strlen']
-        strncpy = angr.SIM_PROCEDURES['libc']['strncpy']
-        malloc = angr.SIM_PROCEDURES['libc']['malloc']
+        strlen = SIM_PROCEDURES['libc']['strlen']
+        strncpy = SIM_PROCEDURES['libc']['strncpy']
+        malloc = SIM_PROCEDURES['libc']['malloc']
 
         src_len = self.inline_call(strlen, s).ret_expr
         new_s = self.inline_call(malloc, src_len+1).ret_expr

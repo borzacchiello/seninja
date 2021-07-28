@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 import logging
 l = logging.getLogger(name=__name__)
 
-class lseek(angr.SimProcedure):
+class lseek(FakeSimProcedure):
 
     def run(self, fd, seek, whence): #pylint:disable=arguments-differ,unused-argument
 

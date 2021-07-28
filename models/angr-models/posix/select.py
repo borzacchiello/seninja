@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # select
 ######################################
 
-class select(angr.SimProcedure):
+class select(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, nfds, readfds, writefds, exceptfds, timeout): # pylint: disable=unused-argument
@@ -17,7 +17,7 @@ class select(angr.SimProcedure):
             raise angr.errors.SimProcedureArgumentError("Can't handle symbolic select arguments")
 
         if writefds_v != 0 or exceptfds_v != 0:
-            raise angr.errors.SimProcedureError("Can't handle write or exception events in select")
+            raise FakeSimProcedureError("Can't handle write or exception events in select")
 
         arch_bits = self.arch.bits
         arch_bytes = self.arch.bytes

@@ -1,8 +1,7 @@
-import angr
-import claripy
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 
-class random(angr.SimProcedure):
+class random(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, buf, count, rnd_bytes):

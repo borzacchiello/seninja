@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 from angr.storage.memory_mixins.address_concretization_mixin import MultiwriteAnnotation
 
 
@@ -8,7 +8,7 @@ from cle.backends.externs.simdata.io_file import io_file_data_for_arch
 # fgets
 ######################################
 
-class fgets(angr.SimProcedure):
+class fgets(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, dst, size, file_ptr):

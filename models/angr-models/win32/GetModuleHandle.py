@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import logging
 
 l = logging.getLogger(name=__name__)
 
-class GetModuleHandleA(angr.SimProcedure):
+class GetModuleHandleA(FakeSimProcedure):
     def run(self, pointer):
         if self.state.solver.is_true(pointer == 0):
             return self.handle(None)

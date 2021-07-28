@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class crazy_scanf(angr.SimProcedure):
+class crazy_scanf(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, src, fmt, one, two, three): #pylint:disable=unused-argument
-        memcpy = angr.SIM_PROCEDURES['libc']['memcpy']
+        memcpy = SIM_PROCEDURES['libc']['memcpy']
 
         self.inline_call(memcpy, one, src, 5)
         self.state.memory.store(one+4, self.state.solver.BVV(0, 8))

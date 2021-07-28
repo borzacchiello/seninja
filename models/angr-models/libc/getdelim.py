@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 from cle.backends.externs.simdata.io_file import io_file_data_for_arch
 
 import logging
@@ -9,7 +9,7 @@ l = logging.getLogger(name=__name__)
 # __getdelim
 ######################################
 
-class __getdelim(angr.SimProcedure):
+class __getdelim(FakeSimProcedure):
     # this code is modified from the 'fgets' implementation
     #   to take an arbitrary delimiter
     #   with no max size for concrete data
@@ -26,7 +26,7 @@ class __getdelim(angr.SimProcedure):
 
         # symbolic delimiters will make this tricky
         if delim.symbolic:
-            raise angr.SimProcedureError("I don't know how to handle a symbolic delimiter")
+            raise FakeSimProcedureError("I don't know how to handle a symbolic delimiter")
 
         # case 1: the data is concrete. we should read it a byte at a time since we can't seek for
         # the newline and we don't have any notion of buffering in-memory
@@ -35,7 +35,7 @@ class __getdelim(angr.SimProcedure):
                 # End-of-file reached
                 return -1
 
-            realloc = angr.SIM_PROCEDURES['libc']['realloc']
+            realloc = SIM_PROCEDURES['libc']['realloc']
 
             # #dereference the destination buffer
             line_ptr = self.state.memory.load(line_ptrptr,8)
@@ -84,7 +84,7 @@ class __getdelim(angr.SimProcedure):
                         byte == delim_byte                # - it is a newline
                     )))
 
-            malloc = angr.SIM_PROCEDURES['libc']['malloc']
+            malloc = SIM_PROCEDURES['libc']['malloc']
 
             dst = self.inline_call(malloc,real_size).ret_expr
 

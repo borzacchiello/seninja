@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 from itertools import count
 
 fastpath_data_counter = count()
 
-class receive(angr.SimProcedure):
+class receive(FakeSimProcedure):
     #pylint:disable=arguments-differ,attribute-defined-outside-init,redefined-outer-name
 
     def run(self, fd, buf, count, rx_bytes):

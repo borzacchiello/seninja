@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 import logging
 l = logging.getLogger(name=__name__)
@@ -7,7 +7,7 @@ l = logging.getLogger(name=__name__)
 # memset
 ######################################
 
-class memset(angr.SimProcedure):
+class memset(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     @staticmethod

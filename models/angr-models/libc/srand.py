@@ -1,5 +1,5 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class srand(angr.SimProcedure):
+class srand(FakeSimProcedure):
     def run(self, seed):
         self.ret()

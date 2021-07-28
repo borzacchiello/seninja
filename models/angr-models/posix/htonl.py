@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 ######################################
 # htonl
 ######################################
 
-class htonl(angr.SimProcedure):
+class htonl(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, to_convert):

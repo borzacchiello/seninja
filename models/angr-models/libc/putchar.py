@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # putchar
 ######################################
 
-class putchar(angr.SimProcedure):
+class putchar(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, string):

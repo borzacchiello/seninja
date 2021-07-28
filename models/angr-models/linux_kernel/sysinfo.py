@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 from ...sim_type import parse_type
 
@@ -19,7 +19,7 @@ struct sysinfo {
 }
 """)
 
-class sysinfo(angr.SimProcedure):
+class sysinfo(FakeSimProcedure):
     def run(self, info): # pylint: disable=arguments-differ
         value = {
                 'uptime': 1234567,

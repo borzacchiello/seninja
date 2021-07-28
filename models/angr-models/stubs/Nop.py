@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # Doing nothing
 ######################################
 
 
-class Nop(angr.SimProcedure):
+class Nop(FakeSimProcedure):
     def run(self):
         pass

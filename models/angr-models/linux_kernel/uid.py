@@ -1,14 +1,14 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class getuid(angr.SimProcedure):
+class getuid(FakeSimProcedure):
     def run(self):
         return self.state.posix.uid
 
-class getgid(angr.SimProcedure):
+class getgid(FakeSimProcedure):
     def run(self):
         return self.state.posix.gid
 
-class getresgid(angr.SimProcedure):
+class getresgid(FakeSimProcedure):
     def run(self, rgid_addr, egid_addr, sgid_addr):
         gid = self.state.posix.gid
         self.state.memory.store(rgid_addr, gid)
@@ -16,7 +16,7 @@ class getresgid(angr.SimProcedure):
         self.state.memory.store(sgid_addr, gid)
         return 0
 
-class getresuid(angr.SimProcedure):
+class getresuid(FakeSimProcedure):
     def run(self, ruid_addr, euid_addr, suid_addr):
         uid = self.state.posix.uid
         self.state.memory.store(ruid_addr, uid)

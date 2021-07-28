@@ -1,6 +1,6 @@
 import logging
 
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 from angr.storage.memory_mixins.address_concretization_mixin import MultiwriteAnnotation
 from angr.misc.ux import once
 
@@ -11,7 +11,7 @@ _l = logging.getLogger(name=__name__)
 # gets
 ######################################
 
-class gets(angr.SimProcedure):
+class gets(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, dst):

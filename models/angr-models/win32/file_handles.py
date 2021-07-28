@@ -1,8 +1,8 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 # pylint: disable=unused-argument,arguments-differ
 
-class GetStdHandle(angr.SimProcedure):
+class GetStdHandle(FakeSimProcedure):
     def run(self, handle):
         if handle.op != 'BVV':
             raise angr.errors.SimProcedureArgumentError("Can't deal with symbolic std handle")
@@ -18,7 +18,7 @@ class GetStdHandle(angr.SimProcedure):
             return -1
 
 
-class ReadFile(angr.SimProcedure):
+class ReadFile(FakeSimProcedure):
     def run(self, hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped):
         self.state.mem[lpNumberOfBytesRead].long = 0
 
@@ -32,7 +32,7 @@ class ReadFile(angr.SimProcedure):
         return 1
 
 
-class WriteFile(angr.SimProcedure):
+class WriteFile(FakeSimProcedure):
     def run(self, hFile, lpBuffer, nNumberOfBytesToWrite, lpNumberOfBytesWritten, lpOverlapped):
         self.state.mem[lpNumberOfBytesWritten].long = 0
 

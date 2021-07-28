@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # Redirect the control flow to some other places
 ######################################
 
-class Redirect(angr.SimProcedure):
+class Redirect(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     NO_RET = True

@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # getsockopt
 ######################################
 
-class getsockopt(angr.SimProcedure):
+class getsockopt(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, sockfd, level, optname, optval, optlen):

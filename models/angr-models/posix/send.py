@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 from ...sim_options import ALLOW_SEND_FAILURES
 
@@ -6,7 +6,7 @@ from ...sim_options import ALLOW_SEND_FAILURES
 # send
 ######################################
 
-class send(angr.SimProcedure):
+class send(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, fd, src, length, flags):  # pylint:disable=unused-argument

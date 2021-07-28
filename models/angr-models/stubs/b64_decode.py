@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class b64_decode(angr.SimProcedure):
+class b64_decode(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, src, dst, length):
-        strncpy = angr.SIM_PROCEDURES['libc']['strncpy']
+        strncpy = SIM_PROCEDURES['libc']['strncpy']
 
         cpy = self.inline_call(strncpy, dst, src, length)
         self.state.memory.store(dst+16, self.state.solver.BVV(0, 8))
@@ -23,7 +23,7 @@ class b64_decode(angr.SimProcedure):
 #
 #
 #
-#         memcpy = angr.SIM_PROCEDURES['libc']['memcpy']
+#         memcpy = SIM_PROCEDURES['libc']['memcpy']
 #
 #         fmt = self.get_arg_expr(1) #pylint:disable=unused-variable
 #         one = self.get_arg_expr(2)

@@ -1,21 +1,21 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 import logging
 l = logging.getLogger(name=__name__)
 
-class strtok_r(angr.SimProcedure):
+class strtok_r(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, str_ptr, delim_ptr, save_ptr, str_strlen=None, delim_strlen=None):
         if self.state.libc.simple_strtok:
-            malloc = angr.SIM_PROCEDURES['libc']['malloc']
+            malloc = SIM_PROCEDURES['libc']['malloc']
             token_ptr = self.inline_call(malloc, self.state.libc.strtok_token_size).ret_expr
             r = self.state.solver.If(self.state.solver.Unconstrained('strtok_case', self.state.arch.bits) == 0, token_ptr, self.state.solver.BVV(0, self.state.arch.bits))
             self.state.libc.strtok_heap.append(token_ptr)
             return r
         else:
-            strstr = angr.SIM_PROCEDURES['libc']['strstr']
-            strlen = angr.SIM_PROCEDURES['libc']['strlen']
+            strstr = SIM_PROCEDURES['libc']['strstr']
+            strlen = SIM_PROCEDURES['libc']['strlen']
 
             l.debug("Doin' a strtok_r!")
             l.debug("... geting the saved state")

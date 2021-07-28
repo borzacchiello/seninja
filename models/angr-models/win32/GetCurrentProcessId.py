@@ -1,5 +1,5 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class GetCurrentProcessId(angr.SimProcedure):
+class GetCurrentProcessId(FakeSimProcedure):
     def run(self):
         return 0x1337BEE2

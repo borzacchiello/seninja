@@ -1,8 +1,8 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 # pylint: disable=unused-argument,arguments-differ
 
-class _dl_vdso_vsym(angr.SimProcedure):
+class _dl_vdso_vsym(FakeSimProcedure):
     def run(self, name, vers):
         return 0
         #namestr = self.state.mem[name].string.concrete
@@ -10,7 +10,7 @@ class _dl_vdso_vsym(angr.SimProcedure):
         #    realname = namestr[6:]
         #    lib = angr.SIM_LIBRARIES['linux_kernel']
         #else:
-        #    raise angr.SimProcedureError('_dl_vdso_vsym(%r): unsupported' % namestr)
+        #    raise FakeSimProcedureError('_dl_vdso_vsym(%r): unsupported' % namestr)
 
         #addr = self.project.loader.extern_object.get_pseudo_addr(realname)
         #if not self.project.is_hooked(addr):

@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # Returns an unconstrained byte
 ######################################
 
-class ReturnUnconstrained(angr.SimProcedure):
+class ReturnUnconstrained(FakeSimProcedure):
 
     ARGS_MISMATCH = True
 

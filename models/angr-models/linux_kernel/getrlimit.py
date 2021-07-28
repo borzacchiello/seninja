@@ -1,5 +1,5 @@
 import logging
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # getrlimit
@@ -7,7 +7,7 @@ import angr
 
 l = logging.getLogger(name=__name__)
 #pylint:disable=redefined-builtin,arguments-differ
-class getrlimit(angr.SimProcedure):
+class getrlimit(FakeSimProcedure):
 
     def run(self, resource, rlim):
 

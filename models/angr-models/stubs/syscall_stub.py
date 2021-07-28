@@ -1,11 +1,11 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # stub, for unsupported syscalls
 ######################################
 
 #pylint:disable=redefined-builtin,arguments-differ
-class syscall(angr.SimProcedure):
+class syscall(FakeSimProcedure):
 
     def run(self, resolves=None):
 

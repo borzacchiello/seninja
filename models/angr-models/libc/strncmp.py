@@ -1,13 +1,13 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 import logging
 l = logging.getLogger(name=__name__)
 
-class strncmp(angr.SimProcedure):
+class strncmp(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, a_addr, b_addr, limit, a_len=None, b_len=None, wchar=False, ignore_case=False): #pylint:disable=arguments-differ
-        strlen = angr.SIM_PROCEDURES['libc']['strlen']
+        strlen = SIM_PROCEDURES['libc']['strlen']
         char_size = 1 if not wchar else 2
 
         a_strlen = a_len if a_len is not None else self.inline_call(strlen, a_addr, wchar=wchar)

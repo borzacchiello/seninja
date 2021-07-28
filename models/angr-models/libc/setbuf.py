@@ -1,7 +1,7 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 
-class setbuf(angr.SimProcedure):
+class setbuf(FakeSimProcedure):
     #pylint:disable=arguments-differ, unused-argument
 
     def run(self, stream, buf):

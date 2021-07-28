@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 from angr.sim_type import SimTypeInt, SimTypeFd
 from angr.state_plugins import SimSystemPosix
 from angr.storage.file import SimFileDescriptor
@@ -8,7 +8,7 @@ from angr.storage.file import SimFileDescriptor
 ##################################
 
 
-class dup(angr.SimProcedure):  #pylint:disable=W0622
+class dup(FakeSimProcedure):  #pylint:disable=W0622
     def run(self, oldfd): # pylint:disable=arguments-differ
         oldfd = self.state.solver.eval(oldfd)
         if oldfd not in self.state.posix.fd.keys():
@@ -24,7 +24,7 @@ class dup(angr.SimProcedure):  #pylint:disable=W0622
         return newfd
 
 
-class dup2(angr.SimProcedure):
+class dup2(FakeSimProcedure):
     def run(self, oldfd, newfd):# pylint:disable=arguments-differ
         oldfd = self.state.solver.eval(oldfd)
         newfd = self.state.solver.eval(newfd)
@@ -43,7 +43,7 @@ class dup2(angr.SimProcedure):
         return newfd
 
 
-class dup3(angr.SimProcedure):
+class dup3(FakeSimProcedure):
     def run(self, oldfd, newfd, flags):# pylint:disable=arguments-differ
         oldfd = self.state.solver.eval(oldfd)
         newfd = self.state.solver.eval(newfd)

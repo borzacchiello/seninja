@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import logging
 
 l = logging.getLogger(name=__name__)
@@ -35,7 +35,7 @@ def deconvert_prot(prot):
     return [0x01, 0x02, None, 0x04, 0x10, 0x20, None, 0x40][prot]
 
 # https://msdn.microsoft.com/en-us/library/windows/desktop/aa366890(v=vs.85).aspx
-class VirtualAlloc(angr.SimProcedure):
+class VirtualAlloc(FakeSimProcedure):
     def run(self, lpAddress, dwSize, flAllocationType, flProtect):
         l.debug("VirtualAlloc(%s, %s, %s, %s)", lpAddress, dwSize, flAllocationType, flProtect)
         addrs = self.state.solver.eval_upto(lpAddress, 2)

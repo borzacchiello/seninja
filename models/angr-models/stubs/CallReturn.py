@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import logging
 
 l = logging.getLogger(name=__name__)
 
-class CallReturn(angr.SimProcedure):
+class CallReturn(FakeSimProcedure):
     NO_RET = True
 
     def run(self):

@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 from cle.backends.externs.simdata.io_file import io_file_data_for_arch
 from ...errors import SimSolverError
@@ -7,7 +7,7 @@ from ...errors import SimSolverError
 # fseek
 ######################################
 
-class fseek(angr.SimProcedure):
+class fseek(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, file_ptr, offset, whence):
@@ -17,7 +17,7 @@ class fseek(angr.SimProcedure):
         try:
             whence = self.state.solver.eval_one(whence)
         except SimSolverError:
-            raise angr.SimProcedureError('multi-valued "whence" is not supported in fseek.')
+            raise FakeSimProcedureError('multi-valued "whence" is not supported in fseek.')
 
         try:
             whence = {0: 'start', 1: 'current', 2: 'end'}[whence]

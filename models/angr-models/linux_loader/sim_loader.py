@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import claripy
 import logging
 
 l = logging.getLogger(name=__name__)
 
-class LinuxLoader(angr.SimProcedure):
+class LinuxLoader(FakeSimProcedure):
     NO_RET = True
 
     # pylint: disable=unused-argument,arguments-differ,attribute-defined-outside-init
@@ -22,7 +22,7 @@ class LinuxLoader(angr.SimProcedure):
             self.initializers = self.initializers[1:]
             self.call(addr, (self.state.posix.argc, self.state.posix.argv, self.state.posix.environ), 'run_initializer')
 
-class IFuncResolver(angr.SimProcedure):
+class IFuncResolver(FakeSimProcedure):
     NO_RET = True
     local_vars = ('saved_regs',)
 

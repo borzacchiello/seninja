@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class uname(angr.SimProcedure):
+class uname(FakeSimProcedure):
     def run(self, uname_buf): # pylint: disable=arguments-differ
          # struct utsname {
          #     char sysname[];    /* Operating system name (e.g., "Linux") */

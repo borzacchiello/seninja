@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 import logging
 l = logging.getLogger(name=__name__)
 
-class system(angr.SimProcedure):
+class system(FakeSimProcedure):
     #pylint:disable=arguments-differ,unused-argument
     def run(self, cmd):
         retcode = self.state.solver.Unconstrained('system_returncode', 8, key=('api', 'system'))

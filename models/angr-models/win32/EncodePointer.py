@@ -1,5 +1,5 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class EncodePointer(angr.SimProcedure):
+class EncodePointer(FakeSimProcedure):
     def run(self, ptr):
         return ptr

@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import logging
 
 l = logging.getLogger(name=__name__)
@@ -10,7 +10,7 @@ l = logging.getLogger(name=__name__)
   PDWORD_PTR lpSystemAffinityMask
 );
 """
-class GetProcessAffinityMask(angr.SimProcedure):
+class GetProcessAffinityMask(FakeSimProcedure):
     paffinity_mask = None
     saffinity_mask = None
 

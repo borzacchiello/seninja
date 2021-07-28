@@ -1,15 +1,15 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # fgetc
 ######################################
 
 
-class fgetc(angr.SimProcedure):
+class fgetc(FakeSimProcedure):
     # pylint:disable=arguments-differ
     def run(self, stream, simfd=None):
         if simfd is None:
-            fileno = angr.SIM_PROCEDURES['posix']['fileno']
+            fileno = SIM_PROCEDURES['posix']['fileno']
             fd = self.inline_call(fileno, stream).ret_expr
             simfd = self.state.posix.get_fd(fd)
 

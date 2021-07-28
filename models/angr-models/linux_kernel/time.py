@@ -1,7 +1,7 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import time as _time
 
-class time(angr.SimProcedure):
+class time(FakeSimProcedure):
     #pylint: disable=arguments-differ
     KEY = 'sys_last_time'
 

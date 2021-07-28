@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 from ..posix.read import read
 from ..posix.write import write
 from ...sim_type import register_types, parse_types
@@ -10,7 +10,7 @@ struct iovec {
 };
 """))
 
-class readv(angr.SimProcedure):
+class readv(FakeSimProcedure):
     def run(self, fd, iovec, iovcnt):
         if iovec.symbolic or iovcnt.symbolic:
             raise angr.errors.SimPosixError("Can't handle symbolic arguments to readv")
@@ -24,7 +24,7 @@ class readv(angr.SimProcedure):
         return res
 
 
-class writev(angr.SimProcedure):
+class writev(FakeSimProcedure):
     def run(self, fd, iovec, iovcnt):
         if iovec.symbolic or iovcnt.symbolic:
             raise angr.errors.SimPosixError("Can't handle symbolic arguments to writev")

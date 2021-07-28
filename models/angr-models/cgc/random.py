@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 import itertools
 rand_count = itertools.count()
 
-class random(angr.SimProcedure):
+class random(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, buf, count, rnd_bytes):

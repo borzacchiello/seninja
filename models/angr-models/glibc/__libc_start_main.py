@@ -1,14 +1,14 @@
 
 import logging
 
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 l = logging.getLogger(name=__name__)
 
 ######################################
 # __libc_start_main
 ######################################
-class __libc_start_main(angr.SimProcedure):
+class __libc_start_main(FakeSimProcedure):
     #pylint:disable=arguments-differ,unused-argument,attribute-defined-outside-init
 
     ADDS_EXITS = True
@@ -21,7 +21,7 @@ class __libc_start_main(angr.SimProcedure):
 
         See __ctype_b_loc.c in libc implementation
         """
-        malloc = angr.SIM_PROCEDURES['libc']['malloc']
+        malloc = SIM_PROCEDURES['libc']['malloc']
         table = self.inline_call(malloc, 768).ret_expr
         table_ptr = self.inline_call(malloc, self.state.arch.bytes).ret_expr
 
@@ -51,7 +51,7 @@ class __libc_start_main(angr.SimProcedure):
 
         See __ctype_tolower_loc.c in libc implementation
         """
-        malloc = angr.SIM_PROCEDURES['libc']['malloc']
+        malloc = SIM_PROCEDURES['libc']['malloc']
         # 384 entries, 4 bytes each
         table = self.inline_call(malloc, 384*4).ret_expr
         table_ptr = self.inline_call(malloc, self.state.arch.bytes).ret_expr
@@ -82,7 +82,7 @@ class __libc_start_main(angr.SimProcedure):
 
         See __ctype_toupper_loc.c in libc implementation
         """
-        malloc = angr.SIM_PROCEDURES['libc']['malloc']
+        malloc = SIM_PROCEDURES['libc']['malloc']
         # 384 entries, 4 bytes each
         table = self.inline_call(malloc, 384*4).ret_expr
         table_ptr = self.inline_call(malloc, self.state.arch.bytes).ret_expr
@@ -113,7 +113,7 @@ class __libc_start_main(angr.SimProcedure):
         self._initialize_toupper_loc_table()
 
     def _initialize_errno(self):
-        malloc = angr.SIM_PROCEDURES['libc']['malloc']
+        malloc = SIM_PROCEDURES['libc']['malloc']
         errno_loc = self.inline_call(malloc, self.state.arch.bytes).ret_expr
 
         self.state.libc.errno_location = errno_loc
@@ -145,32 +145,33 @@ class __libc_start_main(angr.SimProcedure):
 
     def static_exits(self, blocks):
         # Execute those blocks with a blank state, and then dump the arguments
-        blank_state = angr.SimState(project=self.project, mode="fastpath", cle_memory_backer=self.project.loader.memory,
-                                    add_options={angr.options.SYMBOL_FILL_UNCONSTRAINED_MEMORY,
-                                                 angr.options.SYMBOL_FILL_UNCONSTRAINED_REGISTERS})
-        # set up the stack pointer
-        blank_state.regs.sp = 0x7ffffff0
+        raise NotImplementedError
+        # blank_state = angr.SimState(project=self.project, mode="fastpath", cle_memory_backer=self.project.loader.memory,
+        #                             add_options={angr.options.SYMBOL_FILL_UNCONSTRAINED_MEMORY,
+        #                                          angr.options.SYMBOL_FILL_UNCONSTRAINED_REGISTERS})
+        # # set up the stack pointer
+        # blank_state.regs.sp = 0x7ffffff0
 
-        # Execute each block
-        state = blank_state
-        for b in blocks:
-            irsb = self.project.factory.default_engine.process(state, irsb=b, force_addr=b.addr)
-            if irsb.successors:
-                state = irsb.successors[0]
-            else:
-                break
+        # # Execute each block
+        # state = blank_state
+        # for b in blocks:
+        #     irsb = self.project.factory.default_engine.process(state, irsb=b, force_addr=b.addr)
+        #     if irsb.successors:
+        #         state = irsb.successors[0]
+        #     else:
+        #         break
 
-        cc = angr.DEFAULT_CC[self.arch.name](self.arch)
-        args = [ cc.arg(state, _) for _ in range(5) ]
-        main, _, _, init, fini = self._extract_args(blank_state, *args)
+        # cc = angr.DEFAULT_CC[self.arch.name](self.arch)
+        # args = [ cc.arg(state, _) for _ in range(5) ]
+        # main, _, _, init, fini = self._extract_args(blank_state, *args)
 
-        all_exits = [
-            {'address': init, 'jumpkind': 'Ijk_Call', 'namehint': 'init'},
-            {'address': main, 'jumpkind': 'Ijk_Call', 'namehint': 'main'},
-            {'address': fini, 'jumpkind': 'Ijk_Call', 'namehint': 'fini'},
-        ]
+        # all_exits = [
+        #     {'address': init, 'jumpkind': 'Ijk_Call', 'namehint': 'init'},
+        #     {'address': main, 'jumpkind': 'Ijk_Call', 'namehint': 'main'},
+        #     {'address': fini, 'jumpkind': 'Ijk_Call', 'namehint': 'fini'},
+        # ]
 
-        return all_exits
+        # return all_exits
 
     @staticmethod
     def _extract_args(state, main, argc, argv, init, fini):

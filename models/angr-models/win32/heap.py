@@ -1,17 +1,17 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 
-class GetProcessHeap(angr.SimProcedure):
+class GetProcessHeap(FakeSimProcedure):
     def run(self):
         return 1  # fake heap handle
 
 
-class HeapCreate(angr.SimProcedure):
+class HeapCreate(FakeSimProcedure):
     def run(self, flOptions, dwInitialSize, dwMaximumSize): #pylint:disable=arguments-differ, unused-argument
         return 1  # still a fake heap handle
 
 
-class HeapAlloc(angr.SimProcedure):
+class HeapAlloc(FakeSimProcedure):
     def run(self, HeapHandle, Flags, Size): #pylint:disable=arguments-differ, unused-argument
         addr = self.state.heap._malloc(Size)
 
@@ -29,7 +29,7 @@ class HeapAlloc(angr.SimProcedure):
         return addr
 
 
-class HeapReAlloc(angr.SimProcedure):
+class HeapReAlloc(FakeSimProcedure):
     def run(self, hHeap, dwFlags, lpMem, dwBytes): #pylint:disable=arguments-differ, unused-argument
         return self.state.heap._realloc(lpMem, dwBytes)
 
@@ -39,6 +39,6 @@ class GlobalAlloc(HeapAlloc):
         return super(GlobalAlloc, self).run(1, Flags, Size)
 
 
-class HeapFree(angr.SimProcedure):
+class HeapFree(FakeSimProcedure):
     def run(self, HeapHandle, Flags, lpMem): #pylint:disable=arguments-differ, unused-argument
         return 1

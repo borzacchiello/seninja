@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # std::terminate
 ######################################
 
-class std__terminate(angr.SimProcedure): #pylint:disable=redefined-builtin
+class std__terminate(FakeSimProcedure): #pylint:disable=redefined-builtin
     #pylint:disable=arguments-differ
 
     NO_RET = True

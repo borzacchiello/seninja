@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # __ctype_tolower_loc
 ######################################
 
-class __ctype_tolower_loc(angr.SimProcedure):
+class __ctype_tolower_loc(FakeSimProcedure):
     """
     Following is the description from linuxfoundation.org:
 

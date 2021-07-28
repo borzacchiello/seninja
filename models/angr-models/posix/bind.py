@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # bind (but not really)
@@ -6,7 +6,7 @@ import angr
 import logging
 l = logging.getLogger(name=__name__)
 
-class bind(angr.SimProcedure):
+class bind(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, fd, addr_ptr, addr_len): #pylint:disable=unused-argument

@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import logging
 
 l = logging.getLogger(name=__name__)
 
-class brk(angr.SimProcedure):
+class brk(FakeSimProcedure):
     """
     This implements the brk system call.
     """

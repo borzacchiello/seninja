@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class transmit(angr.SimProcedure):
+class transmit(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, fd, buf, count, tx_bytes):

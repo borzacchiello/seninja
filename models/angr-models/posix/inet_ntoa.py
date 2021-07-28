@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class inet_ntoa(angr.SimProcedure):
+class inet_ntoa(FakeSimProcedure):
     #pylint:disable=arguments-differ,unused-argument
 
     def run(self, addr_in):

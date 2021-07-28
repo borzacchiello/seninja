@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import time
 
 # pylint: disable=arguments-differ,unused-argument
 
-class gettimeofday(angr.SimProcedure):
+class gettimeofday(FakeSimProcedure):
     def run(self, tv, tz):
         if self.state.solver.is_true(tv == 0):
             return -1
@@ -20,10 +20,10 @@ class gettimeofday(angr.SimProcedure):
         self.state.mem[tv].struct.timeval = result
         return 0
 
-class clock_gettime(angr.SimProcedure):
+class clock_gettime(FakeSimProcedure):
     def run(self, which_clock, timespec_ptr):
         if not self.state.solver.is_true(which_clock == 0):
-            raise angr.errors.SimProcedureError("clock_gettime doesn't know how to deal with a clock other than CLOCK_REALTIME")
+            raise FakeSimProcedureError("clock_gettime doesn't know how to deal with a clock other than CLOCK_REALTIME")
 
         if self.state.solver.is_true(timespec_ptr == 0):
             return -1

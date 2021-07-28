@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # std::throw_logic_error
 ######################################
 
-class std____throw_logic_error(angr.SimProcedure): #pylint:disable=redefined-builtin
+class std____throw_logic_error(FakeSimProcedure): #pylint:disable=redefined-builtin
     #pylint:disable=arguments-differ
 
     NO_RET = True

@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # exit
 ######################################
 
-class exit(angr.SimProcedure): #pylint:disable=redefined-builtin
+class exit(FakeSimProcedure): #pylint:disable=redefined-builtin
     #pylint:disable=arguments-differ
 
     NO_RET = True

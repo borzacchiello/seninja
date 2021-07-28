@@ -1,7 +1,7 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import claripy
 
-class _vsyscall(angr.SimProcedure):
+class _vsyscall(FakeSimProcedure):
     NO_RET = True
 
     # This is pretty much entirely copied from SimProcedure.ret

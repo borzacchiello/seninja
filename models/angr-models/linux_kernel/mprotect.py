@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import logging
 
 l = logging.getLogger(name=__name__)
 
-class mprotect(angr.SimProcedure):
+class mprotect(FakeSimProcedure):
 
     def run(self, addr, length, prot): #pylint:disable=arguments-differ,unused-argument
 

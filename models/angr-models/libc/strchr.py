@@ -1,16 +1,16 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 from angr.storage.memory_mixins.address_concretization_mixin import MultiwriteAnnotation
 from angr.sim_options import MEMORY_CHUNK_INDIVIDUAL_READS
 
 import logging
 l = logging.getLogger(name=__name__)
 
-class strchr(angr.SimProcedure):
+class strchr(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, s_addr, c_int, s_strlen=None):
         c = c_int[7:0]
-        s_strlen = self.inline_call(angr.SIM_PROCEDURES['libc']['strlen'], s_addr)
+        s_strlen = self.inline_call(SIM_PROCEDURES['libc']['strlen'], s_addr)
 
         chunk_size = None
         if MEMORY_CHUNK_INDIVIDUAL_READS in self.state.options:

@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 from cle.backends.externs.simdata.io_file import io_file_data_for_arch
 
@@ -7,7 +7,7 @@ from cle.backends.externs.simdata.io_file import io_file_data_for_arch
 # fileno
 ######################################
 
-class fileno(angr.SimProcedure):
+class fileno(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, f):

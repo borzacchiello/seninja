@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 def mutate_dict(state, KEY):
     d = dict(state.globals.get(KEY, {}))
@@ -10,7 +10,7 @@ def has_index(state, idx, KEY):
         return False
     return idx in state.globals[KEY]
 
-class TlsAlloc(angr.SimProcedure):
+class TlsAlloc(FakeSimProcedure):
     KEY = 'win32_tls'
     def run(self):
         d = mutate_dict(self.state, self.KEY)
@@ -18,7 +18,7 @@ class TlsAlloc(angr.SimProcedure):
         d[new_key] = self.state.solver.BVV(0, self.state.arch.bits)
         return new_key
 
-class TlsSetValue(angr.SimProcedure):
+class TlsSetValue(FakeSimProcedure):
     KEY = 'win32_tls'
     def run(self, index, value):
         conc_indexs = self.state.solver.eval_upto(index, 2)
@@ -32,7 +32,7 @@ class TlsSetValue(angr.SimProcedure):
         mutate_dict(self.state, self.KEY)[conc_index] = value
         return 1
 
-class TlsGetValue(angr.SimProcedure):
+class TlsGetValue(FakeSimProcedure):
     KEY = 'win32_tls'
     def run(self, index):
         conc_indexs = self.state.solver.eval_upto(index, 2)
@@ -45,7 +45,7 @@ class TlsGetValue(angr.SimProcedure):
 
         return self.state.globals[self.KEY][conc_index]
 
-class TlsFree(angr.SimProcedure):
+class TlsFree(FakeSimProcedure):
     KEY = 'win32_tls'
     SETTER = TlsSetValue
     def run(self, index):

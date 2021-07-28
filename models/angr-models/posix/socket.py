@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # socket
 ######################################
 
-class socket(angr.SimProcedure):
+class socket(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, domain, typ, protocol):

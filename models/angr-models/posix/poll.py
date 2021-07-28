@@ -1,11 +1,11 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import select
 
 ######################################
 # poll
 ######################################
 
-class poll(angr.SimProcedure):
+class poll(FakeSimProcedure):
     # pylint:disable=arguments-differ
 
     def run(self, fds, nfds, timeout):  # pylint: disable=unused-argument

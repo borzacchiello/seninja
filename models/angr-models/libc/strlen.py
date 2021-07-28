@@ -1,11 +1,11 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 from angr.sim_options import MEMORY_CHUNK_INDIVIDUAL_READS
 from angr.storage.memory_mixins.regioned_memory.abstract_address_descriptor import AbstractAddressDescriptor
 
 import logging
 l = logging.getLogger(name=__name__)
 
-class strlen(angr.SimProcedure):
+class strlen(FakeSimProcedure):
     #pylint:disable=arguments-differ
     max_null_index = None
 

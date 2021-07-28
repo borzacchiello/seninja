@@ -1,10 +1,10 @@
 import claripy
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import logging
 
 l = logging.getLogger(name=__name__)
 
-class allocate(angr.SimProcedure):
+class allocate(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, length, is_x, addr): #pylint:disable=unused-argument

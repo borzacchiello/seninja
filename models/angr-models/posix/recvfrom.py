@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # recvfrom
 ######################################
 
-class recvfrom(angr.SimProcedure):
+class recvfrom(FakeSimProcedure):
     # pylint:disable=arguments-differ,unused-argument
 
     def run(self, fd, dst, length, flags, src_addr, addrlen):

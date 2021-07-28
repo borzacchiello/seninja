@@ -1,11 +1,11 @@
 
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # openlog
 ######################################
 
-class openlog(angr.SimProcedure):
+class openlog(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, ident, option, facility):

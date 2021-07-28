@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class UserHook(angr.SimProcedure):
+class UserHook(FakeSimProcedure):
     NO_RET = True
 
     # pylint: disable=arguments-differ

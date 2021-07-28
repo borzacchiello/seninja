@@ -1,11 +1,11 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # Caller
 ######################################
 
 
-class Caller(angr.SimProcedure):
+class Caller(FakeSimProcedure):
     """
     Caller stub. Creates a Ijk_Call exit to the specified function
     """

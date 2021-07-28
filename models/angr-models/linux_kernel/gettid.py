@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class gettid(angr.SimProcedure):
+class gettid(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self):

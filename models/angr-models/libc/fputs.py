@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 from cle.backends.externs.simdata.io_file import io_file_data_for_arch
 
@@ -6,7 +6,7 @@ from cle.backends.externs.simdata.io_file import io_file_data_for_arch
 # fputs
 ######################################
 
-class fputs(angr.SimProcedure):
+class fputs(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, str_addr, file_ptr):
@@ -17,7 +17,7 @@ class fputs(angr.SimProcedure):
         if simfd is None:
             return -1
 
-        strlen = angr.SIM_PROCEDURES['libc']['strlen']
+        strlen = SIM_PROCEDURES['libc']['strlen']
         p_strlen = self.inline_call(strlen, str_addr)
         simfd.write(str_addr, p_strlen.max_null_index)
         return 1

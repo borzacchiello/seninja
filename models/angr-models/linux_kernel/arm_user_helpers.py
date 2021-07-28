@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 """
 references:
@@ -6,7 +6,7 @@ https://elixir.bootlin.com/linux/latest/source/arch/arm/kernel/entry-armv.S
 https://www.kernel.org/doc/Documentation/arm/kernel_user_helpers.txt
 """
 
-class _kuser_helper_version(angr.SimProcedure):
+class _kuser_helper_version(FakeSimProcedure):
     # pylint: disable=arguments-differ
     kuser_addr = 0xffff0ffc
     def run(self):
@@ -14,14 +14,14 @@ class _kuser_helper_version(angr.SimProcedure):
         self.state.regs.r0 = 0x884c0
         return
 
-class _kuser_helper_get_tls(angr.SimProcedure):
+class _kuser_helper_get_tls(FakeSimProcedure):
     # pylint: disable=arguments-differ
     kuser_addr = 0xffff0fe0
     def run(self):
         self.state.regs.r0 = self.project.loader.tls.threads[0].user_thread_pointer
         return
 
-class _kuser_cmpxchg(angr.SimProcedure):
+class _kuser_cmpxchg(FakeSimProcedure):
     # pylint: disable=arguments-differ
     kuser_addr = 0xffff0fc0
     def run(self, oldval, newval, ptr):
@@ -37,13 +37,13 @@ class _kuser_cmpxchg(angr.SimProcedure):
         self.state.regs.cc_ndep = 0
         return retval
 
-class _kuser_memory_barrier(angr.SimProcedure):
+class _kuser_memory_barrier(FakeSimProcedure):
     # pylint: disable=arguments-differ
     kuser_addr = 0xffff0fa0
     def run(self):
         pass
 
-class _kuser_cmpxchg64(angr.SimProcedure):
+class _kuser_cmpxchg64(FakeSimProcedure):
     # pylint: disable=arguments-differ
     kuser_addr = 0xffff0f60
     def run(self):

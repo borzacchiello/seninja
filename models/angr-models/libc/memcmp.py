@@ -1,9 +1,9 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import logging
 
 l = logging.getLogger(name=__name__)
 
-class memcmp(angr.SimProcedure):
+class memcmp(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, s1_addr, s2_addr, n):

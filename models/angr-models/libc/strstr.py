@@ -1,15 +1,15 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 from angr.sim_options import MEMORY_CHUNK_INDIVIDUAL_READS
 
 import logging
 l = logging.getLogger(name=__name__)
 
-class strstr(angr.SimProcedure):
+class strstr(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, haystack_addr, needle_addr, haystack_strlen=None, needle_strlen=None):
-        strlen = angr.SIM_PROCEDURES['libc']['strlen']
-        strncmp = angr.SIM_PROCEDURES['libc']['strncmp']
+        strlen = SIM_PROCEDURES['libc']['strlen']
+        strncmp = SIM_PROCEDURES['libc']['strncmp']
 
         haystack_strlen = self.inline_call(strlen, haystack_addr) if haystack_strlen is None else haystack_strlen
         needle_strlen = self.inline_call(strlen, needle_addr) if needle_strlen is None else needle_strlen

@@ -1,20 +1,20 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class IsBadReadPtr(angr.SimProcedure):
+class IsBadReadPtr(FakeSimProcedure):
     def run(self, ptr, length):
         try:
             return (~self.state.memory.permissions(ptr)[0]).zero_extend(self.state.arch.bits-1)
         except angr.errors.SimMemoryError:
             return 1
 
-class IsBadWritePtr(angr.SimProcedure):
+class IsBadWritePtr(FakeSimProcedure):
     def run(self, ptr, length):
         try:
             return (~self.state.memory.permissions(ptr)[1]).zero_extend(self.state.arch.bits-1)
         except angr.errors.SimMemoryError:
             return 1
 
-class IsBadCodePtr(angr.SimProcedure):
+class IsBadCodePtr(FakeSimProcedure):
     def run(self, ptr, length):
         try:
             return (~self.state.memory.permissions(ptr)[2]).zero_extend(self.state.arch.bits-1)

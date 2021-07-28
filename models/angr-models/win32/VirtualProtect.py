@@ -1,11 +1,11 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import logging
 
 from .VirtualAlloc import convert_prot, deconvert_prot
 
 l = logging.getLogger(name=__name__)
 
-class VirtualProtect(angr.SimProcedure):
+class VirtualProtect(FakeSimProcedure):
     def run(self, lpAddress, dwSize, flNewProtect, lpfOldProtect):
         l.debug("VirtualProtect(%s, %s, %s, %s)", lpAddress, dwSize, flNewProtect, lpfOldProtect)
         addrs = self.state.solver.eval_upto(lpAddress, 2)

@@ -1,6 +1,6 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
-class KiUserExceptionDispatcher(angr.SimProcedure):
+class KiUserExceptionDispatcher(FakeSimProcedure):
     local_vars = ('tib_ptr', 'top_record', 'cur_ptr')
     IS_FUNCTION = False
 

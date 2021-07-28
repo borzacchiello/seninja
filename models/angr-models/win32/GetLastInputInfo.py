@@ -1,4 +1,4 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import logging
 
 l = logging.getLogger(name=__name__)
@@ -14,7 +14,7 @@ typedef struct tagLASTINPUTINFO {
   DWORD dwTime;
 } LASTINPUTINFO, *PLASTINPUTINFO;
 """
-class GetLastInputInfo(angr.SimProcedure):
+class GetLastInputInfo(FakeSimProcedure):
     cbSize = None
     dwTime = None
 

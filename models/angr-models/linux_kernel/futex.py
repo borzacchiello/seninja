@@ -1,5 +1,5 @@
 import logging
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # futex
@@ -7,7 +7,7 @@ import angr
 
 l = logging.getLogger(name=__name__)
 #pylint:disable=redefined-builtin,arguments-differ
-class futex(angr.SimProcedure):
+class futex(FakeSimProcedure):
 
     def run(self, uaddr, futex_op, val, timeout, uaddr2, val3):
         op = self.state.solver.eval(futex_op)

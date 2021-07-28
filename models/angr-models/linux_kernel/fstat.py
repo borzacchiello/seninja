@@ -1,8 +1,8 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 # TODO see comment in fstat64
 
-class fstat(angr.SimProcedure):
+class fstat(FakeSimProcedure):
 
     def run(self, fd, stat_buf):
         stat = self.state.posix.fstat(fd)
@@ -15,7 +15,7 @@ class fstat(angr.SimProcedure):
         elif self.state.arch.name == 'AARCH64':
             self._store_aarch64(stat_buf, stat)
         else:
-            raise angr.errors.SimProcedureError("unsupported fstat arch: %s" % self.state.arch)
+            raise FakeSimProcedureError("unsupported fstat arch: %s" % self.state.arch)
         return 0
 
     def _store_amd64(self, stat_buf, stat):

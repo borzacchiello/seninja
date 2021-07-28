@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # fcntl
 ######################################
 
-class fcntl(angr.SimProcedure):
+class fcntl(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, fd, cmd):

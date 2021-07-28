@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # __vsnprintf
 ######################################
 
-class vsnprintf(angr.SimProcedure):
+class vsnprintf(FakeSimProcedure):
     #pylint:disable=arguments-differ
 
     def run(self, str_ptr, size, fmt, ap): #pylint:disable=unused-argument

@@ -1,10 +1,10 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 import claripy
 import logging
 
 l = logging.getLogger(name=__name__)
 
-class LoadLibraryA(angr.SimProcedure):
+class LoadLibraryA(FakeSimProcedure):
     def run(self, lib_ptr):
         lib = self.state.mem[lib_ptr].string.concrete.decode('utf-8')
         return self.load(lib)
@@ -36,7 +36,7 @@ class LoadLibraryExW(LoadLibraryA):
 # subclasses your special procedure and LoadLibraryExW
 
 
-class GetProcAddress(angr.SimProcedure):
+class GetProcAddress(FakeSimProcedure):
     def run(self, lib_handle, name_addr):
         if lib_handle.symbolic:
             raise angr.errors.SimValueError("GetProcAddress called with symbolic library handle %s" % lib_handle)

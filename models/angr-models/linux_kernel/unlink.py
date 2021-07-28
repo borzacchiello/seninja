@@ -1,15 +1,15 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # unlink
 ######################################
 
-class unlink(angr.SimProcedure): #pylint:disable=W0622
+class unlink(FakeSimProcedure): #pylint:disable=W0622
     #pylint:disable=arguments-differ
 
     def run(self, path_addr):
         # This is a dummy for now
-        strlen = angr.SIM_PROCEDURES['libc']['strlen']
+        strlen = SIM_PROCEDURES['libc']['strlen']
 
         p_strlen = self.inline_call(strlen, path_addr)
         str_expr = self.state.memory.load(path_addr, p_strlen.max_null_index, endness='Iend_BE')

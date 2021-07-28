@@ -1,15 +1,15 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 ######################################
 # openat
 # Based on posix open SimProcedure
 ######################################
 
-class openat(angr.SimProcedure):
+class openat(FakeSimProcedure):
     #pylint:disable=arguments-differ,unused-argument
 
     def run(self, dirfd, p_addr, flags, mode):
-        strlen = angr.SIM_PROCEDURES['libc']['strlen']
+        strlen = SIM_PROCEDURES['libc']['strlen']
 
         p_strlen = self.inline_call(strlen, p_addr)
         p_expr = self.state.memory.load(p_addr, p_strlen.max_null_index, endness='Iend_BE')

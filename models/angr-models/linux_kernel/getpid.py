@@ -1,12 +1,12 @@
-import angr
+from .. import FakeSimProcedure, FakeSimProcedureError, claripy, SIM_PROCEDURES
 
 #pylint:disable=arguments-differ
 
-class getpid(angr.SimProcedure):
+class getpid(FakeSimProcedure):
     def run(self):
         return self.state.posix.pid
 
 
-class getppid(angr.SimProcedure):
+class getppid(FakeSimProcedure):
     def run(self):
         return self.state.posix.ppid
