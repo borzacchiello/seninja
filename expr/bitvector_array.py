@@ -1,8 +1,17 @@
 import z3
 
+from enum import Enum
 from copy import deepcopy
 from .bitvector import BV, BVV, BVExpr
 from .bool_expr import Bool, BoolV
+
+class BVArrayState(Enum):
+    # Never registered a symbolic memory access (either Load or Store)
+    CONCRETE_MODE      = 0
+    # Registered only a symbolic Load. Allowed concrete Load
+    SEMI_CONCRETE_MODE = 1
+    # Registered a symbolic Store
+    SYMBOLIC_MODE      = 2
 
 
 class BVArray(object):
@@ -19,6 +28,7 @@ class BVArray(object):
         self._assertions = list()
         self._z3obj = None
         self._z3objConcCache = None
+        self._mode = BVArrayState.CONCRETE_MODE
 
     def __str__(self):
         return "<BVArray [BV{ind} -> BV{val}] {name}>".format(
@@ -29,6 +39,9 @@ class BVArray(object):
 
     def __repr__(self):
         return self.__str__()
+
+    def get_mode(self):
+        return self._mode
 
     def simplify(self):
         if self._z3obj is None:
@@ -58,29 +71,16 @@ class BVArray(object):
         self._z3objConcCache = res
         return res
 
-    def _try_build_reduced_array(self, index_min, index_max):
-        if self._z3obj is not None:
-            # symbolic mode
-            return self._z3obj
-        if index_max - index_min >= 2**self.index_width:
-            return self.z3obj
+    def _switch_to_symbolic(self, soft=False):
+        if self._mode == BVArrayState.SEMI_CONCRETE_MODE and soft:
+            return
 
-        res = z3.Array(
-            self.name,
-            z3.BitVecSort(self.index_width),
-            z3.BitVecSort(self.value_width)
-        )
-        for i in range(index_min, index_max + 1):
-            if i in self._conc_store:
-                res = z3.Store(
-                    res,
-                    z3.BitVecVal(i, self.index_width),
-                    self._conc_store[i].z3obj
-                )
-        return res
+        if self._mode == BVArrayState.SEMI_CONCRETE_MODE and not soft:
+            self._mode       = BVArrayState.SYMBOLIC_MODE
+            self._conc_store = None
+            return
 
-    def _switch_to_symbolic(self):
-        if self._conc_store is not None:
+        if self._mode == BVArrayState.CONCRETE_MODE:
             assert self._z3obj is None
             self._z3obj = z3.Array(
                 self.name,
@@ -93,7 +93,11 @@ class BVArray(object):
                     z3.Select(self._z3obj, index) == self._conc_store[index].z3obj
                 )
 
-            self._conc_store = None
+            if soft:
+                self._mode = BVArrayState.SEMI_CONCRETE_MODE
+            else:
+                self._mode = BVArrayState.SYMBOLIC_MODE
+                self._conc_store = None
 
     def get_assertions(self):
         return self._assertions
@@ -113,13 +117,13 @@ class BVArray(object):
 
         if (
             isinstance(index, BVV) and
-            self._conc_store is not None
+            self._mode == BVArrayState.CONCRETE_MODE
         ):
             # concrete mode
             self._conc_store[index.value] = value
         else:
             # symbolic mode
-            self._switch_to_symbolic()
+            self._switch_to_symbolic(soft=False)
             self._z3obj = z3.Store(
                 self._z3obj,
                 index.z3obj,
@@ -144,7 +148,7 @@ class BVArray(object):
             return
 
         if (
-            self._conc_store is not None and
+            self._mode == BVArrayState.CONCRETE_MODE and
             isinstance(index, BVV) and
             index.value in self._conc_store and
             self._conc_store[index.value].eq(value)
@@ -153,7 +157,7 @@ class BVArray(object):
             # we can safetely skip the store
             return
 
-        self._switch_to_symbolic()
+        self._switch_to_symbolic(soft=False)
         self._z3obj = z3.If(
             cond.z3obj,
             z3.Store(
@@ -175,7 +179,7 @@ class BVArray(object):
 
         if (
             isinstance(index, BVV) and
-            self._conc_store is not None and
+            self._mode in {BVArrayState.CONCRETE_MODE, BVArrayState.SEMI_CONCRETE_MODE} and
             index.value in self._conc_store
         ):
             # concrete mode
@@ -183,7 +187,7 @@ class BVArray(object):
 
         if (
             isinstance(index, BVV) and
-            self._conc_store is not None and
+            self._mode in {BVArrayState.CONCRETE_MODE, BVArrayState.SEMI_CONCRETE_MODE} and
             index.value not in self._conc_store
         ):
             # uninitialized read
@@ -195,7 +199,7 @@ class BVArray(object):
             return BVExpr(self.value_width, z3.Select(arr, index.z3obj))
 
         # symbolic mode
-        self._switch_to_symbolic()
+        self._switch_to_symbolic(soft=True)
         return BVExpr(self.value_width, z3.Select(self._z3obj, index.z3obj))
 
     def copy(self):
