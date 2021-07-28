@@ -224,11 +224,11 @@ class BVArray(object):
             # Handle concrete mode merge (easy)
             all_indexes = set(self._conc_store.keys()) | set(other._conc_store.keys())
             for idx in all_indexes:
-                self._conc_store[idx] = z3.If(
+                self._conc_store[idx] = BVExpr(self.value_width, z3.If(
                     merge_condition.z3obj,
-                    other.Select(BVV(idx, self.index_width)),
-                    self.Select(BVV(idx, self.index_width))
-                )
+                    other.Select(BVV(idx, self.index_width)).z3obj,
+                    self.Select(BVV(idx, self.index_width)).z3obj
+                ))
         elif (
                 self.get_mode() == BVArrayState.SEMI_CONCRETE_MODE and
                 other.get_mode() in {BVArrayState.CONCRETE_MODE,
@@ -245,11 +245,11 @@ class BVArray(object):
 
             all_indexes = set(self._conc_store.keys()) | set(other._conc_store.keys())
             for idx in all_indexes:
-                self._conc_store[idx] = z3.If(
+                self._conc_store[idx] = BVExpr(self.value_width, z3.If(
                     merge_condition.z3obj,
-                    other.Select(BVV(idx, self.index_width)),
-                    self.Select(BVV(idx, self.index_width))
-                )
+                    other.Select(BVV(idx, self.index_width)).z3obj,
+                    self.Select(BVV(idx, self.index_width)).z3obj
+                ))
 
             all_indexes = set(self._assertions.keys()) | set(other._assertions.keys())
             new_assertions = dict()
@@ -258,8 +258,8 @@ class BVArray(object):
                 self_cond  = self._assertions[idx] if idx in self._assertions else BoolV(True)
                 new_assertions[idx] = z3.If(
                     merge_condition.z3obj,
-                    other_cond,
-                    self_cond
+                    other_cond.z3obj,
+                    self_cond.z3obj
                 )
 
             self._z3obj = z3.If(
@@ -281,8 +281,8 @@ class BVArray(object):
                 self_cond  = self._assertions[idx] if idx in self._assertions else BoolV(True)
                 new_assertions[idx] = z3.If(
                     merge_condition.z3obj,
-                    other_cond,
-                    self_cond
+                    other_cond.z3obj,
+                    self_cond.z3obj
                 )
 
             self._z3obj = z3.If(
