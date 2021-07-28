@@ -5,13 +5,14 @@ from copy import deepcopy
 from .bitvector import BV, BVV, BVExpr
 from .bool_expr import Bool, BoolV
 
+
 class BVArrayState(Enum):
     # Never registered a symbolic memory access (either Load or Store)
-    CONCRETE_MODE      = 0
+    CONCRETE_MODE = 0
     # Registered only a symbolic Load. Allowed concrete Load
     SEMI_CONCRETE_MODE = 1
     # Registered a symbolic Store
-    SYMBOLIC_MODE      = 2
+    SYMBOLIC_MODE = 2
 
 
 class BVArray(object):
@@ -25,7 +26,7 @@ class BVArray(object):
         self.index_width = index_width
         self.value_width = value_width
         self._conc_store = {}
-        self._assertions = list()
+        self._assertions = dict()
         self._z3obj = None
         self._z3objConcCache = None
         self._mode = BVArrayState.CONCRETE_MODE
@@ -76,7 +77,7 @@ class BVArray(object):
             return
 
         if self._mode == BVArrayState.SEMI_CONCRETE_MODE and not soft:
-            self._mode       = BVArrayState.SYMBOLIC_MODE
+            self._mode = BVArrayState.SYMBOLIC_MODE
             self._conc_store = None
             return
 
@@ -89,9 +90,9 @@ class BVArray(object):
             )
             # The solver needs to add those constraints! (even lazly)
             for index in self._conc_store:
-                self._assertions.append(
-                    z3.Select(self._z3obj, index) == self._conc_store[index].z3obj
-                )
+                self._assertions[index] = \
+                    z3.Select(
+                        self._z3obj, index) == self._conc_store[index].z3obj
 
             if soft:
                 self._mode = BVArrayState.SEMI_CONCRETE_MODE
@@ -100,7 +101,7 @@ class BVArray(object):
                 self._conc_store = None
 
     def get_assertions(self):
-        return self._assertions
+        return list(self._assertions.values())
 
     def Store(self, index, value):
         if isinstance(index, int):
@@ -206,6 +207,7 @@ class BVArray(object):
         new = BVArray(self.name, self.index_width, self.value_width)
         new._conc_store = deepcopy(self._conc_store)
         new._z3obj = self._z3obj
+        new._assertions = dict(self._assertions)
 
         return new
 
@@ -218,15 +220,75 @@ class BVArray(object):
                 return other.copy()
             return self
 
-        # FIXME: broken!! Handle assertions
+        if self.get_mode() == BVArrayState.CONCRETE_MODE and other.get_mode() == BVArrayState.CONCRETE_MODE:
+            # Handle concrete mode merge (easy)
+            all_indexes = set(self._conc_store.keys()) | set(other._conc_store.keys())
+            for idx in all_indexes:
+                self._conc_store[idx] = z3.If(
+                    merge_condition.z3obj,
+                    other.Select(BVV(idx, self.index_width)),
+                    self.Select(BVV(idx, self.index_width))
+                )
+        elif (
+                self.get_mode() == BVArrayState.SEMI_CONCRETE_MODE and
+                other.get_mode() in {BVArrayState.CONCRETE_MODE,
+                                     BVArrayState.SEMI_CONCRETE_MODE}
+            ) or (
+                other.get_mode() == BVArrayState.SEMI_CONCRETE_MODE and
+                self.get_mode() in {BVArrayState.CONCRETE_MODE,
+                                    BVArrayState.SEMI_CONCRETE_MODE}
+        ):
+            # Handle semi-concrete mode merge
+            other_copy = other.copy()
+            other_copy._switch_to_symbolic(soft=True)
+            self._switch_to_symbolic(soft=True)
 
-        self._switch_to_symbolic()
-        self._z3obj = z3.If(
-            merge_condition.z3obj,
-            other.z3obj,
-            self._z3obj
-        )
-        # this can be quite inefficient.
-        # Let's try to simplfy the expression.
-        self._z3obj = z3.simplify(self._z3obj)
+            all_indexes = set(self._conc_store.keys()) | set(other._conc_store.keys())
+            for idx in all_indexes:
+                self._conc_store[idx] = z3.If(
+                    merge_condition.z3obj,
+                    other.Select(BVV(idx, self.index_width)),
+                    self.Select(BVV(idx, self.index_width))
+                )
+
+            all_indexes = set(self._assertions.keys()) | set(other._assertions.keys())
+            new_assertions = dict()
+            for idx in all_indexes:
+                other_cond = other._assertions[idx] if idx in other._assertions else BoolV(True)
+                self_cond  = self._assertions[idx] if idx in self._assertions else BoolV(True)
+                new_assertions[idx] = z3.If(
+                    merge_condition.z3obj,
+                    other_cond,
+                    self_cond
+                )
+
+            self._z3obj = z3.If(
+                merge_condition.z3obj,
+                other._z3obj,
+                self._z3obj
+            )
+
+        else:
+            # Handle symbolic mode merge
+            other_copy = other.copy()
+            other_copy._switch_to_symbolic(soft=False)
+            self._switch_to_symbolic(soft=False)
+
+            all_indexes = set(self._assertions.keys()) | set(other._assertions.keys())
+            new_assertions = dict()
+            for idx in all_indexes:
+                other_cond = other._assertions[idx] if idx in other._assertions else BoolV(True)
+                self_cond  = self._assertions[idx] if idx in self._assertions else BoolV(True)
+                new_assertions[idx] = z3.If(
+                    merge_condition.z3obj,
+                    other_cond,
+                    self_cond
+                )
+
+            self._z3obj = z3.If(
+                merge_condition.z3obj,
+                other._z3obj,
+                self._z3obj
+            )
+
         return self
