@@ -136,8 +136,8 @@ class AngrModelProvider(object):
         if fun_name not in self.angr_models[os_name]:
             return None
 
-        def make_condom(model_calss):
-            c = model_calss()
+        def make_condom(model_class):
+            c = model_class()
             num_args = len(signature(c.run).parameters)
 
             def f(seninja_state, view):
@@ -149,7 +149,7 @@ class AngrModelProvider(object):
                         get_arg_k(seninja_state, i+1, seninja_state.arch.bits() // 8, view))
 
                 # print(signature(c.run))
-                # print("running", model_calss, "with arguments:", args)
+                # print("running", model_class, "with arguments:", args)
                 return c.run(*args)
             return f
 
