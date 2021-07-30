@@ -359,9 +359,7 @@ class BVS(BVExpr):
 class BVV(BV):
     def __init__(self, value: int, size: int):
         self.size = size
-        self._mask = (2 << (size-1)) - 1
         self.value = value & self._mask
-        self._signMask = 2 << (size-1-1) if size > 1 else 0
 
     def as_bytes(self):
         assert self.size % 8 == 0
@@ -373,6 +371,14 @@ class BVV(BV):
 
     def simplify(self):
         return self
+
+    @property
+    def _mask(self):
+        return (2 << (self.size-1)) - 1
+
+    @property
+    def _signMask(self):
+        return 2 << (self.size-1-1) if self.size > 1 else 0
 
     @property
     def z3obj(self):

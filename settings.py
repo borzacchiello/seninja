@@ -46,7 +46,7 @@ Settings().register_setting("seninja.memory.page_size", """
     {
         "title" : "Size of a memory page",
         "type" : "string",
-        "default" : "4096",
+        "default" : "2048",
         "description" : "Size (in bytes) of a memory page. It must be a power of 2."
     }
     """)

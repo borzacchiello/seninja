@@ -711,6 +711,8 @@ class SymbolicVisitor(BNILVisitor):
 
             if save_unsat:
                 false_state.solver.add_constraints(condition.Not())
+                import z3; false_state.solver._solver = z3.Solver()
+
                 false_state.set_ip(self.executor.bncache.get_address(
                     curr_fun_name, false_llil_index))
                 false_state.llil_ip = false_llil_index
@@ -725,6 +727,8 @@ class SymbolicVisitor(BNILVisitor):
 
             if save_unsat:
                 true_state.solver.add_constraints(condition)
+                import z3; true_state.solver._solver = z3.Solver()
+
                 true_state.set_ip(self.executor.bncache.get_address(
                     curr_fun_name, true_llil_index))
                 true_state.llil_ip = true_llil_index
@@ -735,11 +739,16 @@ class SymbolicVisitor(BNILVisitor):
 
             if save_unsat:
                 true_state.solver.add_constraints(condition)
+                import z3; true_state.solver._solver = z3.Solver()
+
                 true_state.set_ip(self.executor.bncache.get_address(
                     curr_fun_name, true_llil_index))
                 true_state.llil_ip = true_llil_index
                 self.executor.put_in_unsat(true_state)
+
                 false_state.solver.add_constraints(condition.Not())
+                import z3; false_state.solver._solver = z3.Solver()
+
                 false_state.set_ip(self.executor.bncache.get_address(
                     curr_fun_name, false_llil_index))
                 false_state.llil_ip = false_llil_index
