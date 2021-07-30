@@ -100,6 +100,11 @@ def ui_set_arch(arch, state):
     BNWidgets.MW.init(arch, state)
     BNWidgets.BW.init(state)
 
+    dock_handler = DockHandler.getActiveDockHandler()
+    dock_handler.setVisible("SENinja Registers", True)
+    dock_handler.setVisible("SENinja Memory", True)
+    dock_handler.setVisible("SENinja Buffers", True)
+
 
 def ui_sync_view(state, delta=True):
     assert BNWidgets.RW is not None
@@ -125,6 +130,11 @@ def ui_reset_view():
     BNWidgets.RW.reset()
     BNWidgets.MW.reset()
     BNWidgets.BW.reset()
+
+    dock_handler = DockHandler.getActiveDockHandler()
+    dock_handler.setVisible("SENinja Registers", False)
+    dock_handler.setVisible("SENinja Memory", False)
+    dock_handler.setVisible("SENinja Buffers", False)
 
 
 _registerDynamicWidgets()
