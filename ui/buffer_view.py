@@ -276,6 +276,9 @@ class BufferView(QWidget, DockContextHandler):
         copy_address = menu.addAction("Copy address")
         copy_address.triggered.connect(BufferView._condom(
             self._menuAction_copy_address, row_idx))
+        eval_upto = menu.addAction("Evaluate upto")
+        eval_upto.triggered.connect(BufferView._condom_async(
+            self, self._menuAction_evaluate_upto_buffer, row_idx))
         eval_as_bytes = menu.addAction("Evaluate as bytes")
         eval_as_bytes.triggered.connect(BufferView._condom_async(
             self, self._menuAction_evaluate_buffer, row_idx))
@@ -298,6 +301,16 @@ class BufferView(QWidget, DockContextHandler):
         res = self.current_state.solver.evaluate(buff).as_bytes()
         res = repr(res)[2:-1]
         show_message_box("%s evaluate" % buff.name, res)
+
+    def _menuAction_evaluate_upto_buffer(self, buffer_id):
+        buff = self.current_state.symbolic_buffers[buffer_id][0]
+
+        n_eval = get_int_input("How many values (upto) ?", "Number of distinct values")
+        r = ""
+        for i, v in enumerate(self.current_state.solver.evaluate_upto(buff, n_eval)):
+            r += "solution %d: %s\n" % (i, hex(v.value))
+
+        show_message_box("%s evaluate" % buff.name, r)
 
     def _menuAction_copy_evaluated_buffer(self, buffer_id):
         mime = QMimeData()
