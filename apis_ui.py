@@ -486,21 +486,11 @@ def _async_change_current_state(bv, address):
         state = globs.executor.fringe.get_deferred_by_address(
             address, state_idx)
 
-    def f(tb):
-        disable_widgets()
-
-        globs.executor.delete_comment_for_address(address)
-        globs.executor.set_current_state(state)
-        sync_ui(bv, delta=False)
-
-        enable_widgets()
-        globs._running = False
-
-    if not globs._running:
-        globs._running = True
-        background_task = TaskInBackground(
-            bv, "seninja: changing current state", f)
-        background_task.start()
+    disable_widgets()
+    globs.executor.delete_comment_for_address(address)
+    globs.executor.set_current_state(state)
+    sync_ui(bv, delta=False)
+    enable_widgets()
 
 
 def _async_save_active_state(bv):
