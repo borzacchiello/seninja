@@ -31,6 +31,7 @@ from .utility.expr_wrap_util import split_bv_in_list
 from .utility.bninja_util import get_address_after_merge
 from .utility.exceptions import SENinjaError
 
+import time
 import sys
 
 NO_COLOR = enums.HighlightStandardColor(0)
@@ -216,9 +217,17 @@ def _async_run_dfs_searcher(bv):
         log_alert("no target set for searcher")
         return
 
+    timeout = globs.executor.bncache.get_setting("exploration_timeout")
+    timeout = int(timeout)
+
     def f(tb):
+        start = time.time()
         def callback(s):
             tb.progress = "seninja: running DFS @ %s" % hex(s.get_ip())
+            if timeout > 0 and time.time() - start > timeout:
+                # Timeout elapsed
+                print("[!] Timeout elapsed (%d sec)" % timeout)
+                return False
             if globs._stop:
                 globs._stop = False
                 return False
@@ -244,9 +253,17 @@ def _async_run_dfs_searcher_findall(bv):
         log_alert("no target set for searcher")
         return
 
+    timeout = globs.executor.bncache.get_setting("exploration_timeout")
+    timeout = int(timeout)
+
     def f(tb):
+        start = time.time()
         def callback(s):
             tb.progress = "seninja: running DFS @ %s" % hex(s.get_ip())
+            if timeout > 0 and time.time() - start > timeout:
+                # Timeout elapsed
+                print("[!] Timeout elapsed (%d sec)" % timeout)
+                return False
             if globs._stop:
                 globs._stop = False
                 return False
@@ -273,9 +290,17 @@ def _async_run_bfs_searcher(bv):
         log_alert("no target set for searcher")
         return
 
+    timeout = globs.executor.bncache.get_setting("exploration_timeout")
+    timeout = int(timeout)
+
     def f(tb):
+        start = time.time()
         def callback(s):
             tb.progress = "seninja: running BFS @ %s" % hex(s.get_ip())
+            if timeout > 0 and time.time() - start > timeout:
+                # Timeout elapsed
+                print("[!] Timeout elapsed (%d sec)" % timeout)
+                return False
             if globs._stop:
                 globs._stop = False
                 return False
@@ -317,15 +342,24 @@ def _async_continue_until_branch(bv):
     if not __check_executor():
         return
 
+    timeout = globs.executor.bncache.get_setting("exploration_timeout")
+    timeout = int(timeout)
+
     def f(tb):
         disable_widgets()
 
+        start = time.time()
         k = len(globs.executor.fringe.deferred)
         i = k
         count = 0
         while not globs._stop and i == k:
             globs.executor.execute_one()
             if not globs.executor.state:
+                break
+
+            if timeout > 0 and time.time() - start > timeout:
+                # Timeout elapsed
+                print("[!] Timeout elapsed (%d sec)" % timeout)
                 break
 
             i = len(globs.executor.fringe.deferred)
@@ -351,16 +385,25 @@ def _async_continue_until_address(bv, address):
     if not __check_executor():
         return
 
+    timeout = globs.executor.bncache.get_setting("exploration_timeout")
+    timeout = int(timeout)
+
     address = get_address_after_merge(bv, address)
 
     def f(tb):
         disable_widgets()
         ip = globs.executor.state.get_ip()
+        start = time.time()
 
         count = 0
         while not globs._stop and ip != address:
             globs.executor.execute_one()
             if not globs.executor.state:
+                break
+
+            if timeout > 0 and time.time() - start > timeout:
+                # Timeout elapsed
+                print("[!] Timeout elapsed (%d sec)" % timeout)
                 break
 
             ip = globs.executor.state.get_ip()

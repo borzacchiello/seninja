@@ -210,7 +210,7 @@ def reset_se(bv=None):
     globs.executor = None
 
 
-def stop():
+def stop(bv=None):
     if globs._running:  # race conditions?
         globs._stop = True
 

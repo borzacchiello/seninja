@@ -107,7 +107,14 @@ Settings().register_setting("seninja.save_state_history", """
         "description" : "If true, each state will save the instruction that it executed."
     }
     """)
-
+Settings().register_setting("seninja.exploration_timeout", """
+    {
+        "title" : "Timeout (seconds) during automatic exploration (0 for no timeout)",
+        "type" : "number",
+        "default" : 0,
+        "description" : "If greater than 0, automatic explorations will terminate after X seconds"
+    }
+    """)
 
 Settings().register_setting("seninja.models.use_atox_slow_model", """
     {
