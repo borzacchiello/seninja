@@ -75,12 +75,15 @@ class Solver(object):
                     self._added_mem_constraints.add(page_addr)
                     assertions = self.state.mem.get_assertions_for_page(page_addr)
                     for a in assertions:
-                        self.add_constraints(BoolExpr(a), simplify_constraint=False, check_mem=False)
+                        self.add_constraints(a, simplify_constraint=False, check_mem=False)
 
     def get_path_constraint(self):
         return self.assertions
 
     def add_constraints(self, *constraints, simplify_constraint=True, check_mem=True):
+        if len(constraints) == 0:
+            return
+
         self._invalidate_cache()
         for c in constraints:
             assert isinstance(c, Bool)

@@ -211,6 +211,7 @@ class ArchX8664SPH(ArchX86SPH):
 
         # save result
         store_to_dst(sv.state, dst_p, res)
+        sv.state.solver.add_constraints(*array_src.get_assertions())
 
         self._vpermd_idx += 1
         return True
@@ -270,6 +271,8 @@ class ArchX8664SPH(ArchX86SPH):
 
         # save result
         store_to_dst(sv.state, dst_p, res)
+        sv.state.solver.add_constraints(*array_src_low.get_assertions())
+        sv.state.solver.add_constraints(*array_src_hig.get_assertions())
 
         self._vpshufb_idx += 1
         return True

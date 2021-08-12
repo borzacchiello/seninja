@@ -3,7 +3,7 @@ import z3
 from enum import Enum
 from copy import deepcopy
 from .bitvector import BV, BVV, BVS, BVExpr
-from .bool_expr import Bool, BoolV
+from .bool_expr import Bool, BoolV, BoolExpr
 
 
 class BVArrayState(Enum):
@@ -92,8 +92,8 @@ class BVArray(object):
             # The solver needs to add those constraints! (even lazly)
             for index in self._conc_store:
                 self._assertions[index] = \
-                    z3.Select(
-                        self._z3obj, index) == self._conc_store[index].z3obj
+                    BoolExpr(z3.Select(
+                        self._z3obj, index) == self._conc_store[index].z3obj)
 
             if soft:
                 self._mode = BVArrayState.SEMI_CONCRETE_MODE
