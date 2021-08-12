@@ -47,6 +47,7 @@ from .apis import (
     register_hook,
     register_logger,
     get_stdin_bv,
+    get_stdout_bv,
     reload_settings
 )
 

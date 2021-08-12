@@ -249,6 +249,16 @@ def get_stdin_bv(state):
     return r
 
 
+def get_stdout_bv(state):
+    r = None
+    for el in state.os.get_stdout_stream():
+        if r is None:
+            r = el
+        else:
+            r = r.Concat(el)
+    return r
+
+
 def register_hook(address, func):
     if not __check_executor():
         return
