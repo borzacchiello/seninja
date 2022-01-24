@@ -1,7 +1,7 @@
 from ..seninja_globals import globs
-from PySide2.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication
 from binaryninjaui import DockHandler, UIAction, UIActionHandler, Menu
-from PySide2.QtCore import Qt
+from PySide6.QtCore import Qt
 from .registers_view import RegisterView
 from .memory_view import MemoryView
 from .buffer_view import BufferView

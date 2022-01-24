@@ -1,6 +1,6 @@
 # based on https://github.com/williballenthin/python-pyqt5-hexview
 
-from PySide2.QtCore import (
+from PySide6.QtCore import (
     Qt,
     Signal,
     QSize,
@@ -11,7 +11,7 @@ from PySide2.QtCore import (
     QItemSelectionModel,
     QItemSelection
 )
-from PySide2.QtWidgets import (
+from PySide6.QtWidgets import (
     QApplication,
     QTableView,
     QWidget,
@@ -27,7 +27,7 @@ from PySide2.QtWidgets import (
     QItemDelegate,
     QSizePolicy
 )
-from PySide2.QtGui import (
+from PySide6.QtGui import (
     QMouseEvent,
     QKeySequence,
     QFontDatabase
@@ -584,6 +584,9 @@ class HexViewWidget(QWidget):
         # print("edited address data", address, data)
 
     def _handle_data_changed(self, new_address, new_data, new_data_size):
+        if new_address == []:
+            return
+
         self._model.buf = new_data
         self._model.buf_size = new_data_size
         self._model.start_address = new_address

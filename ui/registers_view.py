@@ -9,10 +9,10 @@ from binaryninjaui import (
     getMonospaceFont,
     UIActionHandler
 )
-from PySide2 import QtCore
-from PySide2.QtCore import Qt, QMimeData
-from PySide2.QtGui import QBrush, QColor
-from PySide2.QtWidgets import (
+from PySide6 import QtCore
+from PySide6.QtCore import Qt, QMimeData
+from PySide6.QtGui import QBrush, QColor
+from PySide6.QtWidgets import (
     QApplication,
     QVBoxLayout,
     QWidget,
