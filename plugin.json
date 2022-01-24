@@ -25,7 +25,6 @@
       "Linux": "Install `z3-solver` using pip: `pip install z3-solver`"
    },
    "dependencies": {
-		"pip": ["z3-solver"],
 		"apt": [],
 		"installers": [],
 		"other": []
