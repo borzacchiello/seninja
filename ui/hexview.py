@@ -12,18 +12,13 @@ from PySide6.QtCore import (
     QItemSelection
 )
 from PySide6.QtWidgets import (
-    QApplication,
     QTableView,
     QWidget,
-    QTableWidgetItem,
-    QMainWindow,
-    QFormLayout,
     QVBoxLayout,
     QLabel,
     QSizePolicy,
     QAbstractItemView,
     QMenu,
-    QHeaderView,
     QItemDelegate,
     QSizePolicy
 )
@@ -503,7 +498,7 @@ class HexTableView(QTableView):
 
 
 class HexViewWidget(QWidget):
-    full_data_changed = Signal(list, list, int)
+    full_data_changed = Signal(object, dict, int)
     single_data_changed = Signal(object, list)
     data_edited = Signal(object, int)
 
@@ -584,9 +579,6 @@ class HexViewWidget(QWidget):
         # print("edited address data", address, data)
 
     def _handle_data_changed(self, new_address, new_data, new_data_size):
-        if new_address == []:
-            return
-
         self._model.buf = new_data
         self._model.buf_size = new_data_size
         self._model.start_address = new_address

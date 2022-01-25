@@ -5,19 +5,16 @@ from binaryninja.interaction import (
     get_choice_input
 )
 from binaryninjaui import (
-    DockHandler,
     DockContextHandler,
     getMonospaceFont,
     UIActionHandler
 )
 from PySide6 import QtCore
 from PySide6.QtCore import Qt, QMimeData
-from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
     QApplication,
     QVBoxLayout,
     QWidget,
-    QComboBox,
     QTableWidget,
     QTableWidgetItem,
     QMenu,

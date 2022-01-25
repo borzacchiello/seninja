@@ -2,29 +2,18 @@ from binaryninja import BackgroundTaskThread
 from binaryninja.interaction import (
     show_message_box,
     get_int_input,
-    get_choice_input
 )
 from binaryninjaui import (
-    DockHandler,
     DockContextHandler,
-    getMonospaceFont,
     UIActionHandler
 )
-from PySide6 import QtCore
-from PySide6.QtCore import Qt, QMimeData
-from PySide6.QtGui import QBrush, QColor, QStandardItemModel, QStandardItem
+from PySide6.QtCore import QMimeData
 from PySide6.QtWidgets import (
     QApplication,
     QGridLayout,
     QWidget,
-    QComboBox,
-    QTableWidget,
-    QTableWidgetItem,
-    QStackedWidget,
     QMenu,
-    QTableView,
     QPushButton,
-    QHeaderView
 )
 
 from ..utility.expr_wrap_util import symbolic, split_bv_in_list

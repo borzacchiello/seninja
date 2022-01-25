@@ -1,3 +1,5 @@
+import sys
+
 from binaryninja import (
     BinaryReader, BinaryWriter,
     RegisterValueType, enums
@@ -360,7 +362,8 @@ class SymbolicExecutor(object):
                 self.put_in_exited(self.state)
                 self.state = None
             except exceptions.SENinjaError as err:
-                print("An error occurred: %s" % err.message)
+                sys.stderr.write("An error occurred: %s\n" % err.message)
+                self.put_in_errored(self.state, str(err))
                 self.state = None
                 self._last_error = err
                 if err.is_fatal():
@@ -389,13 +392,30 @@ class SymbolicExecutor(object):
         if not self.state:
             return
 
-        single_llil_step = self.bncache.get_setting(
-            "single_llil_step") == 'true'
-        if single_llil_step:
-            res = self._execute_one()
-        else:
-            old_ip = self.ip
-            res = old_ip
-            while res == old_ip:
+        res = None
+        try:
+            single_llil_step = self.bncache.get_setting(
+                "single_llil_step") == 'true'
+            if single_llil_step:
                 res = self._execute_one()
+            else:
+                old_ip = self.ip
+                res = old_ip
+                while res == old_ip:
+                    res = self._execute_one()
+        except exceptions.SENinjaError:
+            res = None
+        except Exception as e:
+            import os
+            _, _, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            sys.stderr.write("Unknown exception in SymbolicExecutor.execute_one():\n")
+            sys.stderr.write(" ".join(map(str, "\t", repr(e), fname, exc_tb.tb_lineno, "\n")))
+
+            res = None
+
+        if res is None:
+            if not self.fringe.is_empty():
+                self.select_from_deferred()
+
         return res

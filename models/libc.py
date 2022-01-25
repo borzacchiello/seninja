@@ -2,7 +2,7 @@ from ..sym_state import State
 from ..utility.expr_wrap_util import symbolic
 from ..expr import BVV, BVS, BoolV, ITE, Or, And
 from ..utility.models_util import get_arg_k
-from ..utility.exceptions import ExitException
+from ..utility.exceptions import ExitException, ModelError
 from ..utility.string_util import as_bytes, str_to_bv_list
 from ..memory.sym_memory import InitData
 import re
@@ -34,9 +34,8 @@ def strtoul_handler(state: State, view):
     endptr = get_arg_k(state, 2, state.arch.bits() // 8, view)
     base = get_arg_k(state, 3, 4, view)
 
-    assert not symbolic(base)    # concrete model
-    assert not symbolic(endptr)  # concrete model
-    assert not symbolic(str_p)   # concrete model
+    if symbolic(base) or symbolic(endptr) or symbolic(str_p):
+        raise ModelError("strtoul", "symbolic arguments are not supported")
 
     i = 0
     str_data = b""
@@ -334,8 +333,12 @@ def _atox(state: State, view, size: int):
 
     input_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
-    # no man. Don't make me cry
-    assert not symbolic(input_p) or not state.solver.symbolic(input_p)
+    if symbolic(input_p) and state.solver.symbolic(input_p):
+        # FIXME: I should:
+        #            1. return a fresh new symbol
+        #            2. allocate a new buffer with a concrete address
+        #            3. store the correct expression in the buffer for consistency
+        raise ModelError("atox", "symbolic input pointer (not supported)")
 
     def build_or_expression(b):
         conditions = []
