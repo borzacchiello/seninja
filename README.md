@@ -60,9 +60,9 @@ The right-click menu allows to:
 
 #### Version and Dependencies
 Tested with 
-- binary ninja `2.1` with personal license
-- python `3.6.9` 
-- z3 `4.8.7`
+- binary ninja `3.0` with personal license
+- python `3.9.7`
+- z3 `4.8.14`
 
 To make it work, you need to install z3 with pip:
 `$ pip3 install z3-solver`
