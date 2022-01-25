@@ -48,6 +48,7 @@ from .apis import (
     register_logger,
     get_stdin_bv,
     get_stdout_bv,
+    synthesize_triton,
     reload_settings
 )
 

@@ -10,6 +10,7 @@ from .multipath import searcher
 from .sym_state import State
 from .models import function_models as seninja_models
 from .expr import BVV, BVS, BV, And, Or, ITE
+from .expr.simplifier import TritonSimplifier
 from .utility.string_util import (
     int_to_str,
     str_to_int,
@@ -278,3 +279,11 @@ def reload_settings():
         return
 
     globs.executor.bncache.settings = {}
+
+triton_simplifier = None
+def synthesize_triton(expr):
+    global triton_simplifier
+    if triton_simplifier is None:
+        triton_simplifier = TritonSimplifier()
+
+    return triton_simplifier.simplify(expr)
