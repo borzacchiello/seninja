@@ -410,7 +410,9 @@ class SymbolicExecutor(object):
             _, _, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             sys.stderr.write("Unknown exception in SymbolicExecutor.execute_one():\n")
-            sys.stderr.write(" ".join(map(str, "\t", repr(e), fname, exc_tb.tb_lineno, "\n")))
+            sys.stderr.write(" ".join(map(str, ["\t", repr(e), fname, exc_tb.tb_lineno, "\n"])))
+            self.put_in_errored(self.state, "Unknown error")
+            self.state = None
 
             res = None
 
