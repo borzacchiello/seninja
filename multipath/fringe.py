@@ -27,6 +27,22 @@ class Fringe(object):
         return res
 
     @property
+    def get_unsat_states(self):
+        return self.unsat
+
+    @property
+    def get_error_states(self):
+        return self.errored
+
+    @property
+    def get_avoided_states(self):
+        return self.avoided
+
+    @property
+    def get_exited_states(self):
+        return self.exited
+
+    @property
     def num_states(self):
         return len(self.unsat) + len(self.errored) + \
             len(self.avoided) + len(self.deferred) + \

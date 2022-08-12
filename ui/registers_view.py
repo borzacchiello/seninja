@@ -6,7 +6,9 @@ from binaryninja.interaction import (
 from binaryninjaui import (
     DockContextHandler,
     getMonospaceFont,
-    UIActionHandler
+    UIActionHandler,
+    getThemeColor,
+    ThemeColor
 )
 from PySide6.QtCore import Qt, QMimeData
 from PySide6.QtGui import QBrush, QColor
@@ -39,9 +41,10 @@ def _makewidget(parent, val, center=False):
 
 class RegisterView(QWidget, DockContextHandler):
 
-    dirty_color = QBrush(QColor(255, 153, 51))
-    symbolic_color = QBrush(QColor(245, 66, 72))
-    no_color = QBrush(QColor(255, 255, 255))
+    dirty_color = QBrush(getThemeColor(ThemeColor.OrangeStandardHighlightColor))
+    expression_color = QBrush(getThemeColor(ThemeColor.RedStandardHighlightColor))
+    symbolic_color = QBrush(getThemeColor(ThemeColor.BlueStandardHighlightColor))
+    no_color = QBrush(getThemeColor(ThemeColor.WhiteStandardHighlightColor))
 
     def __init__(self, parent, name, data):
         QWidget.__init__(self, parent)
@@ -70,8 +73,7 @@ class RegisterView(QWidget, DockContextHandler):
         self._table.verticalHeader().setVisible(False)
 
         self._table.setContextMenuPolicy(Qt.CustomContextMenu)
-        self._table.customContextMenuRequested.connect(
-            self.on_customContextMenuRequested)
+        self._table.customContextMenuRequested.connect(self.on_customContextMenuRequested)
         self._table.doubleClicked.connect(self.on_doubleClick)
 
         self._layout.addWidget(self._table)
@@ -108,10 +110,12 @@ class RegisterView(QWidget, DockContextHandler):
         if symbolic(value):
             if isinstance(value, BVS):
                 val_str = value.name
+                if color is None:
+                    color = RegisterView.symbolic_color
             else:
                 val_str = "< symbolic expression >"
                 if color is None:
-                    color = RegisterView.symbolic_color
+                    color = RegisterView.expression_color
         else:
             val_str = "0x{obj:0{width}x}".format(
                 obj=value.value,
@@ -222,6 +226,8 @@ class RegisterView(QWidget, DockContextHandler):
                 )
             else:
                 n_eval = get_int_input("How many values (upto) ?", "Number of distinct values")
+                if n_eval is None:
+                    return
                 r = ""
                 for i, v in enumerate(self.current_state.solver.evaluate_upto(expr, n_eval)):
                     r += "solution %d: %s\n" % (i, hex(v.value))

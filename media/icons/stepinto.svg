@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<svg width="295" height="295" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+ <!-- Created with SVG-edit - https://github.com/SVG-Edit/svgedit-->
+
+ <g class="layer">
+  <title>Layer 1</title>
+  <rect fill="#ffffff" height="14.571745" id="svg_24" rx="7.285872" ry="7.285872" stroke-dashoffset="0" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-width="2.455856" transform="matrix(0.707107 0.707107 0.707107 -0.707107 2110.59 1644.46)" width="95.819725" x="-2510.694281" y="-361.790899"/>
+  <path d="m147.699552,0.287913c-81.28773,0 -147.41165,66.13022 -147.41165,147.41162c0,81.28142 66.12392,147.4116 147.41165,147.4116c81.28767,0 147.41157,-66.13018 147.41157,-147.4116c0,-81.2814 -66.1239,-147.41162 -147.41157,-147.41162zm0,282.53917c-74.50969,0 -135.12753,-60.61783 -135.12753,-135.12755c0,-74.50966 60.61784,-135.12751 135.12753,-135.12751c74.5097,0 135.12759,60.61785 135.12759,135.12751c0,74.50972 -60.61789,135.12755 -135.12759,135.12755z" fill="white" id="svg_25" stroke-width="0.575827"/>
+  <rect fill="#ffffff" height="14.571745" id="svg_23" rx="7.285842" ry="7.285842" stroke-dashoffset="0" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-width="2.455856" transform="matrix(0 1 1 0 2110.59 1644.46)" width="125.70561" x="-1579.849159" y="-1970.384648"/>
+  <circle cx="-1962.886219" cy="-1424.832189" fill="#ffffff" id="svg_22" r="14.345113" stroke-dashoffset="0" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-width="18.976213" transform="matrix(1 0 0 1 2110.59 1644.46)"/>
+  <rect fill="#ffffff" height="14.571745" id="svg_26" rx="7.28587" ry="7.28587" stroke-dashoffset="0" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-width="2.455856" transform="rotate(-90 177.023 154.023) matrix(0.707107 0.707107 0.707107 -0.707107 2110.59 1644.46)" width="95.819725" x="-2469.045544" y="-320.626114"/>
+ </g>
+</svg>

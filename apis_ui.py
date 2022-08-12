@@ -111,6 +111,7 @@ def initialize_ui():
 
 
 def _async_start_se(bv, address):
+    globs.started_address = address
     if globs.executor is not None:
         log_alert("seninja is already running")
         return False
@@ -138,6 +139,12 @@ def _async_start_se(bv, address):
             # something wrong
             return
 
+        globs.bv = bv
+        globs.actions_step = _async_step
+        globs.actions_dfs = _async_run_dfs_searcher
+        globs.actions_bfs = _async_run_bfs_searcher
+        globs.actions_reset = _async_reset_se
+        globs.actions_change_state = _async_change_current_state
         initialize_ui()
         sync_ui(bv)
         enable_widgets()
@@ -223,6 +230,8 @@ def _async_run_dfs_searcher(bv):
     def f(tb):
         start = time.time()
         def callback(s):
+            if s is None:
+                return False
             tb.progress = "seninja: running DFS @ %s" % hex(s.get_ip())
             if timeout > 0 and time.time() - start > timeout:
                 # Timeout elapsed
@@ -259,6 +268,8 @@ def _async_run_dfs_searcher_findall(bv):
     def f(tb):
         start = time.time()
         def callback(s):
+            if s is None:
+                return False
             tb.progress = "seninja: running DFS @ %s" % hex(s.get_ip())
             if timeout > 0 and time.time() - start > timeout:
                 # Timeout elapsed
@@ -296,6 +307,8 @@ def _async_run_bfs_searcher(bv):
     def f(tb):
         start = time.time()
         def callback(s):
+            if s is None:
+                return False
             tb.progress = "seninja: running BFS @ %s" % hex(s.get_ip())
             if timeout > 0 and time.time() - start > timeout:
                 # Timeout elapsed
