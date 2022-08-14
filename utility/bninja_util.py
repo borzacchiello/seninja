@@ -4,17 +4,27 @@ from ..os_models.linux import Linuxi386, Linuxia64, LinuxArmV7
 from ..os_models.windows import Windows
 
 
+sticky_fun = None
 def get_function(view, address):
+    global sticky_fun
+
     funcs = view.get_functions_at(address)
     if len(funcs) == 0:
-        address = view.get_previous_function_start_before(address)
-        funcs = view.get_functions_at(address)
+        funcs = view.get_functions_containing(address)
 
     if len(funcs) > 1:
         print("WARNING: more than one function at {addr:x}".format(
             addr=address
         ))
+        # Prefer the last translated function when there is an ambiguity.
+        # This is just an heuristic, it does not solve the problem in general.
+        funcs = sorted(
+            funcs,
+            key=lambda f: \
+                0 if (sticky_fun is not None and sticky_fun.name == f.name)
+                else 1)
 
+    sticky_fun = funcs[0]
     return funcs[0]
 
 
