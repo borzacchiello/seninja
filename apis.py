@@ -37,6 +37,7 @@ def start_se(bv, address):
     globs.executor = SymbolicExecutor(bv, address)
     globs.dfs_searcher = searcher.DFSSearcher(globs.executor)
     globs.bfs_searcher = searcher.BFSSearcher(globs.executor)
+    globs.started_address = address
 
 
 def continue_until_branch():

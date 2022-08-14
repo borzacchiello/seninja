@@ -25,7 +25,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import (
     QMouseEvent,
     QKeySequence,
-    QFontDatabase
+    QFontDatabase,
+    QFont
 )
 
 
@@ -130,7 +131,7 @@ class HexTableModel(QAbstractTableModel):
                 return ""
             c = self.buf[bindex]
             if col > 0x10:
-                val = int(c, 16) if c != ".." and c != "__" else c
+                val = int(''.join(c), 16) if ''.join(c) != ".." and ''.join(c) != "__" else ''.join(c)
                 return chr(val) if (
                     val != "__" and
                     val != ".." and
@@ -551,8 +552,8 @@ class HexViewWidget(QWidget):
         for i in range(0x22):
             self.optimal_width += self.view.columnWidth(i)
 
-        f = QFontDatabase.systemFont(QFontDatabase.FixedFont)
-        f.setPointSize(8)
+        f = QFont('Courier New')
+        f.setStyleHint(QFont.TypeWriter)
         self.view.horizontalHeader().setFont(f)
         self.view.verticalHeader().setFont(f)
         self.view.setFont(f)

@@ -159,7 +159,7 @@ class BufferView(QWidget, DockContextHandler):
         QWidget.__init__(self, parent)
         DockContextHandler.__init__(self, self, name)
 
-        self.onNewBufferSignal.connect(self.update)
+        self.onNewBufferSignal.connect(self.update_state)
 
         self.parent = parent
         self.current_state = None
@@ -303,6 +303,8 @@ class BufferView(QWidget, DockContextHandler):
         buff = self.current_state.symbolic_buffers[buffer_id][0]
 
         n_eval = get_int_input("How many values (upto) ?", "Number of distinct values")
+        if n_eval is None:
+            return
         r = ""
         for i, v in enumerate(self.current_state.solver.evaluate_upto(buff, n_eval)):
             r += "solution %d: %s\n" % (i, hex(v.value))

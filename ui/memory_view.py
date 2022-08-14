@@ -243,6 +243,8 @@ class MemoryView(QWidget, DockContextHandler):
             )
         else:
             n_eval = get_int_input("How many values (upto) ?", "Number of distinct values")
+            if n_eval is None:
+                return
             r = ""
             for i, v in enumerate(self.current_state.solver.evaluate_upto(expr, n_eval)):
                 r += "solution %d: %s\n" % (i, hex(v.value))
@@ -307,6 +309,7 @@ class MemoryView(QWidget, DockContextHandler):
         self.symb_idx += 1
         self.update_mem_delta(self.current_state)
         self.bnwidgets.BW.onNewBufferSignal.emit(self.current_state)
+        self.update_mem(self.current_state)
 
     def _copy_big_endian(self, expr):
         mime = QMimeData()

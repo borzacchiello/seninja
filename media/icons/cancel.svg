@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<svg width="295" height="295" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+ <!-- Created with SVG-edit - https://github.com/SVG-Edit/svgedit-->
+ <g class="layer">
+  <title>Layer 1</title>
+  <path d="m147.699563,0.287913c-81.28772,0 -147.41165,66.1302 -147.41165,147.4115c0,81.2815 66.12393,147.4117 147.41165,147.4117c81.28772,0 147.41159,-66.1302 147.41159,-147.4117c0,-81.2813 -66.12387,-147.4115 -147.41159,-147.4115zm0,282.5391c-74.50968,0 -135.12755,-60.6179 -135.12755,-135.1276c0,-74.5097 60.61787,-135.1275 135.12755,-135.1275c74.50968,0 135.12751,60.6178 135.12751,135.1275c0,74.5097 -60.61783,135.1276 -135.12751,135.1276z" fill="white" id="svg_3" stroke-width="0.575827"/>
+  <rect fill="#ffffff" height="14.571686" id="svg_2" rx="7.285843" ry="7.285843" stroke-dashoffset="0" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-width="2.455856" transform="rotate(45 723.067 1610.54)" width="149.37303" x="-792.850627" y="975.712783"/>
+  <rect fill="#ffffff" height="14.571686" id="svg_1" rx="7.285843" ry="7.285843" stroke-dashoffset="0" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-width="2.455856" transform="matrix(-0.707107 0.707107 0.707107 0.707107 0 0)" width="149.37303" x="-74.687008" y="201.593133"/>
+ </g>
+</svg>
