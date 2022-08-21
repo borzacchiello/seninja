@@ -415,7 +415,6 @@ class SymbolicExecutor(object):
             self.state = None
 
             res = None
-            raise e
 
         if res is None:
             if not self.fringe.is_empty():
