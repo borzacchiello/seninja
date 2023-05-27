@@ -25,7 +25,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import (
     QMouseEvent,
     QKeySequence,
-    QFontDatabase,
     QFont
 )
 
@@ -197,7 +196,7 @@ class HexTableModel(QAbstractTableModel):
 
 
 class HexItemSelectionModel(QItemSelectionModel):
-    selectionRangeChanged = Signal([int])
+    selectionRangeChanged = Signal(int)
 
     def __init__(self, model, view):
         """
@@ -388,14 +387,14 @@ class HexItemSelectionModel(QItemSelectionModel):
 
 class HexTableView(QTableView):
     """ table view that handles click events for better selection handling """
-    leftMousePressed = Signal([QMouseEvent])
-    leftMousePressedIndex = Signal([QModelIndex])
-    leftMouseMoved = Signal([QMouseEvent])
-    leftMouseMovedIndex = Signal([QModelIndex])
-    leftMouseReleased = Signal([QMouseEvent])
-    leftMouseReleasedIndex = Signal([QModelIndex])
-    moveKeyPressed = Signal([QKeySequence])
-    selectKeyPressed = Signal([QKeySequence])
+    leftMousePressed = Signal(QMouseEvent)
+    leftMousePressedIndex = Signal(QModelIndex)
+    leftMouseMoved = Signal(QMouseEvent)
+    leftMouseMovedIndex = Signal(QModelIndex)
+    leftMouseReleased = Signal(QMouseEvent)
+    leftMouseReleasedIndex = Signal(QModelIndex)
+    moveKeyPressed = Signal(QKeySequence)
+    selectKeyPressed = Signal(QKeySequence)
 
     def __init__(self, *args, **kwargs):
         super(HexTableView, self).__init__(*args, **kwargs)
@@ -431,8 +430,7 @@ class HexTableView(QTableView):
 
     def focusOutEvent(self, event):
         super(HexTableView, self).focusOutEvent(event)
-        if not event.reason() & Qt.MenuBarFocusReason:
-            self.parent._hsm.clearSelection()
+        self.parent._hsm.clearSelection()
 
     def keyPressEvent(self, event):
         move_keys = (
