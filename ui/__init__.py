@@ -1,6 +1,6 @@
 from ..seninja_globals import globs
 from PySide6.QtWidgets import QApplication
-from binaryninjaui import DockHandler, UIAction, UIActionHandler, Menu
+from binaryninjaui import DockHandler, UIAction, UIActionHandler, Menu, GlobalArea
 from PySide6.QtCore import Qt
 from .registers_view import RegisterView
 from .state_view import StateView
@@ -27,8 +27,8 @@ def _get_controlview_widget(name, parent, data):
     BNWidgets.CW.disable()
     return BNWidgets.CW
 
-def _get_memoryview_widget(name, parent, data):
-    BNWidgets.MW = MemoryView(parent, name, data, BNWidgets)
+def _get_memoryview_widget(name, data):
+    BNWidgets.MW = MemoryView(name, data, BNWidgets)
     BNWidgets.MW.setEnabled(False)
     return BNWidgets.MW
 
@@ -76,20 +76,13 @@ def _registerDynamicWidgets():
         False
     )
     dock_handler.addDockWidget(
-        "SENinja Memory",
-        _get_memoryview_widget,
-        Qt.BottomDockWidgetArea,
-        Qt.Horizontal,
-        False
-    )
-    dock_handler.addDockWidget(
         "SENinja Buffers",
         _get_buffer_view_widget,
         Qt.RightDockWidgetArea,
         Qt.Vertical,
         False
     )
-
+    GlobalArea.addWidget(lambda context: _get_memoryview_widget("SENinja Memory", {}))
 
 def _registerUIActions():
     UIAction.registerAction("SENinja\\Setup argv...")
@@ -141,7 +134,6 @@ def ui_set_arch(arch, state):
 
     dock_handler = DockHandler.getActiveDockHandler()
     dock_handler.setVisible("SENinja Registers", True)
-    dock_handler.setVisible("SENinja Memory", True)
     dock_handler.setVisible("SENinja Buffers", True)
     dock_handler.setVisible("SENinja Controls", True)
     dock_handler.setVisible("SENinja State View", True)
@@ -181,7 +173,6 @@ def ui_reset_view():
 
     dock_handler = DockHandler.getActiveDockHandler()
     dock_handler.setVisible("SENinja Registers", False)
-    dock_handler.setVisible("SENinja Memory", False)
     dock_handler.setVisible("SENinja Buffers", False)
     dock_handler.setVisible("SENinja Controls", False)
     dock_handler.setVisible("SENinja State View", False)

@@ -4,16 +4,15 @@ from binaryninja.interaction import (
     get_int_input,
 )
 from binaryninjaui import (
-    DockContextHandler,
+    GlobalAreaWidget,
     UIActionHandler
 )
 from PySide6.QtCore import QMimeData
 from PySide6.QtWidgets import (
     QApplication,
     QGridLayout,
-    QWidget,
     QMenu,
-    QPushButton,
+    QPushButton
 )
 
 from ..utility.expr_wrap_util import symbolic, split_bv_in_list
@@ -37,16 +36,14 @@ class MemoryViewBT(BackgroundTaskThread):
         self.mw.setEnabled(True)
 
 
-class MemoryView(QWidget, DockContextHandler):
+class MemoryView(GlobalAreaWidget):
 
-    def __init__(self, parent, name, data, bnwidgets):
-        QWidget.__init__(self, parent)
-        DockContextHandler.__init__(self, self, name)
+    def __init__(self, name, data, bnwidgets):
+        GlobalAreaWidget.__init__(self, name)
 
         self.actionHandler = UIActionHandler()
         self.actionHandler.setupActionHandler(self)
         self.data = data
-        self.parent = parent
         self.bnwidgets = bnwidgets
 
         self.current_state = None
@@ -137,7 +134,6 @@ class MemoryView(QWidget, DockContextHandler):
 
     def init(self, arch, state):
         self.arch = arch
-        self.tab_name = _normalize_tab_name(self.parent.getTabName())
         self.update_mem(state)
 
     def update_mem(self, state):
