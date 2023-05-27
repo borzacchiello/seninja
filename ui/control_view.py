@@ -50,13 +50,14 @@ class ControlView(QWidget, DockContextHandler):
 
         self.toolbar = QToolBar(self, parent)
         self.toolbar.setStyleSheet("""
-                QToolButton{padding: 4px 10px 4px 10px; font-size: 14pt;}
+                QToolButton{"padding: 1x, 1x, 1x"}
                 """)
 
 
         # ----
         self.toolbar.btnStepInto = QToolButton(self.toolbar)
         self.toolbar.btnStepInto.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toolbar.btnStepInto.setMaximumHeight(24)
 
         self.toolbar.btnStepInto.actionStep = QAction(". Step", self.toolbar)
         self.toolbar.btnStepInto.actionStep.triggered.connect(lambda: self.perform_step())
@@ -69,6 +70,7 @@ class ControlView(QWidget, DockContextHandler):
         # ----
         self.toolbar.btnRunDFS = QToolButton(self.toolbar)
         self.toolbar.btnRunDFS.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toolbar.btnRunDFS.setMaximumHeight(24)
 
         self.toolbar.btnRunDFS.actionRunDFS = QAction(". DFS", self.toolbar)
         self.toolbar.btnRunDFS.actionRunDFS.triggered.connect(lambda: self.perform_dfs())
@@ -81,6 +83,7 @@ class ControlView(QWidget, DockContextHandler):
         # ----
         self.toolbar.btnRunBFS = QToolButton(self.toolbar)
         self.toolbar.btnRunBFS.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toolbar.btnRunBFS.setMaximumHeight(24)
 
         self.toolbar.btnRunBFS.actionRunBFS = QAction(". BFS", self.toolbar)
         self.toolbar.btnRunBFS.actionRunBFS.triggered.connect(lambda: self.perform_bfs())
@@ -93,6 +96,7 @@ class ControlView(QWidget, DockContextHandler):
         # ----
         self.toolbar.btnStop = QToolButton(self.toolbar)
         self.toolbar.btnStop.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toolbar.btnStop.setMaximumHeight(24)
 
         self.toolbar.btnStop.actionStop = QAction(". Stop", self.toolbar)
         self.toolbar.btnStop.actionStop.triggered.connect(lambda: self.perform_stop())
@@ -105,6 +109,7 @@ class ControlView(QWidget, DockContextHandler):
         # ----
         self.toolbar.btnReset = QToolButton(self.toolbar)
         self.toolbar.btnReset.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toolbar.btnReset.setMaximumHeight(24)
 
         self.toolbar.btnReset.actionReset = QAction(". Exit", self.toolbar)
         self.toolbar.btnReset.actionReset.triggered.connect(lambda: self.perform_reset())
