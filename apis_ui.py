@@ -93,14 +93,16 @@ def reset_ui():
 def get_target_tt(bv):
     if globs.TARGET_TAG_TYPE is not None:
         return globs.TARGET_TAG_TYPE
-    globs.TARGET_TAG_TYPE = bv.create_tag_type("searcher_target", "O")
+    globs.TARGET_TAG_TYPE = "searcher_target"
+    bv.create_tag_type(globs.TARGET_TAG_TYPE, "O")
     return globs.TARGET_TAG_TYPE
 
 
 def get_avoid_tt(bv):
     if globs.AVOID_TAG_TYPE is not None:
         return globs.AVOID_TAG_TYPE
-    globs.AVOID_TAG_TYPE = bv.create_tag_type("searcher_avoid", "X")
+    globs.AVOID_TAG_TYPE = "searcher_avoid"
+    bv.create_tag_type(globs.AVOID_TAG_TYPE, "X")
     return globs.AVOID_TAG_TYPE
 
 
@@ -180,13 +182,12 @@ def _set_run_target(bv, address):
     address = get_address_after_merge(bv, address)
     func = globs.executor.bncache.get_function(address)
     if address in globs.searcher_tags:
-        func.remove_auto_address_tag(address, globs.searcher_tags[address])
+        func.remove_auto_address_tags_of_type(address, globs.searcher_tags[address])
         del globs.searcher_tags[address]
 
     tt = get_target_tt(bv)
-    tag = func.create_auto_tag(tt, "SENINJA: target address")
-    func.add_auto_address_tag(address, tag)
-    globs.searcher_tags[address] = tag
+    func.add_tag(tt, "SENINJA: target address", address, True)
+    globs.searcher_tags[address] = tt
     if address in globs.dfs_searcher.avoid:
         globs.dfs_searcher.avoid.remove(address)
         globs.bfs_searcher.avoid.remove(address)
@@ -202,13 +203,12 @@ def _set_run_avoid(bv, address):
     address = get_address_after_merge(bv, address)
     func = globs.executor.bncache.get_function(address)
     if address in globs.searcher_tags:
-        func.remove_auto_address_tag(address, globs.searcher_tags[address])
+        func.remove_auto_address_tags_of_type(address, globs.searcher_tags[address])
         del globs.searcher_tags[address]
 
     tt = get_avoid_tt(bv)
-    tag = func.create_auto_tag(tt, "SENINJA: avoid address")
-    func.add_auto_address_tag(address, tag)
-    globs.searcher_tags[address] = tag
+    func.add_tag(tt, "SENINJA: avoid address", address, True)
+    globs.searcher_tags[address] = tt
     if address == globs.dfs_searcher.target:
         globs.dfs_searcher.target = None
         globs.bfs_searcher.target = None
@@ -562,7 +562,7 @@ def _async_reset_se(bv, address):
         for addr in globs.searcher_tags:
             tag = globs.searcher_tags[addr]
             func = globs.executor.bncache.get_function(addr)
-            func.remove_auto_address_tag(addr, tag)
+            func.remove_auto_address_tags_of_type(addr, tag)
         globs.searcher_tags = dict()
 
         globs.executor.reset()
