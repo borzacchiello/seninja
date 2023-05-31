@@ -114,6 +114,10 @@ class MemoryView(GlobalAreaWidget):
         self.current_state.mem.register_store_hook(self._monitor_changes)
         self.update_mem(self.current_state)
 
+        # FIXME: find a better way. This is necessary to update the headers
+        self.hexWidget.hide()
+        self.hexWidget.show()
+
     def on_back_click(self):
         if self.current_state is None:
             return
@@ -129,6 +133,10 @@ class MemoryView(GlobalAreaWidget):
         self.size = 512
         self.current_state.mem.register_store_hook(self._monitor_changes)
         self.update_mem(self.current_state)
+
+        # FIXME: find a better way. This is necessary to update the headers
+        self.hexWidget.hide()
+        self.hexWidget.show()
 
     def init(self, arch, state):
         self.arch = arch
@@ -259,7 +267,7 @@ class MemoryView(GlobalAreaWidget):
                 address - self.address_start+new_expr.size // 8
             )
         )
-        self.update_mem_delta(self.current_state)
+        self.update_mem(self.current_state)
 
     def _concretize_ascii_str(self, address, expr):
         extra_constraints = []

@@ -520,6 +520,8 @@ class HexViewWidget(QWidget):
         # self.view.setObjectName("view")
         # self.view.horizontalHeader().setDefaultSectionSize(10)
         self.view.horizontalHeader().setMinimumSectionSize(5)
+        self.view.horizontalHeader().setSectionsClickable(False)
+        self.view.verticalHeader().setSectionsClickable(False)
         # self.view.verticalHeader().setDefaultSectionSize(21)
         # self.view.setMinimumWidth( self.view.width() )
         self.mainLayout.insertWidget(0, self.view)
