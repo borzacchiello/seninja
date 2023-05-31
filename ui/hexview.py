@@ -412,22 +412,28 @@ class HexTableView(QTableView):
         self._press_end_index = None
 
     def mousePressEvent(self, event):
-        super(HexTableView, self).mousePressEvent(event)
         if event.buttons() & Qt.LeftButton:
             self.leftMousePressed.emit(event)
 
     def mouseMoveEvent(self, event):
-        super(HexTableView, self).mouseMoveEvent(event)
         if event.buttons() & Qt.LeftButton:
             self.leftMouseMoved.emit(event)
 
     def mouseReleaseEvent(self, event):
-        super(HexTableView, self).mousePressEvent(event)
         if event.buttons() & Qt.LeftButton:
             self.leftMouseReleased.emit(event)
 
+    def contextMenuEvent(self, event):
+        pass
+
+    def mouseDoubleClickEvent(self, event):
+        pass
+
     def focusOutEvent(self, event):
-        super(HexTableView, self).focusOutEvent(event)
+        pass
+
+    def focusInEvent(self, event):
+        pass
 
     def keyPressEvent(self, event):
         move_keys = (
