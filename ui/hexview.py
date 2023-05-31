@@ -176,12 +176,10 @@ class HexTableModel(QAbstractTableModel):
         elif orientation == Qt.Horizontal:
             if section < 0x10:
                 return "%01X" % (section)
-            else:
-                return ""
+            return ""
         elif orientation == Qt.Vertical:
             return "%016X" % (section * 0x10 + self.start_address)
-        else:
-            return None
+        return None
 
     def _emit_data_changed(self, start_bindex, end_bindex):
         for i in range(start_bindex, end_bindex):
@@ -430,7 +428,6 @@ class HexTableView(QTableView):
 
     def focusOutEvent(self, event):
         super(HexTableView, self).focusOutEvent(event)
-        self.parent._hsm.clearSelection()
 
     def keyPressEvent(self, event):
         move_keys = (
@@ -507,14 +504,6 @@ class HexViewWidget(QWidget):
 
         self._model = HexTableModel(self)
         self.view = HexTableView(parent=self)
-        sizePolicy = QSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.view.sizePolicy().hasHeightForWidth())
-        self.view.setSizePolicy(sizePolicy)
-        # self.view.setMinimumSize(QSize(660, 0))
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setSelectionMode(QAbstractItemView.NoSelection)
@@ -557,9 +546,6 @@ class HexViewWidget(QWidget):
         self.view.setFont(f)
         self.statusLabel.setFont(f)
 
-        self.view.setMinimumWidth(self.optimal_width)
-        self.view.setMaximumWidth(self.optimal_width)
-
         self._hsm.selectionRangeChanged.connect(
             self._handle_selection_range_changed)
         self.view.moveKeyPressed.connect(self._hsm.handle_move_key)
@@ -571,7 +557,7 @@ class HexViewWidget(QWidget):
         self.single_data_changed.connect(self._handle_single_data_changed)
         # self.data_edited.connect(self._handle_data_edited)
 
-        self.statusLabel.setText("")
+        self.statusLabel.setText(" sel: [0x00, 0x00] len: 0x0")
 
     def _handle_data_edited(self, address, data):
         pass
@@ -613,7 +599,7 @@ class HexViewWidget(QWidget):
         start = self._hsm.start
         end = self._hsm.end
         if start not in (None, -1) and end not in (None, -1):
-            txt.append("sel: [{:s}, {:s}]".format(hex(start), hex(end)))
+            txt.append("sel: [0x{:02x}, 0x{:02x}]".format(start, end))
             txt.append("len: {:s}".format(hex(end - start + 1)))
         self.statusLabel.setText(" ".join(txt))
 

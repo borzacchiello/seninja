@@ -11,6 +11,7 @@ from PySide6.QtCore import QMimeData
 from PySide6.QtWidgets import (
     QApplication,
     QGridLayout,
+    QSizePolicy,
     QMenu,
     QPushButton
 )
@@ -74,11 +75,8 @@ class MemoryView(GlobalAreaWidget):
 
         self._layout.addWidget(self.button, 0, 0, 1, 4)
         self._layout.addWidget(self.back_button, 0, 4, 1, 1)
-        self._layout.addWidget(self.hexWidget, 1, 0, 1, 5)
+        self._layout.addWidget(self.hexWidget, 2, 0, 1, 5)
         self._layout.setContentsMargins(0, 0, 0, 0)
-
-        self.setMaximumWidth(self.hexWidget.optimal_width + 25)
-
         self.setLayout(self._layout)
 
     def _monitor_changes(self, address, size):
@@ -187,6 +185,7 @@ class MemoryView(GlobalAreaWidget):
         self.hexWidget.full_data_changed.emit(
             0, {}, 0
         )
+        self.hexWidget._hsm.clearSelection()
 
     def _handle_data_edited(self, offset, value):
         if not self.current_state or not self.address_start:
