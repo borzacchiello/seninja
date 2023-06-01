@@ -16,11 +16,9 @@ from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QLabel,
-    QSizePolicy,
     QAbstractItemView,
     QMenu,
-    QItemDelegate,
-    QSizePolicy
+    QItemDelegate
 )
 from PySide6.QtGui import (
     QMouseEvent,

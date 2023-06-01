@@ -11,7 +11,6 @@ from PySide6.QtCore import QMimeData
 from PySide6.QtWidgets import (
     QApplication,
     QGridLayout,
-    QSizePolicy,
     QMenu,
     QPushButton
 )

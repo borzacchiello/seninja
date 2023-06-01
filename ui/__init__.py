@@ -112,6 +112,9 @@ def disable_widgets():
     assert BNWidgets.CW is not None
     assert BNWidgets.SW is not None
 
+    # Refresh state table
+    BNWidgets.SW.set_state_table(None)
+
     BNWidgets.RW.setEnabled(False)
     BNWidgets.MW.setEnabled(False)
     BNWidgets.BW.setEnabled(False)

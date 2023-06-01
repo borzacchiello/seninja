@@ -70,6 +70,7 @@ class StateView(QWidget, DockContextHandler):
         self.index_to_state_address = dict()
         self.state_collection = []
         self.symb_idx = 0
+        self.active_idx = None
         self._table.setRowCount(0)
 
     def init(self, state):
@@ -94,8 +95,12 @@ class StateView(QWidget, DockContextHandler):
         avoided_states = globs.executor.fringe.get_avoided_states
         exited_states = globs.executor.fringe.get_exited_states
 
-        self._table.setRowCount(len(deferred_states)+len(unsat_states)+len(error_states)+len(avoided_states)+len(exited_states)+1)
-        self.state_collection.append((state,STATE_ACTIVE))
+        rowCount = len(deferred_states)+len(unsat_states)+len(error_states)+len(avoided_states)+len(exited_states)
+        if state:
+            rowCount += 1
+        self._table.setRowCount(rowCount)
+        if state:
+            self.state_collection.append((state,STATE_ACTIVE))
 
         for idx, a in enumerate(deferred_states):
             self.state_collection.append((a,STATE_DEFERRED))
@@ -119,6 +124,7 @@ class StateView(QWidget, DockContextHandler):
                 state_colour = self.active_state_color
                 state_text_colour = self.item_color
                 state_status = "Active"
+                self.active_idx = idx
             if s==STATE_UNSAT:
                 state_colour = self.unsat_state_color
                 state_text_colour = self.item_color
@@ -150,6 +156,8 @@ class StateView(QWidget, DockContextHandler):
     # double click event
     def on_doubleClick(self, item):
         row_idx = item.row()
+        if row_idx == self.active_idx:
+            return
         state_addr = self.index_to_state_address[row_idx]
         globs.actions_change_state(globs.bv, state_addr)
 
