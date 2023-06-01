@@ -2,8 +2,9 @@ from ..utility.expr_wrap_util import symbolic
 from ..expr import BVV, BVS
 from ..utility.models_util import get_arg_k
 from ..sym_state import State
+from ..utility.exceptions import ModelError
 
-MAX_READ = 100
+MAX_SYM_READ_WRITE = 100
 
 
 def read_handler(state: State, view):
@@ -11,13 +12,16 @@ def read_handler(state: State, view):
     buf = get_arg_k(state, 2, state.arch.bits() // 8, view)
     count = get_arg_k(state, 3, 4, view)
 
-    assert not symbolic(fd) or not state.solver.symbolic(fd)
+    if symbolic(fd) and state.solver.symbolic(fd):
+        raise ModelError("read", "symbolic fd not supported")
+
     fd = fd.value
-    assert state.os.is_open(fd)
+    if not state.os.is_open(fd):
+        return BVV(-9, 32) # EBADF
 
     if symbolic(count):
         count = state.solver.max(count)
-        count = MAX_READ if count > MAX_READ else count
+        count = MAX_SYM_READ_WRITE if count > MAX_SYM_READ_WRITE else count
     else:
         count = count.value
 
@@ -36,11 +40,16 @@ def write_handler(state: State, view):
     buf = get_arg_k(state, 2, state.arch.bits() // 8, view)
     count = get_arg_k(state, 3, 4, view)
 
-    assert not symbolic(fd) or not state.solver.symbolic(fd)
+    if symbolic(fd) and state.solver.symbolic(fd):
+        raise ModelError("write", "symbolic fd not supported")
+
     fd = fd.value
+    if not state.os.is_open(fd):
+        return BVV(-9, 32) # EBADF
+
     if symbolic(count):
         count = state.solver.max(count)
-        count = MAX_READ if count > MAX_READ else count
+        count = MAX_SYM_READ_WRITE if count > MAX_SYM_READ_WRITE else count
     else:
         count = count.value
 

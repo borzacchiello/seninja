@@ -1,7 +1,8 @@
 from ..utility.expr_wrap_util import symbolic
+from ..utility.exceptions import ExitException, ModelError
 from ..expr import BVV, BVS
 
-MAX_READ = 100
+MAX_SYM_READ_WRITE = 100
 
 
 def read_handler(state):
@@ -13,13 +14,15 @@ def read_handler(state):
     buf = getattr(state.regs, buf_reg)
     count = getattr(state.regs, count_reg)
 
-    assert not symbolic(fd) or not state.solver.symbolic(fd)
+    if symbolic(fd) and state.solver.symbolic(fd):
+        raise ModelError("linux_read", "symbolic fd not supported")
     fd = fd.value
-    assert state.os.is_open(fd)
+    if not state.os.is_open(fd):
+        return BVV(-9, 32) # EBADF
 
     if symbolic(count):
         count = state.solver.max(count)
-        count = MAX_READ if count > MAX_READ else count
+        count = MAX_SYM_READ_WRITE if count > MAX_SYM_READ_WRITE else count
     else:
         count = count.value
 
@@ -42,13 +45,15 @@ def write_handler(state):
     buf = getattr(state.regs, buf_reg)
     count = getattr(state.regs, count_reg)
 
-    assert not symbolic(fd) or not state.solver.symbolic(fd)
+    if symbolic(fd) and state.solver.symbolic(fd):
+        raise ModelError("linux_write", "symbolic fd not supported")
     fd = fd.value
-    assert state.os.is_open(fd)
+    if not state.os.is_open(fd):
+        return BVV(-9, 32) # EBADF
 
     if symbolic(count):
         count = state.solver.max(count)
-        count = MAX_READ if count > MAX_READ else count
+        count = MAX_SYM_READ_WRITE if count > MAX_SYM_READ_WRITE else count
     else:
         count = count.value
 
@@ -65,4 +70,4 @@ def write_handler(state):
 
 
 def exit_handler(state):
-    pass
+    raise ExitException()

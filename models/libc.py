@@ -95,8 +95,8 @@ def _intbv_to_strbv16(intbv):
 
 
 def _printf_common(state: State, format_str_p, param_idx_start, view):
-    assert not symbolic(
-        format_str_p) or not state.solver.symbolic(format_str_p)
+    if symbolic(format_str_p) and state.solver.symbolic(format_str_p):
+        raise ModelError("_printf_common", "symbolic format string not supported")
 
     b = state.mem.load(format_str_p, 1)
     format_str = ""
@@ -222,8 +222,8 @@ def scanf_handler(state: State, view):
     global scanf_count
     format_str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
-    assert not symbolic(
-        format_str_p) or not state.solver.symbolic(format_str_p)
+    if symbolic(format_str_p) and state.solver.symbolic(format_str_p):
+        raise ModelError("scanf_handler", "symbolic format string not supported")
 
     b = state.mem.load(format_str_p, 1)
     format_str = ""
@@ -247,7 +247,8 @@ def scanf_handler(state: State, view):
 
         tmp_bytes_red = list()
         par_p = get_arg_k(state, param_idx, state.arch.bits() // 8, view)
-        assert not symbolic(par_p) or not state.solver.symbolic(par_p)
+        if symbolic(par_p) and state.solver.symbolic(par_p):
+            raise ModelError("scanf_handler", "symbolic pointer for arguments not supported")
         name = 'scanf_input_%d' % scanf_count
 
         if match[-1] == "d" or match[-1] == "x":
@@ -410,7 +411,8 @@ def _atox(state: State, view, size: int):
         overflow_bit == 0
     )
 
-    assert state.solver.satisfiable()
+    if not state.solver.satisfiable():
+        raise ModelError("_atox", "unsat solver")
     return res.Extract(size*8-1, 0)
 
 

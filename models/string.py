@@ -2,6 +2,7 @@ from ..sym_state import State
 from ..utility.expr_wrap_util import symbolic
 from ..expr import BVV, BVS, BoolV, And, ITE
 from ..utility.models_util import get_arg_k
+from ..utility.exceptions import ModelError
 
 
 def memcmp_handler(state: State, view):
@@ -54,8 +55,10 @@ def strcmp_handler(state: State, view):
     str1 = get_arg_k(state, 1, state.arch.bits() // 8, view)
     str2 = get_arg_k(state, 2, state.arch.bits() // 8, view)
 
-    assert not symbolic(str1) or not state.solver.symbolic(str1)
-    assert not symbolic(str2) or not state.solver.symbolic(str2)
+    if symbolic(str1) and state.solver.symbolic(str1):
+        raise ModelError("strcmp", "symbolic string1 pointer not supported")
+    if symbolic(str2) and state.solver.symbolic(str2):
+        raise ModelError("strcmp", "symbolic string2 pointer not supported")
     if symbolic(str1):
         str1 = state.solver.evaluate(str1)
     if symbolic(str2):
@@ -95,7 +98,8 @@ def strcmp_handler(state: State, view):
 def strlen_handler(state: State, view):
     str1 = get_arg_k(state, 1, state.arch.bits() // 8, view)
 
-    assert not symbolic(str1) or not state.solver.symbolic(str1)
+    if symbolic(str1) and state.solver.symbolic(str1):
+        raise ModelError("strlen", "symbolic string pointer not supported")
     if symbolic(str1):
         str1 = state.solver.evaluate(str1)
 
@@ -129,8 +133,11 @@ def strcpy_handler(state: State, view):
     dst = get_arg_k(state, 1, state.arch.bits() // 8, view)
     src = get_arg_k(state, 2, state.arch.bits() // 8, view)
 
-    assert not symbolic(dst) or not state.solver.symbolic(dst)
-    assert not symbolic(src) or not state.solver.symbolic(src)
+    if symbolic(dst) and state.solver.symbolic(dst):
+        raise ModelError("strcpy", "symbolic dst not supported")
+    if symbolic(src) and state.solver.symbolic(src):
+        raise ModelError("strcpy", "symbolic src not supported")
+
     if symbolic(dst):
         dst = state.solver.evaluate(dst)
     if symbolic(src):
@@ -163,9 +170,13 @@ def strncpy_handler(state: State, view):
     src = get_arg_k(state, 2, state.arch.bits() // 8, view)
     n = get_arg_k(state, 3, state.arch.bits() // 8, view)
 
-    assert not symbolic(dst) or not state.solver.symbolic(dst)
-    assert not symbolic(src) or not state.solver.symbolic(src)
-    assert not symbolic(n) or not state.solver.symbolic(n)
+    if symbolic(dst) and state.solver.symbolic(dst):
+        raise ModelError("strncpy", "symbolic dst not supported")
+    if symbolic(src) and state.solver.symbolic(src):
+        raise ModelError("strncpy", "symbolic src not supported")
+    if symbolic(n) and state.solver.symbolic(n):
+        raise ModelError("strncpy", "symbolic n not supported")
+
     if symbolic(dst):
         dst = state.solver.evaluate(dst)
     if symbolic(src):
@@ -174,7 +185,6 @@ def strncpy_handler(state: State, view):
         n = state.solver.evaluate(n)
 
     n = n.value
-    print(src, dst, n)
 
     i = 0
     src_b = state.mem.load(src, 1)
