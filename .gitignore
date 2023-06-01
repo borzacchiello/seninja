@@ -2,3 +2,5 @@
 .vscode/
 .env
 *.DS_Store
+
+generate_plugininfo.py
