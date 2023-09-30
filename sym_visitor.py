@@ -87,6 +87,8 @@ class SymbolicVisitor(BNILVisitor):
                 BVV(1, 1).ZeroExt(expr.dest.info.size*8-1),
                 BVV(0, 1).ZeroExt(expr.dest.info.size*8-1)
             )
+        if src.size == 1:
+            src = src.ZeroExt(8)
 
         setattr(self.executor.state.regs, dest, src)
         return True
