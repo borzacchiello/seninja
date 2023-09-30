@@ -372,4 +372,14 @@ class ArchX8664SPH(ArchX86SPH):
         store_to_dst(sv.state, dst_p, res)
         return True
 
+    def unpcklpd_handler(self, sv, parameters):
+        dst_p = parameters[0]
+        src_p = parameters[1]
+
+        dst = get_src(sv.state, dst_p)
+        src = get_src(sv.state, src_p)
+
+        res = src.Extract(63, 0).Concat(dst.Extract(63, 0))
+        store_to_dst(sv.state, dst_p, res)
+        return True
     # ------------
