@@ -39,6 +39,8 @@ class BNCache(object):
         if address in self.func_name_cache:
             return self.func_name_cache[address]
         function = self.get_function(address)
+        if function is None:
+            return None
         function_name = function.name
         self.func_name_cache[address] = function_name
         self.name_to_func_cache[function_name] = function

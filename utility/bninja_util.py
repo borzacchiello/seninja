@@ -24,6 +24,8 @@ def get_function(view, address):
                 0 if (sticky_fun is not None and sticky_fun.name == f.name)
                 else 1)
 
+    if len(funcs) == 0:
+        return None
     sticky_fun = funcs[0]
     return funcs[0]
 

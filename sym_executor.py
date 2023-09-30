@@ -413,7 +413,6 @@ class SymbolicExecutor(object):
             sys.stderr.write(" ".join(map(str, ["\t", repr(e), fname, exc_tb.tb_lineno, "\n"])))
             self.put_in_errored(self.state, "Unknown error")
             self.state = None
-
             res = None
 
         if res is None:

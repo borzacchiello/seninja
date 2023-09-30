@@ -467,6 +467,17 @@ class SymbolicVisitor(BNILVisitor):
             dest_fun_name = self.executor.imported_functions[dest.value]
         else:
             dest_fun_name = self.executor.bncache.get_function_name(dest.value)
+        if dest_fun_name is None:
+            # Last chance, look in symbols
+            sym = self.executor.view.get_symbol_at(dest.value)
+            if sym is None:
+                raise Exception("Unable to find function name @ 0x%x" % dest.value)
+
+            # If we are here, it is for sure a library function
+            dest_fun_name = sym.name
+            if dest_fun_name not in library_functions:
+                raise UnimplementedModel(dest_fun_name)
+
         ret_addr = self.executor.ip + \
             self.executor.bncache.get_instruction_len(self.executor.ip)
 
