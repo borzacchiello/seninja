@@ -82,7 +82,10 @@ def _registerDynamicWidgets():
         Qt.Vertical,
         False
     )
-    GlobalArea.addWidget(lambda context: _get_memoryview_widget("SENinja Memory", {}))
+
+    # Disable Memory View...
+    _get_memoryview_widget("SENinja Memory", {})
+    # GlobalArea.addWidget(lambda context: _get_memoryview_widget("SENinja Memory", {}))
 
 def _registerUIActions():
     UIAction.registerAction("SENinja\\Setup argv...")
