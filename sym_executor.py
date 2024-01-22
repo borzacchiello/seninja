@@ -137,12 +137,11 @@ class SymbolicExecutor(object):
             offset = var.storage
             s_type = var.type
 
-            if abs(offset) > self.state.page_size * (stack_page_size - 1):
-                print("ERROR: not enough space in stack. Increase stack size")
-                raise Exception(
-                    "Not enough space in stack. Increase stack size")
-
             if s_type.confidence != 255:
+                continue
+
+            if abs(offset) > self.state.page_size * (stack_page_size - 1):
+                print("ERROR: not enough space in stack. Unable to add known variable to stack.")
                 continue
 
             width = s_type.width
