@@ -7,6 +7,7 @@ from binaryninjaui import (
     GlobalAreaWidget,
     UIActionHandler
 )
+from PySide6 import QtCore
 from PySide6.QtCore import QMimeData
 from PySide6.QtWidgets import (
     QApplication,
@@ -37,9 +38,13 @@ class MemoryViewBT(BackgroundTaskThread):
 
 
 class MemoryView(GlobalAreaWidget):
+    updateStateSignal = QtCore.Signal(object)
+    updateStateDeltaSignal = QtCore.Signal(object)
 
     def __init__(self, name, data, bnwidgets):
         GlobalAreaWidget.__init__(self, name)
+        self.updateStateSignal.connect(self.update_mem)
+        self.updateStateDeltaSignal.connect(self.update_mem_delta)
 
         self.actionHandler = UIActionHandler()
         self.actionHandler.setupActionHandler(self)

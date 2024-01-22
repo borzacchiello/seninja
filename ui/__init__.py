@@ -83,9 +83,8 @@ def _registerDynamicWidgets():
         False
     )
 
-    # Disable Memory View...
     _get_memoryview_widget("SENinja Memory", {})
-    # GlobalArea.addWidget(lambda context: _get_memoryview_widget("SENinja Memory", {}))
+    GlobalArea.addWidget(lambda context: _get_memoryview_widget("SENinja Memory", {}))
 
 def _registerUIActions():
     UIAction.registerAction("SENinja\\Setup argv...")
@@ -116,7 +115,7 @@ def disable_widgets():
     assert BNWidgets.SW is not None
 
     # Refresh state table
-    BNWidgets.SW.set_state_table(None)
+    BNWidgets.SW.updateStateSignal.emit(None)
 
     BNWidgets.RW.setEnabled(False)
     BNWidgets.MW.setEnabled(False)
@@ -153,16 +152,16 @@ def ui_sync_view(state, delta=True):
     assert BNWidgets.SW is not None
 
     if BNWidgets.RW.isVisible():
-        BNWidgets.RW.set_reg_values(state)
+        BNWidgets.RW.updateStateSignal.emit(state)
     if BNWidgets.MW.isVisible():
         if delta:
-            BNWidgets.MW.update_mem_delta(state)
+            BNWidgets.MW.updateStateDeltaSignal.emit(state)
         else:
-            BNWidgets.MW.update_mem(state)
+            BNWidgets.MW.updateStateSignal.emit(state)
     if BNWidgets.BW.isVisible():
-        BNWidgets.BW.update_state(state)
+        BNWidgets.BW.updateStateSignal.emit(state)
     if BNWidgets.SW.isVisible():
-        BNWidgets.SW.update_state(state)
+        BNWidgets.SW.updateStateSignal.emit(state)
 
 def ui_reset_view():
     assert BNWidgets.RW is not None

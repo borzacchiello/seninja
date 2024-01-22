@@ -6,6 +6,7 @@ from binaryninjaui import (
     getThemeColor,
     ThemeColor
 )
+from PySide6 import QtCore
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush
 from PySide6.QtWidgets import (
@@ -31,10 +32,12 @@ def _makewidget(parent, val, center=False):
 
 
 class StateView(QWidget, DockContextHandler):
+    updateStateSignal = QtCore.Signal(object)
 
     def __init__(self, parent, name, data):
         QWidget.__init__(self, parent)
         DockContextHandler.__init__(self, self, name)
+        self.updateStateSignal.connect(self.update_state)
 
         self.parent = parent
         self.tab_name = None

@@ -10,6 +10,7 @@ from binaryninjaui import (
     getThemeColor,
     ThemeColor
 )
+from PySide6 import QtCore
 from PySide6.QtCore import Qt, QMimeData
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
@@ -40,6 +41,7 @@ def _makewidget(parent, val, center=False):
 
 
 class RegisterView(QWidget, DockContextHandler):
+    updateStateSignal = QtCore.Signal(object)
 
     dirty_color = QBrush(getThemeColor(ThemeColor.OrangeStandardHighlightColor))
     expression_color = QBrush(getThemeColor(ThemeColor.RedStandardHighlightColor))
@@ -49,6 +51,7 @@ class RegisterView(QWidget, DockContextHandler):
     def __init__(self, parent, name, data):
         QWidget.__init__(self, parent)
         DockContextHandler.__init__(self, self, name)
+        self.updateStateSignal.connect(self.set_reg_values)
 
         self.parent = parent
         self.arch = None

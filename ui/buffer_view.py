@@ -154,12 +154,14 @@ def _makewidget(parent, val, center=False):
 
 class BufferView(QWidget, DockContextHandler):
     onNewBufferSignal = QtCore.Signal(object)
+    updateStateSignal = QtCore.Signal(object)
 
     def __init__(self, parent, name, data):
         QWidget.__init__(self, parent)
         DockContextHandler.__init__(self, self, name)
 
         self.onNewBufferSignal.connect(self.update_state)
+        self.updateStateSignal.connect(self.update_state)
 
         self.parent = parent
         self.current_state = None
