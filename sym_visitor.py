@@ -343,6 +343,11 @@ class SymbolicVisitor(BNILVisitor):
         left = self.visit(expr.left)
         right = self.visit(expr.right)
 
+        if isinstance(left, Bool):
+            left = ITE(left, BVV(1, 8), BVV(0, 8))
+        if isinstance(right, Bool):
+            right = ITE(right, BVV(1, 8), BVV(0, 8))
+
         if right.size > left.size:
             left = left.ZeroExt(right.size - left.size)
         if left.size > right.size:
@@ -353,6 +358,11 @@ class SymbolicVisitor(BNILVisitor):
     def visit_LLIL_OR(self, expr):
         left = self.visit(expr.left)
         right = self.visit(expr.right)
+
+        if isinstance(left, Bool):
+            left = ITE(left, BVV(1, 8), BVV(0, 8))
+        if isinstance(right, Bool):
+            right = ITE(right, BVV(1, 8), BVV(0, 8))
 
         if right.size > left.size:
             left = left.ZeroExt(right.size - left.size)
@@ -541,15 +551,27 @@ class SymbolicVisitor(BNILVisitor):
             dest_fun_name = self.executor.imported_functions[dest.value]
         else:
             dest_fun_name = self.executor.bncache.get_function_name(dest.value)
+        if dest_fun_name is None:
+            # Last chance, look in symbols
+            sym = self.executor.view.get_symbol_at(dest.value)
+            if sym is None:
+                raise Exception("Unable to find function name @ 0x%x" % dest.value)
+            # If we are here, it is for sure a library function
+            dest_fun_name = sym.name
+            if dest_fun_name not in library_functions:
+                raise UnimplementedModel(dest_fun_name)
 
         # check if we have an handler
         if dest_fun_name in library_functions:
             res = library_functions[dest_fun_name](
                 self.executor.state, self.executor.view)
 
+            calling_convention = "cdecl"
             dest_fun = self.executor.bncache.get_function(dest.value)
+            if dest_fun is not None:
+                calling_convention = dest_fun.calling_convention
             self.executor.arch.save_result_value(
-                self.executor.state, dest_fun.calling_convention, res)
+                self.executor.state, calling_convention, res)
 
             # retrive return address
             dest = self.executor.arch.get_return_address(self.executor.state)
