@@ -235,8 +235,12 @@ class BufferView(QWidget, DockContextHandler):
         self._table.setRowCount(0)
 
     def init(self, state):
+        try:
+            self.tab_name = _normalize_tab_name(self.parent.getTabName())
+        except RuntimeError:
+            self.reset()
+            return
         self.current_state = state
-        self.tab_name = _normalize_tab_name(self.parent.getTabName())
         self.update_state(state)
 
     def update_state(self, state):

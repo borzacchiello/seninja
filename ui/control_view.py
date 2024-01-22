@@ -129,7 +129,11 @@ class ControlView(QWidget, DockContextHandler):
 
     
     def init(self):
-        self.tab_name = _normalize_tab_name(self.parent.getTabName())
+        try:
+            self.tab_name = _normalize_tab_name(self.parent.getTabName())
+        except RuntimeError:
+            self.tab_name = None
+            return
         
     def disable(self):
         self.toolbar.btnStepInto.setEnabled(False)

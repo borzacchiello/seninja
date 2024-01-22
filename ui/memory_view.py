@@ -20,10 +20,6 @@ from ..utility.expr_wrap_util import symbolic, split_bv_in_list
 from ..expr.bitvector import BVS, BVV
 from .hexview import HexViewWidget
 
-def _normalize_tab_name(tab_name):
-    return tab_name[:tab_name.find("(")-1]
-
-
 class MemoryViewBT(BackgroundTaskThread):
     def __init__(self, msg, mw, callback, pars):
         BackgroundTaskThread.__init__(self, msg, False)
@@ -56,7 +52,6 @@ class MemoryView(GlobalAreaWidget):
         self.address_start = None
         self.size = 512
         self.changes = set()
-        self.tab_name = None
 
         self.monitor_history = list()
 
@@ -190,7 +185,6 @@ class MemoryView(GlobalAreaWidget):
         self.changes.clear()
 
     def reset(self):
-        self.tab_name = None
         self.current_state = None
         self.address_start = None
         self.size = None
@@ -437,10 +431,6 @@ class MemoryView(GlobalAreaWidget):
 
     def shouldBeVisible(self, view_frame):
         if view_frame is None:
-            return False
-        elif self.tab_name is None:
-            return False
-        elif _normalize_tab_name(view_frame.getTabName()) != self.tab_name:
             return False
         return True
 

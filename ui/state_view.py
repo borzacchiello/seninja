@@ -77,7 +77,11 @@ class StateView(QWidget, DockContextHandler):
         self._table.setRowCount(0)
 
     def init(self, state):
-        self.tab_name = _normalize_tab_name(self.parent.getTabName())
+        try:
+            self.tab_name = _normalize_tab_name(self.parent.getTabName())
+        except RuntimeError:
+            self.reset()
+            return
         self.set_state_table(state)
 
     def update_state(self, state):

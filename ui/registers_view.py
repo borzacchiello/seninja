@@ -91,9 +91,12 @@ class RegisterView(QWidget, DockContextHandler):
         self._table.setRowCount(0)
 
     def init(self, arch, state):
+        try:
+            self.tab_name = _normalize_tab_name(self.parent.getTabName())
+        except RuntimeError:
+            self.reset()
+            return
         self.arch = arch
-        self.tab_name = _normalize_tab_name(self.parent.getTabName())
-
         regs = self.arch.reg_names()
 
         self._table.setRowCount(len(regs))
