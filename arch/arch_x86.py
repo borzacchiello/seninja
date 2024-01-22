@@ -171,7 +171,12 @@ class x86Arch(Arch):
             raise Exception("Wrong size in save_result_value")
 
     def get_argument_regs(self, calling_convention):
-        assert calling_convention == 'cdecl'
+        if calling_convention == 'cdecl':
+            return []
+        if calling_convention == 'regparm':
+            return ["eax", "edx", "ecx"]
+
+        print("!Err: unexpected calling convention", calling_convention)
         return []
 
     def get_flag_cond_lambda(self, cond: str):
