@@ -43,7 +43,7 @@ def get_imported_functions_and_addresses(view):
         for symb_type in symb_types:
             if symb_type.type == SymbolType.ImportedFunctionSymbol:
                 res_functions[symb_type.address] = symb_type.name
-            if symb_type.type == SymbolType.ImportAddressSymbol:
+            if symb_type.type == SymbolType.ImportAddressSymbol or symb_type.type == SymbolType.ExternalSymbol:
                 res_addresses[symb_type.address] = symb_type.name
 
                 if "@IAT" in symb_type.name or "@GOT" in symb_type.name:
