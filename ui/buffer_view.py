@@ -32,11 +32,11 @@ from ..utility.string_util import (
 )
 from ..expr.bitvector import BVS, BVV
 
-
 NO_CONSTRAINTS = 0
 ASCII_STRING = 1
 ALPHANUMERIC_STRING = 2
 
+gBuffersPerTab = {}
 
 def get_int(v):
     try:
@@ -47,7 +47,6 @@ def get_int(v):
         except:
             pass
     return None
-
 
 class BufferViewBT(BackgroundTaskThread):
     def __init__(self, msg, bw, callback, pars):
@@ -60,7 +59,6 @@ class BufferViewBT(BackgroundTaskThread):
         self.bw.setEnabled(False)
         self.callback(*self.pars)
         self.bw.setEnabled(True)
-
 
 class CreateBufferDialog(QDialog):
     constraint_list = {
@@ -151,55 +149,50 @@ def _makewidget(parent, val, center=False):
         out.setTextAlignment(Qt.AlignCenter)
     return out
 
+class BufferViewData(object):
+    def __init__(self):
+        self.current_state = None
 
-class BufferView(QWidget, DockContextHandler):
-    onNewBufferSignal = QtCore.Signal(object)
-    updateStateSignal = QtCore.Signal(object)
-
-    def __init__(self, parent, name, data):
+class BufferView(QWidget):
+    def __init__(self, parent):
         QWidget.__init__(self, parent)
-        DockContextHandler.__init__(self, self, name)
-
-        self.onNewBufferSignal.connect(self.update_state)
-        self.updateStateSignal.connect(self.update_state)
 
         self.parent = parent
-        self.current_state = None
-        self.data = data
-        self.tab_name = None
+        self.data = BufferViewData()
+        self.tabname = ""
 
         self.actionHandler = UIActionHandler()
         self.actionHandler.setupActionHandler(self)
 
-        self._layout = QVBoxLayout()
+        self.layout = QVBoxLayout()
 
         # Set up register table
-        self._table = QTableWidget()
-        self._table.setColumnCount(4)
-        self._table.setHorizontalHeaderLabels(
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(
             ['Address', 'Name', 'Size', 'Constraints'])
-        self._table.horizontalHeader().setStretchLastSection(True)
-        self._table.verticalHeader().setVisible(False)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.verticalHeader().setVisible(False)
 
-        self._table.setContextMenuPolicy(Qt.CustomContextMenu)
-        self._table.customContextMenuRequested.connect(
+        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(
             self.on_customContextMenuRequested)
-        self._table.doubleClicked.connect(self.on_doubleClick)
+        self.table.doubleClicked.connect(self.on_doubleClick)
 
         self.button = QPushButton("New Buffer")
         self.button.clicked.connect(self.on_newBufferClick)
 
-        self._layout.addWidget(self.button)
-        self._layout.addWidget(self._table)
+        self.layout.addWidget(self.button)
+        self.layout.addWidget(self.table)
 
-        self.setLayout(self._layout)
+        self.setLayout(self.layout)
 
     def on_newBufferClick(self):
-        if self.current_state is None:
+        if self.data.current_state is None:
             return
 
         blacklisted_names = [
-            b[0].name for b in self.current_state.symbolic_buffers]
+            b[0].name for b in self.data.current_state.symbolic_buffers]
 
         new_buff_dialog = CreateBufferDialog(
             blacklisted_names=blacklisted_names)
@@ -214,45 +207,42 @@ class BufferView(QWidget, DockContextHandler):
         else:
             buff_to_store = buff
 
-        address = self.current_state.mem.allocate(new_buff_dialog.res_width)
+        address = self.data.current_state.mem.allocate(new_buff_dialog.res_width)
         if new_buff_dialog.res_constraints == ALPHANUMERIC_STRING:
-            constraint_alphanumeric_string(buff, self.current_state)
+            constraint_alphanumeric_string(buff, self.data.current_state)
         elif new_buff_dialog.res_constraints == ASCII_STRING:
-            constraint_ascii_string(buff, self.current_state)
+            constraint_ascii_string(buff, self.data.current_state)
 
         constraint_str = ""
         if new_buff_dialog.res_constraints != NO_CONSTRAINTS:
             constraint_str = CreateBufferDialog.constraint_list[new_buff_dialog.res_constraints]
-        self.current_state.mem.store(address, buff_to_store)
-        self.current_state.symbolic_buffers.append(
+        self.data.current_state.mem.store(address, buff_to_store)
+        self.data.current_state.symbolic_buffers.append(
             (buff, address, constraint_str)
         )
-        self.update_state(self.current_state)
+        self.stateUpdate(self.data.current_state)
 
-    def reset(self):
-        self.tab_name = None
-        self.current_state = None
-        self._table.setRowCount(0)
+    def stateReset(self):
+        self.data.current_state = None
+        self.table.setRowCount(0)
 
-    def init(self, state):
-        try:
-            self.tab_name = _normalize_tab_name(self.parent.getTabName())
-        except RuntimeError:
-            self.reset()
-            return
-        self.current_state = state
-        self.update_state(state)
+    def _init_internal(self):
+        self.stateUpdate(self.data.current_state)
 
-    def update_state(self, state):
-        self.current_state = state
-        self._table.setRowCount(0)
-        self._table.setRowCount(len(self.current_state.symbolic_buffers))
+    def stateInit(self, arch, state):
+        self.data.current_state = state
+        self._init_internal()
+
+    def stateUpdate(self, state):
+        self.data.current_state = state
+        self.table.setRowCount(0)
+        self.table.setRowCount(len(self.data.current_state.symbolic_buffers))
         i = 0
-        for buff, address, constraints in self.current_state.symbolic_buffers:
-            self._table.setItem(i, 0, _makewidget(self, hex(address)))
-            self._table.setItem(i, 1, _makewidget(self, buff.name))
-            self._table.setItem(i, 2, _makewidget(self, buff.size // 8))
-            self._table.setItem(i, 3, _makewidget(self, constraints))
+        for buff, address, constraints in self.data.current_state.symbolic_buffers:
+            self.table.setItem(i, 0, _makewidget(self, hex(address)))
+            self.table.setItem(i, 1, _makewidget(self, buff.name))
+            self.table.setItem(i, 2, _makewidget(self, buff.size // 8))
+            self.table.setItem(i, 3, _makewidget(self, constraints))
             i += 1
 
     @staticmethod
@@ -270,7 +260,7 @@ class BufferView(QWidget, DockContextHandler):
 
     # right click menu
     def on_customContextMenuRequested(self, pos):
-        item = self._table.itemAt(pos)
+        item = self.table.itemAt(pos)
         if item is None:
             return
         row_idx = item.row()
@@ -292,42 +282,42 @@ class BufferView(QWidget, DockContextHandler):
         add_constraint.triggered.connect(BufferView._condom(
             self._menuAction_add_constraint, row_idx))
 
-        menu.exec_(self._table.viewport().mapToGlobal(pos))
+        menu.exec_(self.table.viewport().mapToGlobal(pos))
 
     def _menuAction_copy_address(self, buffer_id):
         mime = QMimeData()
-        mime.setText(hex(self.current_state.symbolic_buffers[buffer_id][1]))
+        mime.setText(hex(self.data.current_state.symbolic_buffers[buffer_id][1]))
         QApplication.clipboard().setMimeData(mime)
 
     def _menuAction_evaluate_buffer(self, buffer_id):
-        buff = self.current_state.symbolic_buffers[buffer_id][0]
-        res = self.current_state.solver.evaluate(buff).as_bytes()
+        buff = self.data.current_state.symbolic_buffers[buffer_id][0]
+        res = self.data.current_state.solver.evaluate(buff).as_bytes()
         res = repr(res)[2:-1]
         show_message_box("%s evaluate" % buff.name, res)
 
     def _menuAction_evaluate_upto_buffer(self, buffer_id):
-        buff = self.current_state.symbolic_buffers[buffer_id][0]
+        buff = self.data.current_state.symbolic_buffers[buffer_id][0]
 
         n_eval = get_int_input("How many values (upto) ?", "Number of distinct values")
         if n_eval is None:
             return
         r = ""
-        for i, v in enumerate(self.current_state.solver.evaluate_upto(buff, n_eval)):
+        for i, v in enumerate(self.data.current_state.solver.evaluate_upto(buff, n_eval)):
             r += "solution %d: %s\n" % (i, hex(v.value))
 
         show_message_box("%s evaluate" % buff.name, r)
 
     def _menuAction_copy_evaluated_buffer(self, buffer_id):
         mime = QMimeData()
-        buff = self.current_state.symbolic_buffers[buffer_id][0]
-        res = self.current_state.solver.evaluate(buff).as_bytes()
+        buff = self.data.current_state.symbolic_buffers[buffer_id][0]
+        res = self.data.current_state.solver.evaluate(buff).as_bytes()
         res = '"' + repr(res)[2:-1] + '"'
         mime.setText(res)
         QApplication.clipboard().setMimeData(mime)
 
     def _menuAction_add_constraint(self, buffer_id):
-        buff = self.current_state.symbolic_buffers[buffer_id][0]
-        constraints = self.current_state.symbolic_buffers[buffer_id][2]
+        buff = self.data.current_state.symbolic_buffers[buffer_id][0]
+        constraints = self.data.current_state.symbolic_buffers[buffer_id][2]
         if constraints != "":
             show_message_box("Error", "The buffer already has a constraint.")
             return
@@ -338,36 +328,37 @@ class BufferView(QWidget, DockContextHandler):
             "Constraint buffer", "choices:", choices
         )
         if choices[res] == "Alphanumeric string":
-            constraint_alphanumeric_string(buff, self.current_state)
+            constraint_alphanumeric_string(buff, self.data.current_state)
         elif choices[res] == "ASCII string":
-            constraint_ascii_string(buff, self.current_state)
+            constraint_ascii_string(buff, self.data.current_state)
         else:
             return
 
-        t = self.current_state.symbolic_buffers[buffer_id]
+        t = self.data.current_state.symbolic_buffers[buffer_id]
         t = t[0], t[1], choices[res]
-        self.current_state.symbolic_buffers[buffer_id] = t
-        self.update_state(self.current_state)
+        self.data.current_state.symbolic_buffers[buffer_id] = t
+        self.update_state(self.data.current_state)
 
     # double click event
     def on_doubleClick(self, item):
         # row_idx = item.row()
         pass
 
+    def contextMenuEvent(self, event):
+        self.m_contextMenuManager.show(self.m_menu, self.actionHandler)
+
     def shouldBeVisible(self, view_frame):
         if view_frame is None:
             return False
-        elif self.tab_name is None:
-            return False
-        elif _normalize_tab_name(view_frame.getTabName()) != self.tab_name:
-            return False
         return True
 
-    def notifyViewChanged(self, view_frame):
-        if view_frame is None:
-            pass
-        else:
-            pass
+    def notifytab(self, newName):
+        if newName != self.tabname:
+            if self.tabname != "":
+                gBuffersPerTab[self.tabname] = self.data
+                self.stateReset()
 
-    def contextMenuEvent(self, event):
-        self.m_contextMenuManager.show(self.m_menu, self.actionHandler)
+            if newName in gBuffersPerTab:
+                self.data = gBuffersPerTab[newName]
+                self._init_internal()
+        self.tabname = newName

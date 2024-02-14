@@ -1,7 +1,6 @@
 from ..seninja_globals import globs
 
 from binaryninjaui import (
-    DockContextHandler,
     getMonospaceFont,
     getThemeColor,
     ThemeColor
@@ -17,12 +16,9 @@ from PySide6.QtWidgets import (
     QMenu
 )
 
-def _normalize_tab_name(tab_name):
-    return tab_name[:tab_name.find("(")-1]
-
+gStatesPerTab = {}
 
 def _makewidget(parent, val, center=False):
-    """ Small helper function that builds a TableWidgetItem and sets up the font the way we want"""
     out = QTableWidgetItem(str(val))
     out.setFlags(Qt.ItemIsEnabled)
     out.setFont(getMonospaceFont(parent))
@@ -30,27 +26,27 @@ def _makewidget(parent, val, center=False):
         out.setTextAlignment(Qt.AlignCenter)
     return out
 
-
-class StateView(QWidget, DockContextHandler):
-    updateStateSignal = QtCore.Signal(object)
-
-    def __init__(self, parent, name, data):
-        QWidget.__init__(self, parent)
-        DockContextHandler.__init__(self, self, name)
-        self.updateStateSignal.connect(self.update_state)
-
-        self.parent = parent
-        self.tab_name = None
-        self.data = data
+class StateViewData(object):
+    def __init__(self):
+        self.current_state = None
         self.index_to_state_address = dict()
         self.state_collection = []
+        self.active_idx = None
 
-       # Set up register table
-        self._table = QTableWidget()
-        self._table.setColumnCount(2)
-        self._table.setHorizontalHeaderLabels(['Status', 'State'])
-        self._table.horizontalHeader().setStretchLastSection(True)
-        self._table.verticalHeader().setVisible(False)
+class StateView(QWidget):
+    def __init__(self, parent):
+        QWidget.__init__(self, parent)
+
+        self.parent = parent
+        self.tabname = ""
+        self.data = StateViewData()
+
+        # Set up register table
+        self.table = QTableWidget()
+        self.table.setColumnCount(2)
+        self.table.setHorizontalHeaderLabels(['Status', 'State'])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.verticalHeader().setVisible(False)
 
         self.active_state_color = QBrush(getThemeColor(ThemeColor.GreenStandardHighlightColor))
         self.defered_state_color = QBrush(getThemeColor(ThemeColor.RedStandardHighlightColor))
@@ -61,31 +57,25 @@ class StateView(QWidget, DockContextHandler):
         self.item_color = QBrush(getThemeColor(ThemeColor.BlackStandardHighlightColor))
         self.item_color_inverted = QBrush(getThemeColor(ThemeColor.WhiteStandardHighlightColor))
 
-        self._table.doubleClicked.connect(self.on_doubleClick)
+        self.table.doubleClicked.connect(self.on_doubleClick)
 
-        self._layout = QVBoxLayout()
-        self._layout.addWidget(self._table)
-        self.setLayout(self._layout)
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.table)
+        self.setLayout(self.layout)
 
-    def reset(self):
-        self.tab_name = None
-        self.arch = None
-        self.index_to_state_address = dict()
-        self.state_collection = []
-        self.symb_idx = 0
-        self.active_idx = None
-        self._table.setRowCount(0)
+    def stateReset(self):
+        self.data = StateViewData()
+        self.table.setRowCount(0)
 
-    def init(self, state):
-        try:
-            self.tab_name = _normalize_tab_name(self.parent.getTabName())
-        except RuntimeError:
-            self.reset()
-            return
-        self.set_state_table(state)
+    def _init_internal(self):
+        self.set_state_table(self.data.current_state)
 
-    def update_state(self, state):
-        self.set_state_table(state)
+    def stateInit(self, arch, state):
+        self.stateUpdate(state)
+
+    def stateUpdate(self, state):
+        self.data.current_state = state
+        self._init_internal()
 
     def set_state_table(self, state):
         STATE_ACTIVE = 0
@@ -94,7 +84,7 @@ class StateView(QWidget, DockContextHandler):
         STATE_ERROR = 3
         STATE_AVOIDED = 4
         STATE_EXITED = 5
-        self.state_collection.clear()
+        self.data.state_collection.clear()
         
         deferred_states = globs.executor.fringe.deferred
         unsat_states = globs.executor.fringe.get_unsat_states
@@ -105,24 +95,24 @@ class StateView(QWidget, DockContextHandler):
         rowCount = len(deferred_states)+len(unsat_states)+len(error_states)+len(avoided_states)+len(exited_states)
         if state:
             rowCount += 1
-        self._table.setRowCount(rowCount)
+        self.table.setRowCount(rowCount)
         if state:
-            self.state_collection.append((state,STATE_ACTIVE))
+            self.data.state_collection.append((state,STATE_ACTIVE))
 
         for idx, a in enumerate(deferred_states):
-            self.state_collection.append((a,STATE_DEFERRED))
+            self.data.state_collection.append((a,STATE_DEFERRED))
         for idx, a in enumerate(unsat_states):
-            self.state_collection.append((a,STATE_UNSAT))
+            self.data.state_collection.append((a,STATE_UNSAT))
         for idx, a in enumerate(error_states):
-            self.state_collection.append((a[1],STATE_ERROR))
+            self.data.state_collection.append((a[1],STATE_ERROR))
         for idx, a in enumerate(avoided_states):
-            self.state_collection.append((a,STATE_AVOIDED))
+            self.data.state_collection.append((a,STATE_AVOIDED))
         for idx, a in enumerate(exited_states):
-            self.state_collection.append((a,STATE_EXITED))
+            self.data.state_collection.append((a,STATE_EXITED))
         
-        self.state_collection = sorted(self.state_collection, key=lambda t: t[0].get_ip())
+        self.data.state_collection = sorted(self.data.state_collection, key=lambda t: t[0].get_ip())
 
-        for idx, (a,s) in enumerate(self.state_collection):
+        for idx, (a,s) in enumerate(self.data.state_collection):
             if s==STATE_DEFERRED:
                 state_colour = self.defered_state_color
                 state_text_colour = self.item_color
@@ -131,7 +121,7 @@ class StateView(QWidget, DockContextHandler):
                 state_colour = self.active_state_color
                 state_text_colour = self.item_color
                 state_status = "Active"
-                self.active_idx = idx
+                self.data.active_idx = idx
             if s==STATE_UNSAT:
                 state_colour = self.unsat_state_color
                 state_text_colour = self.item_color
@@ -149,23 +139,20 @@ class StateView(QWidget, DockContextHandler):
                 state_text_colour = self.item_color_inverted
                 state_status = "Exited"
 
-
-            self._table.setItem(idx, 0, _makewidget(self, state_status))
-            self._table.setItem(idx, 1, _makewidget(self, f"State_{hex(a.get_ip())}"))
-            self._table.item(idx, 0).setBackground(state_colour)
-            self._table.item(idx, 1).setBackground(state_colour)
-            self._table.item(idx, 0).setForeground(state_text_colour)
-            self._table.item(idx, 1).setForeground(state_text_colour)
-            self.index_to_state_address[idx] = a.get_ip()    
-
-
+            self.table.setItem(idx, 0, _makewidget(self, state_status))
+            self.table.setItem(idx, 1, _makewidget(self, f"State_{hex(a.get_ip())}"))
+            self.table.item(idx, 0).setBackground(state_colour)
+            self.table.item(idx, 1).setBackground(state_colour)
+            self.table.item(idx, 0).setForeground(state_text_colour)
+            self.table.item(idx, 1).setForeground(state_text_colour)
+            self.data.index_to_state_address[idx] = a.get_ip()    
 
     # double click event
     def on_doubleClick(self, item):
         row_idx = item.row()
-        if row_idx == self.active_idx:
+        if row_idx == self.data.active_idx:
             return
-        state_addr = self.index_to_state_address[row_idx]
+        state_addr = self.data.index_to_state_address[row_idx]
         globs.actions_change_state(globs.bv, state_addr)
 
     def notifyOffsetChanged(self, offset):
@@ -174,15 +161,15 @@ class StateView(QWidget, DockContextHandler):
     def shouldBeVisible(self, view_frame):
         if view_frame is None:
             return False
-        elif self.tab_name is None:
-            return False
-        elif _normalize_tab_name(view_frame.getTabName()) != self.tab_name:
-            return False
         return True
 
-    def notifyViewChanged(self, view_frame):
-        if view_frame is None:
-            pass
-        else:
-            pass
+    def notifytab(self, newName):
+        if newName != self.tabname:
+            if self.tabname != "":
+                gStatesPerTab[self.tabname] = self.data
+                self.stateReset()
 
+            if newName in gStatesPerTab:
+                self.data = gStatesPerTab[newName]
+                self._init_internal()
+        self.tabname = newName
