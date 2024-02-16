@@ -383,7 +383,7 @@ class UIManager(object):
 
                 if timeout > 0 and time.time() - start > timeout:
                     # Timeout elapsed
-                    print("[!] Timeout elapsed (%d sec)" % timeout)
+                    sys.stderr.write("SENinja: Timeout elapsed (%d sec)\n" % timeout)
                     break
 
                 ip = self.executor.state.get_ip()
@@ -409,20 +409,20 @@ class UIManager(object):
             return
 
         if self.executor.state.get_ip() != address:
-            log_alert("current state is not at this address")
+            log_alert("SENinja: current state is not at this address")
             return
 
         to_be_merged_all = self.executor.fringe.get_all_deferred_by_address(
             address)
         if to_be_merged_all is None:
-            log_alert("no deferred state at this address")
+            log_alert("SENinja: no deferred state at this address")
             return
 
         mergeable, not_mergeable = self.executor.extract_mergeable_with_current_state(
             to_be_merged_all)
         if len(not_mergeable) > 0:
-            sys.stdout.write(
-                "WARNING: %d states was not merged since they deviate from the current state after executing the current instruction\n" % len(not_mergeable))
+            sys.stderr.write(
+                "SENinja [warning]: %d states was not merged since they deviate from the current state after executing the current instruction\n" % len(not_mergeable))
             self.executor.fringe._deferred[address] = not_mergeable
 
         if len(mergeable) == 0:
@@ -435,7 +435,7 @@ class UIManager(object):
             for s in to_be_merged:
                 self.executor.state.merge(s)
                 i += 1
-                tb.progress = "seninja: merging states %d/%d" % (i, tot)
+                tb.progress = "SENinja: merging states %d/%d" % (i, tot)
 
             self._delete_comment_for_address(address)
             self._sync_ui()
@@ -506,7 +506,7 @@ class UIManager(object):
         if not self.running:
             self.running = True
             background_task = UIBackgroundTask(
-                self.bv, "seninja: changing current state", f)
+                self.bv, "SENinja: changing current state", f)
             background_task.start()
 
     @locked
