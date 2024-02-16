@@ -104,7 +104,7 @@ class SENinjaWidget(SidebarWidget):
         self.files.notifytab(newName)
 
 class SENinjaWidgetType(SidebarWidgetType):
-    name = "SENinja Widget"
+    name = "SENinja"
 
     def __init__(self):
         path_this_file = os.path.abspath(__file__)
