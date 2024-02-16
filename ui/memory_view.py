@@ -32,7 +32,6 @@ class MemoryViewBT(BackgroundTaskThread):
         self.callback(*self.pars)
         self.mw.setEnabled(True)
 
-
 class MemoryView(GlobalAreaWidget):
     updateStateSignal = QtCore.Signal(object)
     updateStateDeltaSignal = QtCore.Signal(object)

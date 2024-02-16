@@ -1,20 +1,18 @@
 import os
-from ..seninja_globals import globs
 
 from binaryninjaui import (
-    DockContextHandler,
     UIActionHandler,
-    getThemeColor,
-    ThemeColor
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QBrush, QPixmap, QIcon, QAction
+from PySide6.QtGui import QPixmap, QIcon, QAction
 from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QToolBar,
     QToolButton
 )
+
+from ..globals import Globals
 
 def load_icon(fname_icon):
     path_this_file = os.path.abspath(__file__)
@@ -37,18 +35,27 @@ class ControlView(QWidget):
         self.parent = parent
 
         self.toolbar = QToolBar(self, parent)
-        self.toolbar.setStyleSheet("""
-            QToolButton{"padding: 1x, 1x, 1x"}
-        """)
-
         maxheight = 24
 
         # ----
+        self.toolbar.btnStart = QToolButton(self.toolbar)
+        self.toolbar.btnStart.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        self.toolbar.btnStart.setMaximumHeight(maxheight)
+
+        self.toolbar.btnStart.actionStart = QAction("Start...", self.toolbar)
+        self.toolbar.btnStart.actionStart.triggered.connect(lambda: self.perform_start())
+        self.toolbar.btnStart.actionStart.setIcon(load_icon('start.svg'))
+
+        self.toolbar.btnStart.setDefaultAction(self.toolbar.btnStart.actionStart)
+        self.toolbar.addWidget(self.toolbar.btnStart)
+        # ----
+
+        # ----
         self.toolbar.btnStepInto = QToolButton(self.toolbar)
-        self.toolbar.btnStepInto.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toolbar.btnStepInto.setToolButtonStyle(Qt.ToolButtonIconOnly)
         self.toolbar.btnStepInto.setMaximumHeight(maxheight)
 
-        self.toolbar.btnStepInto.actionStep = QAction("", self.toolbar)
+        self.toolbar.btnStepInto.actionStep = QAction("Step", self.toolbar)
         self.toolbar.btnStepInto.actionStep.triggered.connect(lambda: self.perform_step())
         self.toolbar.btnStepInto.actionStep.setIcon(load_icon('stepinto.svg'))
 
@@ -57,13 +64,39 @@ class ControlView(QWidget):
         # ----
 
         # ----
+        self.toolbar.btnRunBranch = QToolButton(self.toolbar)
+        self.toolbar.btnRunBranch.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        self.toolbar.btnRunBranch.setMaximumHeight(maxheight)
+
+        self.toolbar.btnRunBranch.actionRunUntilBranch = QAction("Run Until Branch", self.toolbar)
+        self.toolbar.btnRunBranch.actionRunUntilBranch.triggered.connect(lambda: self.perform_run_until_branch())
+        self.toolbar.btnRunBranch.actionRunUntilBranch.setIcon(load_icon('run_branch.svg'))
+
+        self.toolbar.btnRunBranch.setDefaultAction(self.toolbar.btnRunBranch.actionRunUntilBranch)
+        self.toolbar.addWidget(self.toolbar.btnRunBranch)
+        # ----
+
+        # ----
+        self.toolbar.btnRunAddr = QToolButton(self.toolbar)
+        self.toolbar.btnRunAddr.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        self.toolbar.btnRunAddr.setMaximumHeight(maxheight)
+
+        self.toolbar.btnRunAddr.actionRunAddr = QAction("Run Until Address", self.toolbar)
+        self.toolbar.btnRunAddr.actionRunAddr.triggered.connect(lambda: self.perform_run_until_addr())
+        self.toolbar.btnRunAddr.actionRunAddr.setIcon(load_icon('run_addr.svg'))
+
+        self.toolbar.btnRunAddr.setDefaultAction(self.toolbar.btnRunAddr.actionRunAddr)
+        self.toolbar.addWidget(self.toolbar.btnRunAddr)
+        # ----
+
+        # ----
         self.toolbar.btnRunDFS = QToolButton(self.toolbar)
-        self.toolbar.btnRunDFS.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toolbar.btnRunDFS.setToolButtonStyle(Qt.ToolButtonIconOnly)
         self.toolbar.btnRunDFS.setMaximumHeight(maxheight)
 
-        self.toolbar.btnRunDFS.actionRunDFS = QAction(" DFS", self.toolbar)
+        self.toolbar.btnRunDFS.actionRunDFS = QAction("Run DFS", self.toolbar)
         self.toolbar.btnRunDFS.actionRunDFS.triggered.connect(lambda: self.perform_dfs())
-        self.toolbar.btnRunDFS.actionRunDFS.setIcon(load_icon('run.svg'))
+        self.toolbar.btnRunDFS.actionRunDFS.setIcon(load_icon('run_dfs.svg'))
 
         self.toolbar.btnRunDFS.setDefaultAction(self.toolbar.btnRunDFS.actionRunDFS)
         self.toolbar.addWidget(self.toolbar.btnRunDFS)
@@ -71,12 +104,12 @@ class ControlView(QWidget):
 
         # ----
         self.toolbar.btnRunBFS = QToolButton(self.toolbar)
-        self.toolbar.btnRunBFS.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toolbar.btnRunBFS.setToolButtonStyle(Qt.ToolButtonIconOnly)
         self.toolbar.btnRunBFS.setMaximumHeight(maxheight)
 
-        self.toolbar.btnRunBFS.actionRunBFS = QAction(" BFS", self.toolbar)
+        self.toolbar.btnRunBFS.actionRunBFS = QAction("Run BFS", self.toolbar)
         self.toolbar.btnRunBFS.actionRunBFS.triggered.connect(lambda: self.perform_bfs())
-        self.toolbar.btnRunBFS.actionRunBFS.setIcon(load_icon('run.svg'))
+        self.toolbar.btnRunBFS.actionRunBFS.setIcon(load_icon('run_bfs.svg'))
 
         self.toolbar.btnRunBFS.setDefaultAction(self.toolbar.btnRunBFS.actionRunBFS)
         self.toolbar.addWidget(self.toolbar.btnRunBFS)
@@ -84,10 +117,10 @@ class ControlView(QWidget):
 
         # ----
         self.toolbar.btnStop = QToolButton(self.toolbar)
-        self.toolbar.btnStop.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toolbar.btnStop.setToolButtonStyle(Qt.ToolButtonIconOnly)
         self.toolbar.btnStop.setMaximumHeight(maxheight)
 
-        self.toolbar.btnStop.actionStop = QAction("", self.toolbar)
+        self.toolbar.btnStop.actionStop = QAction("Stop", self.toolbar)
         self.toolbar.btnStop.actionStop.triggered.connect(lambda: self.perform_stop())
         self.toolbar.btnStop.actionStop.setIcon(load_icon('stop.svg'))
 
@@ -97,10 +130,10 @@ class ControlView(QWidget):
 
         # ----
         self.toolbar.btnReset = QToolButton(self.toolbar)
-        self.toolbar.btnReset.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toolbar.btnReset.setToolButtonStyle(Qt.ToolButtonIconOnly)
         self.toolbar.btnReset.setMaximumHeight(maxheight)
 
-        self.toolbar.btnReset.actionReset = QAction("", self.toolbar)
+        self.toolbar.btnReset.actionReset = QAction("Reset", self.toolbar)
         self.toolbar.btnReset.actionReset.triggered.connect(lambda: self.perform_reset())
         self.toolbar.btnReset.actionReset.setIcon(load_icon('cancel.svg'))
 
@@ -127,33 +160,30 @@ class ControlView(QWidget):
     def notifytab(self, newName):
         pass
 
-    # def disable(self):
-    #     self.toolbar.btnStepInto.setEnabled(False)
-    #     self.toolbar.btnRunDFS.setEnabled(False)
-    #     self.toolbar.btnRunBFS.setEnabled(False)
-
-    # def enable(self):
-    #     self.toolbar.btnStepInto.setEnabled(True)
-    #     self.toolbar.btnRunDFS.setEnabled(True)
-    #     self.toolbar.btnRunBFS.setEnabled(True)
-    #     self.toolbar.btnStop.setEnabled(True)
-    #     self.toolbar.btnReset.setEnabled(True)
+    def perform_start(self):
+        Globals.uimanager.start_se()
 
     def perform_step(self):
-        globs.actions_step(globs.bv)
+        Globals.uimanager.async_step()
 
     def perform_dfs(self):
-        globs.actions_dfs(globs.bv)
+        Globals.uimanager.async_run_dfs_searcher()
 
     def perform_bfs(self):
-        globs.actions_bfs(globs.bv)
+        Globals.uimanager.async_run_bfs_searcher()
+
+    def perform_run_until_branch(self):
+        Globals.uimanager.async_continue_until_branch()
+
+    def perform_run_until_addr(self):
+        Globals.uimanager.async_continue_until_address(Globals.uimanager.bv.file.offset)
 
     def perform_stop(self):
-        if globs._running:  # race conditions
-            globs._stop = True
+        if Globals.uimanager.running:
+            Globals.uimanager.stop = True
 
     def perform_reset(self):
-        globs.actions_reset(globs.bv, globs.started_address)
+        Globals.uimanager.async_reset_se()
 
     def notifyOffsetChanged(self, offset):
         pass

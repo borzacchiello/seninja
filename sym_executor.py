@@ -20,12 +20,6 @@ from .utility.binary_ninja_cache import BNCache
 from .memory.sym_memory import InitData
 from .multipath.fringe import Fringe
 
-NO_COLOR = enums.HighlightStandardColor(0)
-CURR_STATE_COLOR = enums.HighlightStandardColor.GreenHighlightColor
-DEFERRED_STATE_COLOR = enums.HighlightStandardColor.RedHighlightColor
-ERRORED_STATE_COLOR = enums.HighlightStandardColor.BlackHighlightColor
-
-
 def find_arch(view):
     if view.arch.name == "x86":
         return x86Arch()
@@ -35,7 +29,6 @@ def find_arch(view):
         return ArmV7Arch()
 
     raise exceptions.UnsupportedArch(view.arch.name)
-
 
 class SymbolicExecutor(object):
     def __init__(self, view, addr):
@@ -94,7 +87,6 @@ class SymbolicExecutor(object):
         current_function = self.bncache.get_function(addr)
 
         # initialize stack
-
         stack_page_size = int(self.bncache.get_setting("stack_size"))
 
         unmapped_page_init = self.state.mem.get_unmapped(
@@ -195,43 +187,6 @@ class SymbolicExecutor(object):
         self.fringe.add_errored(
             (msg, state)
         )
-
-    def delete_comment_for_address(self, address):
-        # TODO write an UI manager, this does not belong to the executor
-        func = self.bncache.get_function(address)
-        func.set_comment_at(address, None)
-
-    def set_colors(self, reset=False):
-        # TODO write an UI manager, this does not belong to the executor
-        old_ip = self._last_colored_ip
-        if old_ip is not None:
-            old_func = self.bncache.get_function(old_ip)
-            old_func.set_auto_instr_highlight(old_ip, NO_COLOR)
-
-        for ip in self.fringe._deferred:
-            func = self.bncache.get_function(ip)
-            func.set_auto_instr_highlight(
-                ip, DEFERRED_STATE_COLOR if not reset else NO_COLOR)
-            if reset:
-                func.set_comment_at(ip, None)
-            elif len(self.fringe._deferred[ip]) > 1 or (len(self.fringe._deferred[ip]) == 1 and self.ip == ip):
-                func.set_comment_at(ip, "n deferred: %d" %
-                                    len(self.fringe._deferred[ip]))
-
-        for _, state in self.fringe.errored:
-            func = self.bncache.get_function(state.get_ip())
-            func.set_auto_instr_highlight(
-                state.get_ip(), ERRORED_STATE_COLOR if not reset else NO_COLOR)
-
-        if self.state:
-            func = self.bncache.get_function(self.ip)
-            func.set_auto_instr_highlight(
-                self.ip, CURR_STATE_COLOR if not reset else NO_COLOR)
-        if not reset:
-            self._last_colored_ip = self.ip
-
-    def reset(self):
-        self.set_colors(reset=True)
 
     def extract_mergeable_with_current_state(self, to_merge):
         # returns the set of states that do not deviate from
@@ -417,5 +372,4 @@ class SymbolicExecutor(object):
         if res is None:
             if not self.fringe.is_empty():
                 self.select_from_deferred()
-
         return res

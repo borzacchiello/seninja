@@ -1,8 +1,3 @@
-from binaryninja.interaction import (
-    show_message_box,
-    get_int_input,
-    get_choice_input
-)
 from binaryninjaui import (
     SidebarWidget,
     SidebarWidgetType,
@@ -12,16 +7,10 @@ from binaryninjaui import (
     ThemeColor
 )
 from PySide6 import QtCore
-from PySide6.QtCore import (
-    Qt,
-    QRectF,
-)
 from PySide6.QtGui import (
     QPainter,
     QPixmap,
     QBrush,
-    QColor,
-    QFont,
     QImage,
     QIcon
 )
@@ -31,6 +20,7 @@ from PySide6.QtWidgets import (
     QTabWidget
 )
 
+from .files_view import FilesView
 from .registers_view import RegisterWidget
 from .control_view import ControlView
 from .state_view import StateView
@@ -72,10 +62,12 @@ class SENinjaWidget(SidebarWidget):
         self.controls = ControlView(frame)
         self.states = StateView(frame)
         self.buffers = BufferView(frame)
+        self.files = FilesView(frame)
 
         self.tabs.addTab(self.regs, "Registers")
         self.tabs.addTab(self.states, "States")
         self.tabs.addTab(self.buffers, "Buffers")
+        self.tabs.addTab(self.files, "Files")
 
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.controls)
@@ -87,18 +79,21 @@ class SENinjaWidget(SidebarWidget):
         self.states.stateUpdate(state)
         self.buffers.stateUpdate(state)
         self.controls.stateUpdate(state)
+        self.files.stateUpdate(state)
 
     def stateInit(self, arch, state):
         self.regs.stateInit(arch, state)
         self.states.stateInit(arch, state)
         self.buffers.stateInit(arch, state)
         self.controls.stateInit(arch, state)
+        self.files.stateInit(arch, state)
 
     def stateReset(self):
         self.regs.stateReset()
         self.states.stateReset()
         self.buffers.stateReset()
         self.controls.stateReset()
+        self.files.stateReset()
 
     def notifyViewChanged(self, view_frame):
         newName = view_frame.getTabName() if view_frame is not None else ""
@@ -106,6 +101,7 @@ class SENinjaWidget(SidebarWidget):
         self.states.notifytab(newName)
         self.buffers.notifytab(newName)
         self.controls.notifytab(newName)
+        self.files.notifytab(newName)
 
 class SENinjaWidgetType(SidebarWidgetType):
     name = "SENinja Widget"

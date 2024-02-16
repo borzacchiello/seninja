@@ -4,7 +4,6 @@ from .bitvector import BV, BVV, BVS, BVExpr
 from .bool_expr import Bool, BoolExpr, BoolS, BoolV
 from .bitvector_array import BVArray
 
-
 def ITE(cond: Bool, iftrue: BV, iffalse: BV):
     assert iftrue.size == iffalse.size
     if isinstance(cond, BoolV):
@@ -13,7 +12,6 @@ def ITE(cond: Bool, iftrue: BV, iffalse: BV):
         iftrue.size,
         z3.If(cond.z3obj, iftrue.z3obj, iffalse.z3obj)
     )
-
 
 def Or(*conditions):
     res = None
@@ -24,7 +22,6 @@ def Or(*conditions):
     assert res is not None
     return res
 
-
 def And(*conditions):
     res = None
     for cond in conditions:
@@ -33,7 +30,6 @@ def And(*conditions):
 
     assert res is not None
     return res
-
 
 def Xor(*conditions):
     res = None

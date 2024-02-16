@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="295"
+   height="295"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="run_dfs.svg"
+   inkscape:version="1.3.2 (091e20ef0f, 2023-11-25, custom)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#000000"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="true"
+     inkscape:zoom="3.9491525"
+     inkscape:cx="147.5"
+     inkscape:cy="145.72747"
+     inkscape:window-width="2560"
+     inkscape:window-height="1383"
+     inkscape:window-x="0"
+     inkscape:window-y="33"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="1"
+       spacingy="1"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="5"
+       dotted="false"
+       gridanglex="30"
+       gridanglez="30"
+       visible="true" />
+  </sodipodi:namedview>
+  <!-- Created with SVG-edit - https://github.com/SVG-Edit/svgedit-->
+  <path
+     d="m 147.69961,0.287913 c -81.2877,0 -147.4117,66.1302 -147.4117,147.411497 0,81.2815 66.124,147.4117 147.4117,147.4117 81.2877,0 147.4116,-66.1302 147.4116,-147.4117 0,-81.281297 -66.1239,-147.411497 -147.4116,-147.411497 z m 0,282.539097 c -74.5097,0 -135.1276,-60.6179 -135.1276,-135.1276 0,-74.509697 60.6179,-135.127497 135.1276,-135.127497 74.5097,0 135.1275,60.6178 135.1275,135.127497 0,74.5097 -60.6178,135.1276 -135.1275,135.1276 z"
+     fill="#ffffff"
+     id="svg_4"
+     stroke-width="0.575827" />
+  <path
+     d="M 190.0989,79.920807 131.04482,40.67805 c -1.29357,-0.872751 -2.96589,-0.919817 -4.3006,-0.161857 -1.35951,0.766407 -2.19982,2.231498 -2.19982,3.828205 v 78.485592 c 0,1.59663 0.84031,3.06172 2.19982,3.8282 0.62604,0.35367 1.3264,0.53228 2.01844,0.53228 0.79094,0 1.59012,-0.23029 2.28216,-0.69414 L 190.0989,87.253503 c 1.20299,-0.800412 1.93617,-2.184504 1.93617,-3.666206 0,-1.481916 -0.73318,-2.865652 -1.93617,-3.66649 z M 132.98051,114.84163 V 52.332755 l 47.03441,31.2544 z"
+     fill="#ffffff"
+     id="svg_3"
+     stroke-width="0.402061" />
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:133.333px;font-family:'DejaVu Sans Mono';-inkscape-font-specification:'DejaVu Sans Mono';text-align:center;text-anchor:middle;fill:#ffffff"
+     x="145.10733"
+     y="228.72467"
+     id="text1"><tspan
+       sodipodi:role="line"
+       id="tspan1"
+       x="145.10733"
+       y="228.72467"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:133.333px;font-family:System-ui;-inkscape-font-specification:System-ui">DFS</tspan></text>
+</svg>

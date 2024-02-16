@@ -1,6 +1,5 @@
 import traceback
 
-
 class Searcher(object):
     def __init__(self, executor):
         self.target = None
@@ -29,7 +28,6 @@ class Searcher(object):
 
     def run(self, step_callback=None):
         raise NotImplementedError
-
 
 class DFSSearcher(Searcher):
     def __init__(self, executor):
@@ -78,7 +76,6 @@ class DFSSearcher(Searcher):
         for state in res[1:]:
             self.executor.fringe.add_deferred(state)
         return state_res
-
 
 class BFSSearcher(Searcher):
     def __init__(self, executor):

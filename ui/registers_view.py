@@ -4,10 +4,6 @@ from binaryninja.interaction import (
     get_choice_input
 )
 from binaryninjaui import (
-    SidebarWidget,
-    SidebarWidgetType,
-    SidebarWidgetLocation,
-    SidebarContextSensitivity,
     getMonospaceFont,
     UIActionHandler,
     getThemeColor,
@@ -16,15 +12,10 @@ from binaryninjaui import (
 from PySide6 import QtCore
 from PySide6.QtCore import (
     Qt,
-    QRectF,
     QMimeData
 )
 from PySide6.QtGui import (
-    QPainter,
     QBrush,
-    QColor,
-    QFont,
-    QImage
 )
 from PySide6.QtWidgets import (
     QApplication,

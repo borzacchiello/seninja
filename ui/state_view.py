@@ -1,11 +1,8 @@
-from ..seninja_globals import globs
-
 from binaryninjaui import (
     getMonospaceFont,
     getThemeColor,
     ThemeColor
 )
-from PySide6 import QtCore
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush
 from PySide6.QtWidgets import (
@@ -13,8 +10,9 @@ from PySide6.QtWidgets import (
     QWidget,
     QTableWidget,
     QTableWidgetItem,
-    QMenu
 )
+
+from ..globals import Globals
 
 gStatesPerTab = {}
 
@@ -86,11 +84,11 @@ class StateView(QWidget):
         STATE_EXITED = 5
         self.data.state_collection.clear()
         
-        deferred_states = globs.executor.fringe.deferred
-        unsat_states = globs.executor.fringe.get_unsat_states
-        error_states = globs.executor.fringe.get_error_states
-        avoided_states = globs.executor.fringe.get_avoided_states
-        exited_states = globs.executor.fringe.get_exited_states
+        deferred_states = Globals.uimanager.executor.fringe.deferred
+        unsat_states = Globals.uimanager.executor.fringe.get_unsat_states
+        error_states = Globals.uimanager.executor.fringe.get_error_states
+        avoided_states = Globals.uimanager.executor.fringe.get_avoided_states
+        exited_states = Globals.uimanager.executor.fringe.get_exited_states
 
         rowCount = len(deferred_states)+len(unsat_states)+len(error_states)+len(avoided_states)+len(exited_states)
         if state:
@@ -153,7 +151,7 @@ class StateView(QWidget):
         if row_idx == self.data.active_idx:
             return
         state_addr = self.data.index_to_state_address[row_idx]
-        globs.actions_change_state(globs.bv, state_addr)
+        Globals.uimanager.async_change_current_state(state_addr)
 
     def notifyOffsetChanged(self, offset):
         pass

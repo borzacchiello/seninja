@@ -5,7 +5,6 @@ from binaryninja.interaction import (
     get_choice_input
 )
 from binaryninjaui import (
-    DockContextHandler,
     getMonospaceFont,
     UIActionHandler
 )
@@ -56,9 +55,7 @@ class BufferViewBT(BackgroundTaskThread):
         self.callback = callback
 
     def run(self):
-        self.bw.setEnabled(False)
         self.callback(*self.pars)
-        self.bw.setEnabled(True)
 
 class CreateBufferDialog(QDialog):
     constraint_list = {
@@ -134,10 +131,6 @@ class CreateBufferDialog(QDialog):
 
     def on_cancelClick(self):
         self.reject()
-
-
-def _normalize_tab_name(tab_name):
-    return tab_name[:tab_name.find("(")-1]
 
 
 def _makewidget(parent, val, center=False):
@@ -236,6 +229,9 @@ class BufferView(QWidget):
     def stateUpdate(self, state):
         self.data.current_state = state
         self.table.setRowCount(0)
+        if self.data.current_state is None:
+            return
+
         self.table.setRowCount(len(self.data.current_state.symbolic_buffers))
         i = 0
         for buff, address, constraints in self.data.current_state.symbolic_buffers:

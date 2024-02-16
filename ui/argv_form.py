@@ -7,10 +7,11 @@ from PySide6.QtWidgets import (
     QComboBox
 )
 from binaryninja.interaction import show_message_box
-from ..utility.string_util import str_to_bv
-from ..apis import setup_argv
-from ..expr import BVV
+from ..utility.string_util import str_to_bv, str_to_bv_list
+from ..expr import BVV, BV
+from ..globals import Globals
 
+import sys
 
 class GetArgvDialog(QDialog):
     def __init__(self, state, parent=None):
@@ -107,8 +108,56 @@ class GetArgvDialog(QDialog):
 
     def onOkClick(self):
         args = self._get_arguments()
-        setup_argv(*args)
+        GetArgvDialog.setup_argv(*args)
         self.accept()
 
     def onCancelClick(self):
         self.reject()
+
+    @staticmethod
+    def setup_argv(*args, argc_loc=None, argv_loc=None):
+        filename = Globals.uimanager.executor.view.file.filename
+        state = Globals.uimanager.executor.state
+        argv_p = BVV(state.mem.allocate((len(args) + 1) *
+                                        (state.arch.bits() // 8)), state.arch.bits())
+        argv_1_p = BVV(state.mem.allocate(len(filename)), state.arch.bits())
+        for i, b in enumerate(str_to_bv_list(filename, terminator=True)):
+            state.mem.store(argv_1_p + i, b)
+        state.mem.store(argv_p, argv_1_p, state.arch.endness())
+
+        for i, arg in enumerate(args):
+            if not isinstance(arg, BV):
+                sys.stderr.write("SENinja [error]: %s is not a BitVector\n" % str(arg))
+                return
+            argv_el_p = BVV(state.mem.allocate(
+                arg.size // 8 + 1), state.arch.bits())
+            state.mem.store(argv_el_p, arg)
+            state.mem.store(argv_p + (i + 1) *
+                            (state.arch.bits() // 8), argv_el_p, state.arch.endness())
+
+        argc = BVV(len(args) + 1, state.arch.bits())
+        if argc_loc is None:
+            current_function = Globals.uimanager.executor.bncache.get_function(
+                Globals.uimanager.executor.ip)
+            argc_loc = current_function.calling_convention.int_arg_regs[0]
+
+        if isinstance(argc_loc, str):
+            setattr(state.regs, argc_loc, argc)
+        elif isinstance(argc_loc, BV):
+            state.mem.store(argc_loc, argc, state.arch.endness())
+        else:
+            sys.stderr.write("SENinja [error]: invalid argc_loc %s" % str(argc_loc))
+            return
+
+        if argv_loc is None:
+            current_function = Globals.uimanager.executor.bncache.get_function(
+                Globals.uimanager.executor.ip)
+            argv_loc = current_function.calling_convention.int_arg_regs[1]
+
+        if isinstance(argv_loc, str):
+            setattr(state.regs, argv_loc, argv_p)
+        elif isinstance(argv_loc, BV):
+            state.mem.store(argv_loc, argv_p, state.arch.endness())
+        else:
+            sys.stderr.write("SENinja [error]: invalid argv_loc %s" % str(argv_loc))
+            return
