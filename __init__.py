@@ -58,5 +58,5 @@ PluginCommand.register_for_address(
 PluginCommand.register_for_address(
     "SENinja\\Mark as address to avoid",
     "Set the avoid address",
-    lambda bv, addr: Globals.uimanager.set_run_target(addr)
+    lambda bv, addr: Globals.uimanager.set_run_avoid(addr)
 )

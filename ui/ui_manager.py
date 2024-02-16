@@ -42,7 +42,7 @@ class UIManager(object):
     def get_target_tt(bv):
         if UIManager.TARGET_TAG_TYPE is not None:
             return UIManager.TARGET_TAG_TYPE
-        UIManager.TARGET_TAG_TYPE = "searcher_target"
+        UIManager.TARGET_TAG_TYPE = "SENinja Target"
         bv.create_tag_type(UIManager.TARGET_TAG_TYPE, "O")
         return UIManager.TARGET_TAG_TYPE
 
@@ -50,7 +50,7 @@ class UIManager(object):
     def get_avoid_tt(bv):
         if UIManager.AVOID_TAG_TYPE is not None:
             return UIManager.AVOID_TAG_TYPE
-        UIManager.AVOID_TAG_TYPE = "searcher_avoid"
+        UIManager.AVOID_TAG_TYPE = "SENinja Avoid"
         bv.create_tag_type(UIManager.AVOID_TAG_TYPE, "X")
         return UIManager.AVOID_TAG_TYPE
 
@@ -201,12 +201,12 @@ class UIManager(object):
         address = get_address_after_merge(self.bv, address)
         func = self.executor.bncache.get_function(address)
         if address in self.searcher_tags:
-            func.remove_auto_address_tags_of_type(address, self.searcher_tags[address])
+            func.remove_auto_address_tags_of_type(address, self.searcher_tags[address][0])
             del self.searcher_tags[address]
 
         tt = UIManager.get_target_tt(self.bv)
         func.add_tag(tt, "SENINJA: target address", address, True)
-        self.searcher_tags[address] = tt
+        self.searcher_tags[address] = (tt, func)
         if address in self.dfs_searcher.avoid:
             self.dfs_searcher.avoid.remove(address)
             self.bfs_searcher.avoid.remove(address)
@@ -227,13 +227,28 @@ class UIManager(object):
 
         tt = UIManager.get_avoid_tt(self.bv)
         func.add_tag(tt, "SENINJA: avoid address", address, True)
-        self.searcher_tags[address] = tt
+        self.searcher_tags[address] = (tt, func)
         if address == self.dfs_searcher.target:
             self.dfs_searcher.target = None
             self.bfs_searcher.target = None
 
         self.dfs_searcher.add_avoid(address)
         self.bfs_searcher.add_avoid(address)
+
+    @locked
+    def reset_searchers(self):
+        if not self.symbolic_started():
+            return
+
+        for addr in self.searcher_tags:
+            tt, func = self.searcher_tags[addr]
+            func.remove_auto_address_tags_of_type(addr, tt)
+
+        self.searcher_tags = {}
+        self.dfs_searcher.target = None
+        self.bfs_searcher.target = None
+        self.dfs_searcher.avoid = []
+        self.bfs_searcher.avoid = []
 
     @locked
     def async_run_dfs_searcher(self):
@@ -516,8 +531,7 @@ class UIManager(object):
 
         def f(tb):
             for addr in self.searcher_tags:
-                tag = self.searcher_tags[addr]
-                func = self.executor.bncache.get_function(addr)
+                tag, func = self.searcher_tags[addr]
                 func.remove_auto_address_tags_of_type(addr, tag)
             self.searcher_tags = dict()
 

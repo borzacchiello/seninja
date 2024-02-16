@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="295"
+   height="295"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="set_avoid.svg"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#000000"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="true"
+     inkscape:zoom="1.9517536"
+     inkscape:cx="189.31693"
+     inkscape:cy="191.62255"
+     inkscape:window-width="1512"
+     inkscape:window-height="945"
+     inkscape:window-x="0"
+     inkscape:window-y="37"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg1">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="1"
+       spacingy="1"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="5"
+       dotted="false"
+       gridanglex="30"
+       gridanglez="30"
+       visible="true" />
+  </sodipodi:namedview>
+  <!-- Created with SVG-edit - https://github.com/SVG-Edit/svgedit-->
+  <path
+     d="m 147.69961,0.287913 c -81.2877,0 -147.4117,66.1302 -147.4117,147.411497 0,81.2815 66.124,147.4117 147.4117,147.4117 81.2877,0 147.4116,-66.1302 147.4116,-147.4117 0,-81.281297 -66.1239,-147.411497 -147.4116,-147.411497 z m 0,282.539097 c -74.5097,0 -135.1276,-60.6179 -135.1276,-135.1276 0,-74.509697 60.6179,-135.127497 135.1276,-135.127497 74.5097,0 135.1275,60.6178 135.1275,135.127497 0,74.5097 -60.6178,135.1276 -135.1275,135.1276 z"
+     fill="#ffffff"
+     id="svg_4"
+     stroke-width="0.575827" />
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:120px;font-family:'DejaVu Sans Mono';-inkscape-font-specification:'DejaVu Sans Mono';text-align:center;text-anchor:middle;fill:#ffffff"
+     x="151.76588"
+     y="228.21231"
+     id="text1"><tspan
+       sodipodi:role="line"
+       id="tspan1"
+       x="151.76588"
+       y="228.21231"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:120px;font-family:System-ui;-inkscape-font-specification:System-ui">AVD</tspan></text>
+  <circle
+     style="fill:#ffffff"
+     id="path1"
+     cx="146.27872"
+     cy="65.838234"
+     r="46.368557" />
+</svg>

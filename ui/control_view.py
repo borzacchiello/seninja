@@ -35,6 +35,7 @@ class ControlView(QWidget):
         self.parent = parent
 
         self.toolbar = QToolBar(self, parent)
+        self.run_toolbar = QToolBar(self, parent)
         maxheight = 24
 
         # ----
@@ -90,42 +91,81 @@ class ControlView(QWidget):
         # ----
 
         # ----
-        self.toolbar.btnRunDFS = QToolButton(self.toolbar)
-        self.toolbar.btnRunDFS.setToolButtonStyle(Qt.ToolButtonIconOnly)
-        self.toolbar.btnRunDFS.setMaximumHeight(maxheight)
+        self.run_toolbar.btnRunDFS = QToolButton(self.toolbar)
+        self.run_toolbar.btnRunDFS.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        self.run_toolbar.btnRunDFS.setMaximumHeight(maxheight)
 
-        self.toolbar.btnRunDFS.actionRunDFS = QAction("Run DFS", self.toolbar)
-        self.toolbar.btnRunDFS.actionRunDFS.triggered.connect(lambda: self.perform_dfs())
-        self.toolbar.btnRunDFS.actionRunDFS.setIcon(load_icon('run_dfs.svg'))
+        self.run_toolbar.btnRunDFS.actionRunDFS = QAction("Run DFS", self.run_toolbar)
+        self.run_toolbar.btnRunDFS.actionRunDFS.triggered.connect(lambda: self.perform_dfs())
+        self.run_toolbar.btnRunDFS.actionRunDFS.setIcon(load_icon('run_dfs.svg'))
 
-        self.toolbar.btnRunDFS.setDefaultAction(self.toolbar.btnRunDFS.actionRunDFS)
-        self.toolbar.addWidget(self.toolbar.btnRunDFS)
+        self.run_toolbar.btnRunDFS.setDefaultAction(self.run_toolbar.btnRunDFS.actionRunDFS)
+        self.run_toolbar.addWidget(self.run_toolbar.btnRunDFS)
         # ----
 
         # ----
-        self.toolbar.btnRunBFS = QToolButton(self.toolbar)
-        self.toolbar.btnRunBFS.setToolButtonStyle(Qt.ToolButtonIconOnly)
-        self.toolbar.btnRunBFS.setMaximumHeight(maxheight)
+        self.run_toolbar.btnRunBFS = QToolButton(self.run_toolbar)
+        self.run_toolbar.btnRunBFS.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        self.run_toolbar.btnRunBFS.setMaximumHeight(maxheight)
 
-        self.toolbar.btnRunBFS.actionRunBFS = QAction("Run BFS", self.toolbar)
-        self.toolbar.btnRunBFS.actionRunBFS.triggered.connect(lambda: self.perform_bfs())
-        self.toolbar.btnRunBFS.actionRunBFS.setIcon(load_icon('run_bfs.svg'))
+        self.run_toolbar.btnRunBFS.actionRunBFS = QAction("Run BFS", self.run_toolbar)
+        self.run_toolbar.btnRunBFS.actionRunBFS.triggered.connect(lambda: self.perform_bfs())
+        self.run_toolbar.btnRunBFS.actionRunBFS.setIcon(load_icon('run_bfs.svg'))
 
-        self.toolbar.btnRunBFS.setDefaultAction(self.toolbar.btnRunBFS.actionRunBFS)
-        self.toolbar.addWidget(self.toolbar.btnRunBFS)
+        self.run_toolbar.btnRunBFS.setDefaultAction(self.run_toolbar.btnRunBFS.actionRunBFS)
+        self.run_toolbar.addWidget(self.run_toolbar.btnRunBFS)
         # ----
 
         # ----
-        self.toolbar.btnStop = QToolButton(self.toolbar)
-        self.toolbar.btnStop.setToolButtonStyle(Qt.ToolButtonIconOnly)
-        self.toolbar.btnStop.setMaximumHeight(maxheight)
+        self.run_toolbar.btnSetTarget = QToolButton(self.run_toolbar)
+        self.run_toolbar.btnSetTarget.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        self.run_toolbar.btnSetTarget.setMaximumHeight(maxheight)
 
-        self.toolbar.btnStop.actionStop = QAction("Stop", self.toolbar)
-        self.toolbar.btnStop.actionStop.triggered.connect(lambda: self.perform_stop())
-        self.toolbar.btnStop.actionStop.setIcon(load_icon('stop.svg'))
+        self.run_toolbar.btnSetTarget.actionSetTarget = QAction("Set Target", self.run_toolbar)
+        self.run_toolbar.btnSetTarget.actionSetTarget.triggered.connect(lambda: self.set_target())
+        self.run_toolbar.btnSetTarget.actionSetTarget.setIcon(load_icon('set_target.svg'))
 
-        self.toolbar.btnStop.setDefaultAction(self.toolbar.btnStop.actionStop)
-        self.toolbar.addWidget(self.toolbar.btnStop)
+        self.run_toolbar.btnSetTarget.setDefaultAction(self.run_toolbar.btnSetTarget.actionSetTarget)
+        self.run_toolbar.addWidget(self.run_toolbar.btnSetTarget)
+        # ----
+
+        # ----
+        self.run_toolbar.btnSetAvoid = QToolButton(self.run_toolbar)
+        self.run_toolbar.btnSetAvoid.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        self.run_toolbar.btnSetAvoid.setMaximumHeight(maxheight)
+
+        self.run_toolbar.btnSetAvoid.actionSetAvoid = QAction("Set Avoid", self.run_toolbar)
+        self.run_toolbar.btnSetAvoid.actionSetAvoid.triggered.connect(lambda: self.set_avoid())
+        self.run_toolbar.btnSetAvoid.actionSetAvoid.setIcon(load_icon('set_avoid.svg'))
+
+        self.run_toolbar.btnSetAvoid.setDefaultAction(self.run_toolbar.btnSetAvoid.actionSetAvoid)
+        self.run_toolbar.addWidget(self.run_toolbar.btnSetAvoid)
+        # ----
+
+        # ----
+        self.run_toolbar.btnResetSearcher = QToolButton(self.run_toolbar)
+        self.run_toolbar.btnResetSearcher.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        self.run_toolbar.btnResetSearcher.setMaximumHeight(maxheight)
+
+        self.run_toolbar.btnResetSearcher.actionResetSearcher = QAction("Reset Searchers", self.run_toolbar)
+        self.run_toolbar.btnResetSearcher.actionResetSearcher.triggered.connect(lambda: self.reset_searchers())
+        self.run_toolbar.btnResetSearcher.actionResetSearcher.setIcon(load_icon('reset_searchers.svg'))
+
+        self.run_toolbar.btnResetSearcher.setDefaultAction(self.run_toolbar.btnResetSearcher.actionResetSearcher)
+        self.run_toolbar.addWidget(self.run_toolbar.btnResetSearcher)
+        # ----
+
+        # ----
+        self.run_toolbar.btnStop = QToolButton(self.run_toolbar)
+        self.run_toolbar.btnStop.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        self.run_toolbar.btnStop.setMaximumHeight(maxheight)
+
+        self.run_toolbar.btnStop.actionStop = QAction("Stop", self.run_toolbar)
+        self.run_toolbar.btnStop.actionStop.triggered.connect(lambda: self.perform_stop())
+        self.run_toolbar.btnStop.actionStop.setIcon(load_icon('stop.svg'))
+
+        self.run_toolbar.btnStop.setDefaultAction(self.run_toolbar.btnStop.actionStop)
+        self.run_toolbar.addWidget(self.run_toolbar.btnStop)
         # ----
 
         # ----
@@ -146,6 +186,7 @@ class ControlView(QWidget):
 
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.toolbar)
+        self.layout.addWidget(self.run_toolbar)
         self.setLayout(self.layout)
 
     def stateInit(self, arch, state):
@@ -159,6 +200,15 @@ class ControlView(QWidget):
 
     def notifytab(self, newName):
         pass
+
+    def set_target(self):
+        Globals.uimanager.set_run_target(Globals.uimanager.bv.file.offset)
+
+    def set_avoid(self):
+        Globals.uimanager.set_run_avoid(Globals.uimanager.bv.file.offset)
+
+    def reset_searchers(self):
+        Globals.uimanager.reset_searchers()
 
     def perform_start(self):
         Globals.uimanager.start_se()

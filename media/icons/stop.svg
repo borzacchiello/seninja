@@ -1,9 +1,56 @@
-<?xml version="1.0"?>
-<svg width="295" height="295" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
- <!-- Created with SVG-edit - https://github.com/SVG-Edit/svgedit-->
- <g class="layer">
-  <title>Layer 1</title>
-  <path d="m147.699562,0.287913c-81.28773,0 -147.41166,66.1302 -147.41166,147.4115c0,81.2815 66.12394,147.4117 147.41166,147.4117c81.28769,0 147.41159,-66.1302 147.41159,-147.4117c0,-81.2813 -66.1239,-147.4115 -147.41159,-147.4115zm0,282.5391c-74.50968,0 -135.12754,-60.6179 -135.12754,-135.1276c0,-74.5097 60.61786,-135.1275 135.12754,-135.1275c74.50972,0 135.12748,60.6178 135.12748,135.1275c0,74.5097 -60.61776,135.1276 -135.12748,135.1276z" fill="white" id="svg_8" stroke-width="0.575827"/>
-  <path clip-rule="nonzero" d="m103.109472,93.263313c-7.20475,0 -13.1906,5.9859 -13.1906,13.1906l0,82.4877c0,7.2047 5.98585,13.1906 13.1906,13.1906l89.18667,0c7.20485,0 13.19069,-5.9859 13.19069,-13.1906l0,-82.4877c0,-7.2047 -5.98584,-13.1906 -13.19069,-13.1906l-89.18667,0zm0,11.8071l89.18667,0c0.86799,0 1.38365,0.5157 1.38365,1.3835l0,82.4877c0,0.8679 -0.51592,1.3835 -1.38365,1.3835l-89.18667,0c-0.86788,0 -1.38361,-0.5156 -1.38361,-1.3835l0,-82.4877c0,-0.8678 0.51597,-1.3835 1.38361,-1.3835z" fill="#ffffff" fill-rule="nonzero" id="svg_7" stroke-dashoffset="0" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-width="11.807001"/>
- </g>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="295"
+   height="295"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="stop.svg"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#000000"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.8"
+     inkscape:cx="146.875"
+     inkscape:cy="146.875"
+     inkscape:window-width="1440"
+     inkscape:window-height="710"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg1" />
+  <!-- Created with SVG-edit - https://github.com/SVG-Edit/svgedit-->
+  <g
+     class="layer"
+     id="g1">
+    <title
+       id="title1">Layer 1</title>
+    <path
+       d="m147.699562,0.287913c-81.28773,0 -147.41166,66.1302 -147.41166,147.4115c0,81.2815 66.12394,147.4117 147.41166,147.4117c81.28769,0 147.41159,-66.1302 147.41159,-147.4117c0,-81.2813 -66.1239,-147.4115 -147.41159,-147.4115zm0,282.5391c-74.50968,0 -135.12754,-60.6179 -135.12754,-135.1276c0,-74.5097 60.61786,-135.1275 135.12754,-135.1275c74.50972,0 135.12748,60.6178 135.12748,135.1275c0,74.5097 -60.61776,135.1276 -135.12748,135.1276z"
+       fill="white"
+       id="svg_8"
+       stroke-width="0.575827" />
+    <path
+       clip-rule="nonzero"
+       d="m103.109472,93.263313c-7.20475,0 -13.1906,5.9859 -13.1906,13.1906l0,82.4877c0,7.2047 5.98585,13.1906 13.1906,13.1906l89.18667,0c7.20485,0 13.19069,-5.9859 13.19069,-13.1906l0,-82.4877c0,-7.2047 -5.98584,-13.1906 -13.19069,-13.1906l-89.18667,0zm0,11.8071l89.18667,0c0.86799,0 1.38365,0.5157 1.38365,1.3835l0,82.4877c0,0.8679 -0.51592,1.3835 -1.38365,1.3835l-89.18667,0c-0.86788,0 -1.38361,-0.5156 -1.38361,-1.3835l0,-82.4877c0,-0.8678 0.51597,-1.3835 1.38361,-1.3835z"
+       fill="#ffffff"
+       fill-rule="nonzero"
+       id="svg_7"
+       stroke-dashoffset="0"
+       stroke-linecap="round"
+       stroke-linejoin="round"
+       stroke-miterlimit="4"
+       stroke-width="11.807001" />
+  </g>
 </svg>
