@@ -479,3 +479,28 @@ class Memory(MemoryAbstract):
 
     def register_store_hook(self, function):
         self.store_hooks.append(function)
+
+    def get_regions(self):
+        regions = list()
+        addresses = list(sorted(self.pages.keys()))
+        if len(addresses) == 0:
+            return regions
+        addresses = list(map(lambda a: a*self.page_size, addresses))
+
+        currAddr = addresses[0]
+        currSize = self.page_size
+        i = 1
+        while i < len(addresses):
+            if addresses[i] == currAddr + currSize:
+                currSize += self.page_size
+            else:
+                regions.append(
+                    (currAddr, currSize)
+                )
+                currAddr = addresses[i]
+                currSize = self.page_size
+            i += 1
+        regions.append(
+            (currAddr, currSize)
+        )
+        return regions

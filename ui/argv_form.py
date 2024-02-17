@@ -69,7 +69,7 @@ class GetArgvDialog(QDialog):
         self.n_args += 1
         self.update_label_args()
 
-        label = QLabel(str(self.n_args) + ": ")
+        label     = QLabel(str(self.n_args) + ": ")
         combo_box = QComboBox()
         buffer_names = [
             b[0].name for b in self.state.symbolic_buffers]

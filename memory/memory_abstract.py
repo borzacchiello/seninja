@@ -31,3 +31,6 @@ class MemoryAbstract(object):
 
     def register_store_hook(self, function):
         raise NotImplementedError
+
+    def get_regions(self):
+        return NotImplementedError

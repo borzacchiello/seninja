@@ -25,6 +25,7 @@ from .registers_view import RegisterWidget
 from .control_view import ControlView
 from .state_view import StateView
 from .buffer_view import BufferView
+from .memory_view import MemoryView
 
 import os
 
@@ -63,8 +64,10 @@ class SENinjaWidget(SidebarWidget):
         self.states = StateView(frame)
         self.buffers = BufferView(frame)
         self.files = FilesView(frame)
+        self.mem = MemoryView(frame)
 
         self.tabs.addTab(self.regs, "Registers")
+        self.tabs.addTab(self.mem, "Memory")
         self.tabs.addTab(self.states, "States")
         self.tabs.addTab(self.buffers, "Buffers")
         self.tabs.addTab(self.files, "Files")
@@ -80,6 +83,7 @@ class SENinjaWidget(SidebarWidget):
         self.buffers.stateUpdate(state)
         self.controls.stateUpdate(state)
         self.files.stateUpdate(state)
+        self.mem.stateUpdate(state)
 
     def stateInit(self, arch, state):
         self.regs.stateInit(arch, state)
@@ -87,6 +91,7 @@ class SENinjaWidget(SidebarWidget):
         self.buffers.stateInit(arch, state)
         self.controls.stateInit(arch, state)
         self.files.stateInit(arch, state)
+        self.mem.stateInit(arch, state)
 
     def stateReset(self):
         self.regs.stateReset()
@@ -94,6 +99,7 @@ class SENinjaWidget(SidebarWidget):
         self.buffers.stateReset()
         self.controls.stateReset()
         self.files.stateReset()
+        self.mem.stateReset()
 
     def notifyViewChanged(self, view_frame):
         newName = view_frame.getTabName() if view_frame is not None else ""
@@ -102,6 +108,7 @@ class SENinjaWidget(SidebarWidget):
         self.buffers.notifytab(newName)
         self.controls.notifytab(newName)
         self.files.notifytab(newName)
+        self.mem.notifytab(newName)
 
 class SENinjaWidgetType(SidebarWidgetType):
     name = "SENinja"
