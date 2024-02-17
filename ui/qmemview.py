@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt, QRectF
-from PySide6.QtGui import QFont, QFontMetrics, QMouseEvent, QPainter, QPen, QColor, QPalette
+from PySide6.QtGui import QFont, QFontMetrics, QFontDatabase, QMouseEvent, QPainter, QPen, QColor, QPalette
 from PySide6.QtWidgets import QAbstractScrollArea
 
 import math
@@ -35,7 +35,7 @@ class QMemView(QAbstractScrollArea):
         return self.addr + min(self.selectionStart, self.selectionEnd), abs(self.selectionEnd-self.selectionStart)
 
     def setFont(self):
-        self.font        = QFont("Monospace", 8)
+        self.font        = QFontDatabase.systemFont(QFontDatabase.FixedFont)
         self.fontMetrics = QFontMetrics(self.font)
 
         self.fontWidth  = self.fontMetrics.horizontalAdvance('X')

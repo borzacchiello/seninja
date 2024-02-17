@@ -20,18 +20,6 @@ from ..utility.expr_wrap_util import symbolic, split_bv_in_list
 from ..expr.bitvector import BVS, BVV
 from .qmemview import QMemView
 
-class MemoryViewBT(BackgroundTaskThread):
-    def __init__(self, msg, mw, callback, pars):
-        BackgroundTaskThread.__init__(self, msg, False)
-        self.mw = mw
-        self.pars = pars
-        self.callback = callback
-
-    def run(self):
-        self.mw.setEnabled(False)
-        self.callback(*self.pars)
-        self.mw.setEnabled(True)
-
 gMemPerTab = {}
 
 class MemoryViewData(object):
@@ -95,26 +83,38 @@ class MemoryView(QWidget):
         self._init_internal()
 
     def stateUpdate(self, state):
+        def regionsAreEqual(r1, r2):
+            if r1 is None or r2 is None:
+                return False
+            if len(r1) != len(r2):
+                return False
+            for t1, t2 in zip(r1, r2):
+                if t1 != t2:
+                    return False
+            return True
+
         regions = state.mem.get_regions()
-        if self.data.regions != regions:
+        if not regionsAreEqual(self.data.regions, regions):
             self.regionSelector.clear()
             for addr, size in regions:
                 self.regionSelector.addItem(
                     "0x%016x -> 0x%016x" % (addr, addr+size))
             self.data.regions = regions
-        if len(regions) > 0:
+
+        if len(regions) > 0 and self.memWidget.dataCallback is None:
             addr, size = regions[0]
             self.memWidget.addr = addr
             self.memWidget.size = size
 
             def callback(addr):
-                v = state.mem.load(addr, 1)
+                v = self.data.current_state.mem.load(addr, 1)
                 if isinstance(v, BVV):
                     return "%02x" % v.value
                 return ".."
             self.memWidget.dataCallback = callback
             self.memWidget.updateScrollbars()
-            self.memWidget.viewport().update()
+
+        self.memWidget.viewport().update()
         self.data.current_state = state
 
     def _show_expression(self, address, expr):
@@ -236,19 +236,6 @@ class MemoryView(QWidget):
         mime.setText(res)
         QApplication.clipboard().setMimeData(mime)
 
-    @staticmethod
-    def _condom(f, *pars):
-        def g():
-            f(*pars)
-        return g
-
-    @staticmethod
-    def _condom_async(mw, f, *pars):
-        def g():
-            bt = MemoryViewBT("MemoryView background task...", mw, f, pars)
-            bt.start()
-        return g
-
     def on_customContextMenuRequested(self):
         if self.data.current_state is None:
             return
@@ -272,38 +259,29 @@ class MemoryView(QWidget):
 
         if symbolic(expr):
             a = menu.addAction("Show expression")
-            a.triggered.connect(MemoryView._condom(
-                self._show_expression, selStart, expr))
+            a.triggered.connect(lambda: self._show_expression(selStart, expr))
             a = menu.addAction("Evaluate with solver")
-            a.triggered.connect(MemoryView._condom_async(
-                self, self._evaluate_with_solver, selStart, expr))
+            a.triggered.connect(lambda: self._evaluate_with_solver(selStart, expr))
             a = menu.addAction("Evaluate with solver (upto)")
-            a.triggered.connect(MemoryView._condom_async(
-                self, self._evaluate_upto_with_solver, selStart, expr))
+            a.triggered.connect(lambda: self._evaluate_upto_with_solver(selStart, expr))
             a = menu.addAction("Concretize")
-            a.triggered.connect(MemoryView._condom_async(
-                self, self._concretize, selStart, expr))
+            a.triggered.connect(lambda: self._concretize(selStart, expr))
             a = menu.addAction("Concretize (ascii str)")
-            a.triggered.connect(MemoryView._condom_async(
-                self, self._concretize_ascii_str, selStart, expr))
+            a.triggered.connect(lambda: self._concretize_ascii_str(selStart, expr))
             a = menu.addAction("Copy expression")
-            a.triggered.connect(MemoryView._condom(
-                self._copy_expression, expr))
+            a.triggered.connect(lambda: self._copy_expression(expr))
         else:
             a = menu.addAction("Make symbolic")
-            a.triggered.connect(MemoryView._condom(
-                self._make_symbolic, selStart, selSize))
+            a.triggered.connect(lambda: self._make_symbolic(selStart, selSize))
             copy_menu = menu.addMenu("Copy...")
             a = copy_menu.addAction("Copy Little Endian")
-            a.triggered.connect(MemoryView._condom(
-                self._copy_little_endian, expr))
+            a.triggered.connect(lambda: self._copy_little_endian(expr))
             a = copy_menu.addAction("Copy Big Endian")
-            a.triggered.connect(MemoryView._condom(
-                self._copy_big_endian, expr))
+            a.triggered.connect(lambda: self._copy_big_endian(expr))
             a = copy_menu.addAction("Copy String")
-            a.triggered.connect(MemoryView._condom(self._copy_string, expr))
+            a.triggered.connect(lambda: self._copy_string(expr))
             a = copy_menu.addAction("Copy Binary")
-            a.triggered.connect(MemoryView._condom(self._copy_binary, expr))
+            a.triggered.connect(lambda: self._copy_binary(expr))
         return menu
 
     def notifyOffsetChanged(self, offset):
