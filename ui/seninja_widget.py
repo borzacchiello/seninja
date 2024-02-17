@@ -75,6 +75,8 @@ class SENinjaWidget(SidebarWidget):
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.controls)
         self.layout.addWidget(self.tabs)
+        self.layout.setSpacing(0)
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
 
     def stateUpdate(self, state):

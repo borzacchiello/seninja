@@ -169,7 +169,7 @@ class FilesView(QWidget):
         pass
 
     def contextMenuEvent(self, event):
-        self.m_contextMenuManager.show(self.m_menu, self.actionHandler)
+        pass
 
     def shouldBeVisible(self, view_frame):
         if view_frame is None:
