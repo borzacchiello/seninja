@@ -161,6 +161,7 @@ class RegisterWidget(QWidget):
         copy = menu.addAction("Copy to clipboard") if not isinstance(
             expr, BVS) else None
         bind_to_buffer = menu.addAction("Bind to symbolic buffer")
+        make_pointer = menu.addAction("Make pointer")
 
         action = menu.exec_(self.table.viewport().mapToGlobal(pos))
         if action is None:
@@ -181,9 +182,17 @@ class RegisterWidget(QWidget):
                     buff_p)
             self.set_reg_value(
                 self.data.index_to_reg[row_idx], buff_p, RegisterWidget.dirty_color)
-        if action == show_reg_expr:
+        elif action == make_pointer:
+            size = get_int_input("Enter the size in bytes", "Size")
+            ptr = BVV(self.data.current_state.mem.allocate(size), self.data.current_state.arch.bits())
+            setattr(self.data.current_state.regs,
+                    self.data.index_to_reg[row_idx],
+                    ptr)
+            self.set_reg_value(
+                self.data.index_to_reg[row_idx], ptr)
+        elif action == show_reg_expr:
             show_message_box("Reg Expression", str(expr.z3obj.sexpr()))
-        if action == make_reg_symb:
+        elif action == make_reg_symb:
             new_expr = BVS('symb_injected_through_ui_%d' %
                            self.data.symb_idx, expr.size)
             setattr(self.data.current_state.regs,
@@ -191,9 +200,9 @@ class RegisterWidget(QWidget):
             self.set_reg_value(
                 self.data.index_to_reg[row_idx], new_expr, RegisterWidget.dirty_color)
             self.data.symb_idx += 1
-        if action == set_reg_value:
+        elif action == set_reg_value:
             self.on_doubleClick(item)
-        if action == eval_with_sol:
+        elif action == eval_with_sol:
             expr = getattr(self.data.current_state.regs, self.data.index_to_reg[row_idx])
             if not self.data.current_state.solver.symbolic(expr):
                 new_expr = self.data.current_state.solver.evaluate(expr)
@@ -210,7 +219,7 @@ class RegisterWidget(QWidget):
                     "Reg Value (with solver)",
                     hex(self.data.current_state.solver.evaluate(expr).value)
                 )
-        if action == eval_upto_with_sol:
+        elif action == eval_upto_with_sol:
             expr = getattr(self.data.current_state.regs, self.data.index_to_reg[row_idx])
             if not self.data.current_state.solver.symbolic(expr):
                 new_expr = self.data.current_state.solver.evaluate(expr)
@@ -233,7 +242,7 @@ class RegisterWidget(QWidget):
                     "Reg Value (with solver)",
                     r
                 )
-        if action == concretize:
+        elif action == concretize:
             expr = getattr(self.data.current_state.regs, self.data.index_to_reg[row_idx])
             new_expr = self.data.current_state.solver.evaluate(expr)
             res = get_choice_input(
@@ -250,8 +259,7 @@ class RegisterWidget(QWidget):
                 )
                 self.set_reg_value(
                     self.data.index_to_reg[row_idx], new_expr, RegisterWidget.dirty_color)
-
-        if action == copy:
+        elif action == copy:
             mime = QMimeData()
             if isinstance(expr, BVV):
                 mime.setText(hex(expr.value))

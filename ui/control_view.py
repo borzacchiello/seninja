@@ -35,7 +35,9 @@ class ControlView(QWidget):
         self.parent = parent
 
         self.toolbar = QToolBar(self, parent)
+        self.toolbar.setStyleSheet("QToolBar{spacing:0px;}")
         self.run_toolbar = QToolBar(self, parent)
+        self.run_toolbar.setStyleSheet("QToolBar{spacing:0px;}")
         maxheight = 24
 
         # ----

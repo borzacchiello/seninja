@@ -66,10 +66,8 @@ def strtoul_handler(state: State, view):
     return BVV(_native_res, state.arch.bits())
 # -----------------------------------
 
-
 def exit_handler(state: State, view):
     raise ExitException()
-
 
 def _intbv_to_strbv16(intbv):
     # int bv to string bv in hex
@@ -92,7 +90,6 @@ def _intbv_to_strbv16(intbv):
         res.extend(v)
 
     return res
-
 
 def _printf_common(state: State, format_str_p, param_idx_start, view):
     if symbolic(format_str_p) and state.solver.symbolic(format_str_p):
@@ -163,14 +160,12 @@ def _printf_common(state: State, format_str_p, param_idx_start, view):
 
     return res, BVV(len(res), 32)
 
-
 def printf_handler(state: State, view):  # only concrete
     format_str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
     data_list, res_n = _printf_common(state, format_str_p, 2, view)
 
     state.os.write(state.os.stdout_fd, data_list)
     return res_n
-
 
 def printf_chk_handler(state: State, view):
     flag = get_arg_k(state, 1, 4, view)  # TODO ignored
@@ -180,14 +175,12 @@ def printf_chk_handler(state: State, view):
     state.os.write(state.os.stdout_fd, data_list)
     return res_n
 
-
 def putchar_handler(state: State, view):
     res = get_arg_k(state, 1, 4, view)
     c = res.Extract(7, 0)
 
     state.os.write(state.os.stdout_fd, [c])
     return res
-
 
 def puts_handler(state: State, view):
     string_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
@@ -203,7 +196,6 @@ def puts_handler(state: State, view):
 
     return BVV(0, 32)
 
-
 def getchar_handler(state: State, view):
     state.events.append(
         "getchar called"
@@ -215,12 +207,11 @@ def getchar_handler(state: State, view):
 
 scanf_count = 0
 
-
-def scanf_handler(state: State, view):
+def _internal_scanf_handler(state: State, view, argoff):
     # scanf does not support reading data from stdin... Too difficult to model
     # it will simply write on stdin the correct data
     global scanf_count
-    format_str_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
+    format_str_p = get_arg_k(state, argoff+1, state.arch.bits() // 8, view)
 
     if symbolic(format_str_p) and state.solver.symbolic(format_str_p):
         raise ModelError("scanf_handler", "symbolic format string not supported")
@@ -241,46 +232,62 @@ def scanf_handler(state: State, view):
     last_idx = 0
     param_idx = 2
     params = re.finditer("%([0-9]*s|d|x)", format_str)  # TODO generalize
+    num_params = 0
     for param in params:
+        num_params += 1
         index = param.start()
         match = param.group()
 
-        tmp_bytes_red = list()
-        par_p = get_arg_k(state, param_idx, state.arch.bits() // 8, view)
+        tmp_bytes_read = list()
+        par_p = get_arg_k(state, argoff+param_idx, state.arch.bits() // 8, view)
         if symbolic(par_p) and state.solver.symbolic(par_p):
             raise ModelError("scanf_handler", "symbolic pointer for arguments not supported")
         name = 'scanf_input_%d' % scanf_count
 
         if match[-1] == "d" or match[-1] == "x":
             data = BVS(name + "_INT", 32)
+            # Since we are generating new inputs, let's view them in the UI
+            state.symbolic_buffers.append((data, par_p.value, ""))
             state.mem.store(par_p, data, endness=state.arch.endness())
-            tmp_bytes_red = _intbv_to_strbv16(data)
+            tmp_bytes_read = _intbv_to_strbv16(data)
         elif match[-1] == "s":
             max_symb_str = int(state.executor.bncache.get_setting(
                 "models.max_size_symb_string"))
             n = int(match[1:-1]) if len(match) > 2 else max_symb_str
 
             data = BVS(name + "_STR", 8*(n - 1))
+            # Since we are generating new inputs, let's view them in the UI
+            state.symbolic_buffers.append((data, par_p.value, ""))
             state.mem.store(par_p, data.Concat(BVV(0, 8)), 'big')
             for i in range(0, data.size, 8):
                 b = data.Extract(i+7, i)
                 state.solver.add_constraints(b != ord("\n"))
-                tmp_bytes_red.append(b)
+                tmp_bytes_read.append(b)
 
         param_idx += 1
 
         format_substr = format_str[last_idx:index]
         last_idx = index + len(match)
         bytes_read.extend(str_to_bv_list(format_substr))
-        bytes_read.extend(tmp_bytes_red)
+        bytes_read.extend(tmp_bytes_read)
 
         scanf_count += 1
 
     format_substr = format_str[last_idx + len(match):]
     bytes_read.extend(str_to_bv_list(format_substr))
-    state.os.write(state.os.stdin_fd, bytes_read)
-    return BVV(1, 32)
+    return BVV(num_params, 32), bytes_read
 
+def scanf_handler(state: State, view):
+    res, bytes = _internal_scanf_handler(state, view, 0)
+    state.os.write(state.os.stdin_fd, bytes)
+    return res
+
+def sscanf_handler(state: State, view):
+    res, bytes = _internal_scanf_handler(state, view, 1)
+    sptr = get_arg_k(state, 1, state.arch.bits() // 8, view)
+    for off, b in enumerate(bytes):
+        state.mem.store(sptr+off, b)
+    return res
 
 def fgets_handler(state: State, view):
     s_p = get_arg_k(state, 1, state.arch.bits() // 8, view)
@@ -319,10 +326,8 @@ def isxdigit_handler(state: State, view):
 
 # ************** atoX models **************
 
-
 # SLOW... but cool :)
 atox_idx = 0
-
 
 def _atox(state: State, view, size: int):
     atox_slow_model = state.executor.bncache.get_setting(
@@ -415,16 +420,13 @@ def _atox(state: State, view, size: int):
         raise ModelError("_atox", "unsat solver")
     return res.Extract(size*8-1, 0)
 
-
 def atoi_handler(state: State, view):
     return _atox(state, view, 4)
-
 
 def atol_handler(state: State, view):
     return _atox(state, view, 8)
 
 # ********* MALLOC MODELS *********
-
 
 def malloc_handler(state: State, view):
     size = get_arg_k(state, 1, 4, view)
@@ -439,7 +441,6 @@ def malloc_handler(state: State, view):
 
     res = state.mem.allocate(size)
     return BVV(res, state.arch.bits())
-
 
 def calloc_handler(state: State, view):
     size = get_arg_k(state, 1, 4, view)

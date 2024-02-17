@@ -17,4 +17,4 @@ def get_arg_k(state, k, size, view):
         stack_pointer = getattr(state.regs, state.arch.get_stack_pointer_reg())
         assert not symbolic(stack_pointer)
 
-        return state.mem.load(stack_pointer + (state.arch.bits() // 8)*k, size, state.arch.endness())
+        return state.mem.load(stack_pointer + (state.arch.bits() // 8)*(k - len(args)), size, state.arch.endness())

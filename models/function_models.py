@@ -13,6 +13,8 @@ library_functions = {
     '__printf_chk':     models_libc.printf_chk_handler,
     'scanf':            models_libc.scanf_handler,
     '__isoc99_scanf':   models_libc.scanf_handler,
+    'sscanf':           models_libc.sscanf_handler,
+    '__isoc99_sscanf':  models_libc.sscanf_handler,
     'getchar':          models_libc.getchar_handler,
     'putchar':          models_libc.putchar_handler,
     'puts':             models_libc.puts_handler,
