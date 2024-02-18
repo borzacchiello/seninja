@@ -216,7 +216,7 @@ class BufferView(QWidget):
         self.stateUpdate(self.data.current_state)
 
     def stateReset(self):
-        self.data.current_state = None
+        self.data = BufferViewData()
         self.table.setRowCount(0)
 
     def _init_internal(self):

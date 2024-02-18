@@ -83,6 +83,10 @@ class MemoryView(QWidget):
         self._init_internal()
 
     def stateUpdate(self, state):
+        self.data.current_state = state
+        if state is None:
+            return
+
         def regionsAreEqual(r1, r2):
             if r1 is None or r2 is None:
                 return False
@@ -115,7 +119,6 @@ class MemoryView(QWidget):
             self.memWidget.updateScrollbars()
 
         self.memWidget.viewport().update()
-        self.data.current_state = state
 
     def _show_expression(self, address, expr):
         show_message_box("Expression at %s" %
@@ -295,6 +298,7 @@ class MemoryView(QWidget):
     def notifytab(self, newName):
         if newName != self.tabname:
             if self.tabname != "":
+                self.data.regions = None
                 gMemPerTab[self.tabname] = self.data
                 self.stateReset()
 

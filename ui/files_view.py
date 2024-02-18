@@ -76,7 +76,7 @@ class FilesView(QWidget):
         self.setLayout(self.layout)
 
     def stateReset(self):
-        self.data.current_state = None
+        self.data = FilesViewData()
         self.table.setRowCount(0)
 
     def _init_internal(self):
