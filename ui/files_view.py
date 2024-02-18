@@ -97,19 +97,6 @@ class FilesView(QWidget):
             self.table.setItem(i, 0, _makewidget(self, path))
             self.table.setItem(i, 1, _makewidget(self, state.os.filesystem[path].file_size))
 
-    @staticmethod
-    def _condom(f, *pars):
-        def g():
-            f(*pars)
-        return g
-
-    @staticmethod
-    def _condom_async(bw, f, *pars):
-        def g():
-            bt = FilesViewBT("FilesView background task...", bw, f, pars)
-            bt.start()
-        return g
-
     # right click menu
     def on_customContextMenuRequested(self, pos):
         item = self.table.itemAt(pos)
@@ -118,27 +105,33 @@ class FilesView(QWidget):
         row_idx = item.row()
         menu = QMenu()
 
-        eval_upto = menu.addAction("Evaluate upto")
-        eval_upto.triggered.connect(FilesView._condom_async(
-            self, self._menuAction_evaluate_upto_buffer, row_idx))
-        eval_as_bytes = menu.addAction("Evaluate as bytes")
-        eval_as_bytes.triggered.connect(FilesView._condom_async(
-            self, self._menuAction_evaluate_buffer, row_idx))
-        copy_eval = menu.addAction("Copy evaluated bytes")
-        copy_eval.triggered.connect(FilesView._condom_async(
-            self, self._menuAction_copy_evaluated_buffer, row_idx))
-
+        a = menu.addAction("Evaluate upto")
+        a.triggered.connect(lambda: self._menuAction_evaluate_upto_buffer(row_idx))
+        a = menu.addAction("Evaluate as bytes")
+        a.triggered.connect(lambda: self._menuAction_evaluate_buffer(row_idx))
+        a = menu.addAction("Evaluate as string")
+        a.triggered.connect(lambda: self._menuAction_evaluate_buffer(row_idx, as_string=True))
+        a = menu.addAction("Copy evaluated bytes")
+        a.triggered.connect(lambda: self._menuAction_copy_evaluated_buffer(row_idx))
         menu.exec_(self.table.viewport().mapToGlobal(pos))
 
-    def _menuAction_evaluate_buffer(self, files_id):
+    def _menuAction_evaluate_buffer(self, files_id, as_string=False):
         files = sorted(self.data.current_state.os.filesystem.keys())
         symfile = self.data.current_state.os.filesystem[files[files_id]]
         if symfile.file_size == 0:
             return
         data = symfile.data.load(BVV(0, symfile.data.bits), symfile.file_size)
+        dataBytes = self.data.current_state.solver.evaluate(data).as_bytes()
 
-        res = self.data.current_state.solver.evaluate(data).as_bytes()
-        res = repr(res)[2:-1]
+        if not as_string:
+            res = dataBytes
+            res = repr(res)[2:-1]
+        else:
+            res = ""
+            for el in dataBytes:
+                if el == 0:
+                    break
+                res += chr(el) if el >= 32 and el <= 126 else "."
         show_message_box("evaluate", res)
 
     def _menuAction_evaluate_upto_buffer(self, files_id):

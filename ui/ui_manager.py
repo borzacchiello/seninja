@@ -56,13 +56,16 @@ class UIManager(object):
 
     @property
     def bv(self):
+        if self._bv is not None:
+            return self._bv
         ctx = UIContext.activeContext()
         if ctx is None:
             return None
         view = ctx.getCurrentView()
         if view is None:
             return None
-        return view.getData()
+        self._bv = view.getData()
+        return self._bv
 
     @property
     def widget(self):
@@ -91,6 +94,7 @@ class UIManager(object):
     def __init__(self):
         self.lock    = threading.RLock()
         self._widget = None
+        self._bv     = None
 
         self.executor      = None
         self.dfs_searcher  = None
@@ -552,6 +556,7 @@ class UIManager(object):
             self.searcher_tags = dict()
 
             self._set_colors(reset=True)
+            self._bv = None
             self.executor = None
             self.running = False
             self.widget.enableAll()
