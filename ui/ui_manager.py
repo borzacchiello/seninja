@@ -567,6 +567,8 @@ class UIManager(object):
 
     @locked
     def launch_argv_dialog(self):
+        if self.running:
+            return
         if self.executor is None:
             return
 
