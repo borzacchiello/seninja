@@ -46,6 +46,11 @@ PluginCommand.register_for_address(
     lambda bv, addr: Globals.uimanager.async_change_current_state(addr)
 )
 PluginCommand.register_for_address(
+    "SENinja\\Set ip",
+    "Set the instruction pointer of the current state to the selected address",
+    lambda bv, addr: Globals.uimanager.async_change_active_state_ip(addr)
+)
+PluginCommand.register_for_address(
     "SENinja\\Merge states",
     "Merge all the states at the current address",
     lambda bv, addr: Globals.uimanager.async_merge_states(addr)

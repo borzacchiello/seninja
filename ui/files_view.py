@@ -133,6 +133,8 @@ class FilesView(QWidget):
     def _menuAction_evaluate_buffer(self, files_id):
         files = sorted(self.data.current_state.os.filesystem.keys())
         symfile = self.data.current_state.os.filesystem[files[files_id]]
+        if symfile.file_size == 0:
+            return
         data = symfile.data.load(BVV(0, symfile.data.bits), symfile.file_size)
 
         res = self.data.current_state.solver.evaluate(data).as_bytes()
@@ -142,6 +144,8 @@ class FilesView(QWidget):
     def _menuAction_evaluate_upto_buffer(self, files_id):
         files = sorted(self.data.current_state.os.filesystem.keys())
         symfile = self.data.current_state.os.filesystem[files[files_id]]
+        if symfile.file_size == 0:
+            return
         data = symfile.data.load(BVV(0, symfile.data.bits), symfile.file_size)
 
         n_eval = get_int_input("How many values (upto) ?", "Number of distinct values")
@@ -156,6 +160,8 @@ class FilesView(QWidget):
     def _menuAction_copy_evaluated_buffer(self, files_id):
         files = sorted(self.data.current_state.os.filesystem.keys())
         symfile = self.data.current_state.os.filesystem[files[files_id]]
+        if symfile.file_size == 0:
+            return
         data = symfile.data.load(BVV(0, symfile.data.bits), symfile.file_size)
 
         mime = QMimeData()

@@ -38,6 +38,9 @@ library_functions = {
     '__xstat':          models_unistd.xstat_handler,
     'exit':             models_libc.exit_handler,
 
+    # Antidebug
+    'ptrace':           models_libc.ptrace_handler,
+
     # C++
     '_Znwm':            models_libc.malloc_handler,
     '_Znwj':            models_libc.malloc_handler,

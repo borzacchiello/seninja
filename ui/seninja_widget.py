@@ -112,6 +112,20 @@ class SENinjaWidget(SidebarWidget):
         self.files.notifytab(newName)
         self.mem.notifytab(newName)
 
+    def disableAll(self):
+        self.regs.setDisabled(True)
+        self.states.setDisabled(True)
+        self.buffers.setDisabled(True)
+        self.files.setDisabled(True)
+        self.mem.setDisabled(True)
+
+    def enableAll(self):
+        self.regs.setEnabled(True)
+        self.states.setEnabled(True)
+        self.buffers.setEnabled(True)
+        self.files.setEnabled(True)
+        self.mem.setEnabled(True)
+
 class SENinjaWidgetType(SidebarWidgetType):
     name = "SENinja"
 

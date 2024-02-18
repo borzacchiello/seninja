@@ -98,7 +98,7 @@ class MemoryView(QWidget):
             self.regionSelector.clear()
             for addr, size in regions:
                 self.regionSelector.addItem(
-                    "0x%016x -> 0x%016x" % (addr, addr+size))
+                    "0x%x -> 0x%x" % (addr, addr+size))
             self.data.regions = regions
 
         if len(regions) > 0 and self.memWidget.dataCallback is None:

@@ -460,3 +460,11 @@ def calloc_handler(state: State, view):
     return BVV(res, state.arch.bits())
 
 # ***************************************
+
+# ********* MISC MODELS *********
+
+def ptrace_handler(state: State, view):
+    # Just a stub to trick anti-debug code
+    return BVV(1, 32)
+
+# ***************************************

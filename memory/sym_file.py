@@ -1,4 +1,4 @@
-from ..expr import BV, BVV, BVS
+from ..expr import BV, BVV
 from .sym_flat_memory_not_paged import MemoryConcreteFlatNotPaged
 
 

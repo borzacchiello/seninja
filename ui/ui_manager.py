@@ -279,9 +279,11 @@ class UIManager(object):
             self.dfs_searcher.run(step_callback=callback)
             self._sync_ui(self.executor._last_error == None)
             self.running = False
+            self.widget.enableAll()
 
         if not self.running:
             self.running = True
+            self.widget.disableAll()
             background_task = UIBackgroundTask(self.bv, "SENinja: running DFS", f)
             background_task.start()
 
@@ -315,9 +317,11 @@ class UIManager(object):
 
             self._sync_ui(self.executor._last_error == None)
             self.running = False
+            self.widget.enableAll()
 
         if not self.running:
             self.running = True
+            self.widget.disableAll()
             background_task = UIBackgroundTask(self.bv, "SENinja: running BFS", f)
             background_task.start()
 
@@ -330,9 +334,11 @@ class UIManager(object):
             self.executor.execute_one()
             self._sync_ui(self.executor._last_error == None)
             self.running = False
+            self.widget.enableAll()
 
         if not self.running:
             self.running = True
+            self.widget.disableAll()
             background_task = UIBackgroundTask(self.bv, "SENinja: stepping", f)
             background_task.start()
 
@@ -369,9 +375,11 @@ class UIManager(object):
             self._sync_ui(self.executor._last_error == None)
             self.running = False
             self.stop = False
+            self.widget.enableAll()
 
         if not self.running:
             self.running = True
+            self.widget.disableAll()
             background_task = UIBackgroundTask(
                 self.bv, "SENinja: continue until branch", f)
             background_task.start()
@@ -410,9 +418,11 @@ class UIManager(object):
             self._sync_ui(self.executor._last_error == None)
             self.running = False
             self.stop = False
+            self.widget.enableAll()
 
         if not self.running:
             self.running = True
+            self.widget.disableAll()
             background_task = UIBackgroundTask(
                 self.bv, "SENinja: continue until address", f)
             background_task.start()
@@ -455,9 +465,11 @@ class UIManager(object):
             self._delete_comment_for_address(address)
             self._sync_ui()
             self.running = False
+            self.widget.enableAll()
 
         if not self.running:
             self.running = True
+            self.widget.disableAll()
             background_task = UIBackgroundTask(self.bv, "SENinja: merging states", f)
             background_task.start()
 
@@ -493,9 +505,11 @@ class UIManager(object):
 
             self._sync_ui(delta=False)
             self.running = False
+            self.widget.enableAll()
 
         if not self.running:
             self.running = True
+            self.widget.disableAll()
             background_task = UIBackgroundTask(
                 self.bv, "SENinja: saving current state", f)
             background_task.start()
@@ -517,9 +531,11 @@ class UIManager(object):
 
             self._sync_ui(delta=False)
             self.running = False
+            self.widget.enableAll()
 
         if not self.running:
             self.running = True
+            self.widget.disableAll()
             background_task = UIBackgroundTask(
                 self.bv, "SENinja: changing current state", f)
             background_task.start()
@@ -538,14 +554,13 @@ class UIManager(object):
             self._set_colors(reset=True)
             self.executor = None
             self.running = False
+            self.widget.enableAll()
 
         if not self.running:
             self.running = True
+            self.widget.disableAll()
 
             self._reset_ui()
-            # just an hack to redraw widgets. find another way
-            self.bv.file.navigate(self.bv.file.view, self.bv.file.offset)
-
             background_task = UIBackgroundTask(
                 self.bv, "SENinja: resetting symbolic execution", f)
             background_task.start()

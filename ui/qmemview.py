@@ -1,6 +1,8 @@
 from PySide6.QtCore import Qt, QRectF
-from PySide6.QtGui import QFont, QFontMetrics, QFontDatabase, QMouseEvent, QPainter, QPen, QColor, QPalette
+from PySide6.QtGui import QFontMetrics, QFontDatabase, QMouseEvent, QPainter, QPen, QColor, QPalette
 from PySide6.QtWidgets import QAbstractScrollArea
+
+from binaryninjaui import ThemeColor, getThemeColor
 
 import math
 
@@ -8,9 +10,10 @@ class QMemView(QAbstractScrollArea):
     ROW_WIDTH      = 16 # amount of bytes per row
     CHARS_PER_WORD = 2
 
-    COLOR_ADDR  = QColor("white")
-    COLOR_LINE  = QColor("white")
-    COLOR_BYTES = QColor("light grey")
+    COLOR_ADDR      = getThemeColor(ThemeColor.AddressColor)
+    COLOR_LINE      = getThemeColor(ThemeColor.WhiteStandardHighlightColor)
+    COLOR_BYTES     = getThemeColor(ThemeColor.OpcodeColor)
+    HIGHLIGHT_COLOR = getThemeColor(ThemeColor.BackgroundHighlightLightColor)
 
     HIGHLIGHT_ON  = 1
     HIGHLIGHT_OFF = 2
@@ -48,7 +51,7 @@ class QMemView(QAbstractScrollArea):
 
     def addrline(self):
         """ The X coordinate of the line between the addresses and the hexdump """
-        return 16 * self.fontWidth + self.padding()
+        return 17 * self.fontWidth + self.padding()
 
     def hexdumpCoordinate(self):
         """ The X coordinate of the hexdump """
@@ -89,7 +92,7 @@ class QMemView(QAbstractScrollArea):
             addr    = self.addr + offset
             addrStr = "%016x" % addr
             painter.setPen(QPen(QMemView.COLOR_ADDR))
-            painter.drawText(0, row, addrStr)
+            painter.drawText(self.padding(), row, addrStr)
 
             # Draw the bytes
             for i in range(QMemView.ROW_WIDTH):
@@ -105,12 +108,12 @@ class QMemView(QAbstractScrollArea):
                     colorGroup = QPalette.ColorGroup.Active if self.hasFocus() else QPalette.ColorGroup.Inactive
                     painter.fillRect(
                         QRectF(drawCoordinate, row-self.fontHeight+self.padding(), self.fontWidth*2, self.fontHeight),
-                        self.palette().color(colorGroup, QPalette.ColorRole.Highlight)
+                        QMemView.HIGHLIGHT_COLOR
                     )
                     if (boff+1) % QMemView.ROW_WIDTH != 0 and self.isSelected(boff+1):
                         painter.fillRect(
                             QRectF(drawCoordinate+self.fontWidth*2, row-self.fontHeight+self.padding(), self.fontWidth, self.fontHeight),
-                            self.palette().color(colorGroup, QPalette.ColorRole.Highlight)
+                            QMemView.HIGHLIGHT_COLOR
                         )
 
                 painter.setPen(QPen(QMemView.COLOR_BYTES))
