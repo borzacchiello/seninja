@@ -42,9 +42,10 @@ class MemoryView(QWidget):
         self.memWidget = QMemView(
             addr=0,
             size=0,
-            dataCallback=None)
+            dataCallback=self._memwidget_callback)
         self.regionSelector = QComboBox()
-        self.regionSelector.currentIndexChanged.connect(self.regionSelectorChanged)
+        self.regionSelector.currentIndexChanged.connect(
+            self.regionSelectorChanged)
 
         self.memWidget.customMenu = self.on_customContextMenuRequested
 
@@ -69,10 +70,16 @@ class MemoryView(QWidget):
         self.data = MemoryViewData()
         self.memWidget.addr = 0
         self.memWidget.size = 0
-        self.memWidget.dataCallback = None
         self.memWidget.updateScrollbars()
         self.memWidget.viewport().update()
         self.regionSelector.clear()
+
+    def setEnabled(self, v):
+        self.regionSelector.setEnabled(v)
+        self.memWidget.setEnabled(v)
+
+    def setDisabled(self, v):
+        self.setEnabled(not v)
 
     def _init_internal(self):
         self.stateUpdate(self.data.current_state)
@@ -105,20 +112,20 @@ class MemoryView(QWidget):
                     "0x%x -> 0x%x" % (addr, addr+size))
             self.data.regions = regions
 
-        if len(regions) > 0 and self.memWidget.dataCallback is None:
+        if len(regions) > 0 and self.memWidget.size == 0:
             addr, size = regions[0]
             self.memWidget.addr = addr
             self.memWidget.size = size
-
-            def callback(addr):
-                v = self.data.current_state.mem.load(addr, 1)
-                if isinstance(v, BVV):
-                    return "%02x" % v.value
-                return ".."
-            self.memWidget.dataCallback = callback
             self.memWidget.updateScrollbars()
+            self.memWidget.viewport().update()
 
-        self.memWidget.viewport().update()
+    def _memwidget_callback(self, addr):
+        if self.data.current_state is None:
+            return "  "
+        v = self.data.current_state.mem.load(addr, 1)
+        if isinstance(v, BVV):
+            return "%02x" % v.value
+        return ".."
 
     def _show_expression(self, address, expr):
         show_message_box("Expression at %s" %

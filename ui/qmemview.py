@@ -24,6 +24,7 @@ class QMemView(QAbstractScrollArea):
         self.size         = size
         self.dataCallback = dataCallback
         self.customMenu   = None
+        self.enabled      = True
 
         self.highligting    = QMemView.HIGHLIGHT_OFF
         self.selectionStart = -1
@@ -31,6 +32,12 @@ class QMemView(QAbstractScrollArea):
 
         self.setFont()
         self.updateScrollbars()
+
+    def setEnabled(self, v):
+        self.enabled = v
+
+    def setDisabled(self, v):
+        self.setEnabled(not v)
 
     def getSelection(self):
         if self.selectionStart == self.selectionEnd:
@@ -139,6 +146,9 @@ class QMemView(QAbstractScrollArea):
         return y * QMemView.ROW_WIDTH + x + self.verticalScrollBar().value() * QMemView.ROW_WIDTH
 
     def mousePressEvent(self, event: QMouseEvent):
+        if not self.enabled:
+            return
+
         if event.buttons() & Qt.LeftButton:
             if self.highligting == QMemView.HIGHLIGHT_ON:
                 self.highligting = QMemView.HIGHLIGHT_OFF
@@ -160,6 +170,9 @@ class QMemView(QAbstractScrollArea):
             menu.exec_(self.mapToGlobal(event.pos()))
 
     def mouseMoveEvent(self, event: QMouseEvent):
+        if not self.enabled:
+            return
+
         if self.highligting != QMemView.HIGHLIGHT_ON:
             return
 
