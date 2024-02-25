@@ -3,7 +3,7 @@
    "name": "SENinja",
    "author": "Luca Borzacchiello",
    "type": [
-      "helper"
+      "helper", "ui"
    ],
    "api": [
       "python3"
@@ -30,5 +30,5 @@
 		"other": []
 	},
    "version": "0.5.0",
-   "minimumbinaryninjaversion": 3500
+   "minimumbinaryninjaversion": 4000
 }
